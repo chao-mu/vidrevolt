@@ -179,8 +179,6 @@ namespace frag {
 
         vert_shader += "}";
 
-        std::cout << vert_shader << std::endl;
-
         std::ifstream ifs(path_);
         if (ifs.fail()) {
             std::ostringstream err;
