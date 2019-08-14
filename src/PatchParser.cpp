@@ -14,6 +14,7 @@
 #include "cmd/Overwrite.h"
 #include "cmd/Reverse.h"
 #include "cmd/Rotate.h"
+#include "fileutil.h"
 
 #define KEY_RESET "reset"
 #define KEY_MEMBERS "members"
@@ -25,7 +26,7 @@
 #define KEY_TRIGGER "trigger"
 #define KEY_MEDIAS "media"
 #define KEY_GROUPS "groups"
-#define KEY_MODULES "modules"
+#define KEY_RENDER "render"
 #define KEY_PLAYBACK "playback"
 #define KEY_TYPE "type"
 #define KEY_OUTPUT "output"
@@ -260,23 +261,40 @@ namespace frag {
         }
     }
 
+    std::string PatchParser::getBuiltinShader(const std::string& path) {
+        return fileutil::join("shaders", path);
+    }
+
     void PatchParser::parseModules(const YAML::Node& patch) {
-        if (!patch[KEY_MODULES]) {
+        if (!patch[KEY_RENDER]) {
             return;
         }
 
         Resolution res = getResolution();
 
-        for (const auto& settings : patch[KEY_MODULES]) {
+        for (const auto& settings : patch[KEY_RENDER]) {
             if (!settings[KEY_OUTPUT]) {
-                throw std::runtime_error("A module is missing output");
+                throw std::runtime_error("A render step is missing output");
             }
 
             const std::string output = settings[KEY_OUTPUT].as<std::string>();
             store_->setIsMedia(Address(output), true);
 
+            if (settings[KEY_INPUT]) {
+                Address addr = settings[KEY_INPUT].as<std::string>();
+                Module::Param param;
+                param.value = addr;
+
+                auto mod = std::make_shared<Module>(output, getBuiltinShader("pass.glsl"), res);
+
+                mod->setParam("img0", param);
+                modules_.push_back(mod);
+
+                continue;
+            }
+
             if (!settings[KEY_PATH]) {
-                throw std::runtime_error("A module is missing path");
+                throw std::runtime_error("A render step is missing its path");
             }
 
             const std::string path = settings[KEY_PATH].as<std::string>();

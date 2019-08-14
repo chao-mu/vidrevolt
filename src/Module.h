@@ -51,7 +51,7 @@ namespace frag {
             const Resolution resolution_;
             std::shared_ptr<ShaderProgram> program_;
 
-            static std::string toChannelName(const std::string& name);
+            static std::string toInputName(const std::string& name);
     };
 }
 

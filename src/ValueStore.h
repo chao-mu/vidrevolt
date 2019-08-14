@@ -30,6 +30,7 @@ namespace frag {
             void set(Address addr, std::shared_ptr<Group> g);
             void set(Address addr, std::shared_ptr<Video> v);
             void set(Address addr, std::shared_ptr<Texture> t);
+            void set(Address alias, Address target);
 
             Address getAddress(Address addr) const;
 
@@ -44,6 +45,7 @@ namespace frag {
             std::map<Address, AddressOrValue> aovs_;
             std::map<Address, std::shared_ptr<Group>> groups_;
             std::map<Address, std::shared_ptr<Video>> videos_;
+            std::map<Address, Address> aliases_;
     };
 }
 

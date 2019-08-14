@@ -53,8 +53,8 @@ namespace frag {
         return resolution_;
     }
 
-    std::string Module::toChannelName(const std::string& name) {
-        return "se_channel_" + name;
+    std::string Module::toInputName(const std::string& name) {
+        return "se_input_" + name;
     }
 
     GLenum Module::getReadableBuf() {
@@ -83,7 +83,7 @@ namespace frag {
     }
 
     void Module::setParam(const std::string& name, Param p) {
-        const std::string& chan_name = toChannelName(name);
+        const std::string& chan_name = toInputName(name);
         uniforms_[chan_name] = p.value;
         uniforms_[chan_name + "_amp"] = p.amp;
         uniforms_[chan_name + "_shift"] = p.shift;
@@ -122,7 +122,21 @@ namespace frag {
             uniform vec2 iResolution;
 
             layout (location = 0) in vec3 aPos;
+        )V";
 
+        for (const auto& kv : params_) {
+            if (!isAddress(kv.second.value) || !store->isMedia(std::get<Address>(kv.second.value))) {
+                continue;
+            }
+
+            const std::string& name = kv.first;
+            const std::string internal_name = toInputName(name);
+
+            vert_shader += "uniform vec2 " + internal_name + "_res;\n";
+            vert_shader += "out vec2 " + internal_name + "_tc;\n";
+        }
+
+        vert_shader += R"V(
             void main() {
                 gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);
 
@@ -130,8 +144,9 @@ namespace frag {
                 float heightStep = 1. / iResolution.y;
 
                 vec2 st = aPos.xy * .5 + .5;
-                uv = st - .5;
-                uv.x *= iResolution.x / iResolution.y;
+                vec2 uv_in = st - .5;
+                uv_in.x *= iResolution.x / iResolution.y;
+                uv = uv_in;
 
                 tc = st;
                 texcoord = st;
@@ -145,8 +160,26 @@ namespace frag {
                 texcoordB = st + vec2(0, -heightStep);
                 texcoordBL = st + vec2(-widthStep, -heightStep);
                 texcoordBR = st + vec2(widthStep, -heightStep);
-            }
         )V";
+
+        for (const auto& kv : params_) {
+            if (!isAddress(kv.second.value) || !store->isMedia(std::get<Address>(kv.second.value))) {
+                continue;
+            }
+
+            const std::string& name = kv.first;
+            const std::string internal_name = toInputName(name);
+            const std::string res_name = internal_name + "_res";
+            const std::string tc_name = internal_name + "_tc";
+
+            vert_shader += tc_name + " = uv_in;\n";
+            vert_shader += tc_name + ".x /= " + res_name + ".x / " + res_name + ".y;\n";
+            vert_shader += tc_name + " += .5;\n";
+        }
+
+        vert_shader += "}";
+
+        std::cout << vert_shader << std::endl;
 
         std::ifstream ifs(path_);
         if (ifs.fail()) {
@@ -156,9 +189,9 @@ namespace frag {
         }
 
         std::stringstream frag_shader;
-        const std::regex pragma_channel_re(R"(^#pragma\s+channel\s+(.*)$)");
+        const std::regex pragma_input_re(R"(^#pragma\s+input\s+(.*)$)");
         const std::regex pragma_include_re(R"(^#pragma\s+include\s+(.*)\s*$)");
-        const std::regex channel_info_re(R"(^(\w+)\s+(\w+)\s*(.*)$)");
+        const std::regex input_info_re(R"(^(\w+)\s+(\w+)\s*(.*)$)");
         std::smatch match;
 
         std::string line;
@@ -168,17 +201,18 @@ namespace frag {
 
             if (std::regex_match(line, match, pragma_include_re)) {
                 frag_shader << fileutil::slurp(path_, match[1]);
-            } else if (std::regex_match(line, match, pragma_channel_re)) {
-                std::string channel_info = match[1].str();
-                if (std::regex_match(channel_info, match, channel_info_re)) {
+            } else if (std::regex_match(line, match, pragma_input_re)) {
+                std::string input_info = match[1].str();
+                if (std::regex_match(input_info, match, input_info_re)) {
                     const std::string type = match[1];
                     const std::string name = match[2];
                     const std::string def = match[3];
 
-                    const std::string internal_name = toChannelName(name);
+                    const std::string internal_name = toInputName(name);
                     const std::string internal_name_shift = internal_name + "_shift";
                     const std::string internal_name_amp = internal_name + "_amp";
                     const std::string internal_name_res = internal_name + "_res";
+                    const std::string internal_name_tc = internal_name + "_tc";
 
                     bool defined = params_.count(name) > 0;
                     std::optional<Address> addr_opt;
@@ -190,6 +224,7 @@ namespace frag {
 
                     if (is_texture) {
                         frag_shader << "uniform sampler2D " << internal_name << ";\n";
+                        frag_shader << "in vec2 " << internal_name_tc << ";\n";
                     } else {
                         frag_shader << "uniform " << type << " " << internal_name;
 
@@ -204,19 +239,17 @@ namespace frag {
                     frag_shader << "uniform float " <<  internal_name_amp << " = 1;\n";
                     frag_shader << "uniform vec2 " << internal_name_res << ";\n";
 
-                    // Define texture coordinates
+                    frag_shader << "#define " << name << "_res " << internal_name_res << "\n";
                     frag_shader << "#define " << name << "_tc ";
                     if (is_texture && addr_opt.has_value()) {
-                        frag_shader << "(gl_FragCoord.xy / " << internal_name_res << ")";
+                        frag_shader << internal_name_tc;
                         uniforms_[internal_name_res] = addr_opt.value() + "resolution";
                     } else {
                         frag_shader << "vec2(0)";
                     }
                     frag_shader << "\n";
 
-                    frag_shader << "#define " << name << "_res " << internal_name_res << "\n";
-
-                    frag_shader << type << " channel_" << name << "(in vec2 uv) {\n";
+                    frag_shader << type << " input_" << name << "(in vec2 uv) {\n";
                     if (is_texture && addr_opt.has_value()) {
                         frag_shader << "   return " << "texture(" << internal_name << ", uv)";
                         std::string swiz = addr_opt.value().getSwiz();
@@ -241,7 +274,7 @@ namespace frag {
                         } else if (type == "bool") {
                             frag_shader << "." << swiz[0] << " > 0.5";
                         } else {
-                            throw std::runtime_error("unsupported channel type '" + type + "'");
+                            throw std::runtime_error("unsupported input type '" + type + "'");
                         }
                     } else {
                         frag_shader << "  return " << internal_name;
@@ -254,10 +287,10 @@ namespace frag {
                     frag_shader << ";\n";
                     frag_shader << "}\n";
 
-                    frag_shader << type << " channel_" << name << "() { return channel_" <<
+                    frag_shader << type << " input_" << name << "() { return input_" <<
                         name << "(" << name << "_tc); }\n";
                 } else {
-                    throw std::runtime_error("Unable to parse channel definition line: " + line);
+                    throw std::runtime_error("Unable to parse input definition line: " + line);
                 }
             } else {
                 frag_shader << line << "\n";
