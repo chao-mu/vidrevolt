@@ -36,6 +36,10 @@ namespace frag {
                 path.compare(path.size() - ext.size(), ext.size(), ext) == 0;
 
         }
+
+        std::string join(const std::string& a, const std::string& b) {
+            return (boost::filesystem::path(a) / boost::filesystem::path(b)).c_str();
+        }
     }
 }
 

@@ -23,9 +23,17 @@ namespace frag {
         return is_media_.count(addr) > 0 && is_media_.at(addr);
     }
 
+    void ValueStore::set(Address alias, Address target) {
+        aliases_[alias] = target;
+    }
+
     Address ValueStore::getAddress(Address addr) const {
         if (values_.count(addr) > 0 || is_media_.count(addr) > 0 || groups_.count(addr) > 0) {
             return addr;
+        }
+
+        if (aliases_.count(addr) > 0) {
+            return getAddress(aliases_.at(addr));
         }
 
         std::vector<std::string> fields = addr.getFields();
