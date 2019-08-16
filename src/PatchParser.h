@@ -44,6 +44,7 @@ namespace frag {
             void parseControllers(const YAML::Node& patch);
             void parseModules(const YAML::Node& patch);
             void parseGroups(const YAML::Node& patch);
+            void parseVars(const YAML::Node& patch);
 
             std::string getBuiltinShader(const std::string& path);
 

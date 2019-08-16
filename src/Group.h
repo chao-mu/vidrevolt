@@ -17,6 +17,7 @@ namespace frag {
             AddressOrValue exchange(const std::string& key, AddressOrValue aov);
             void overwrite(const std::string& key, AddressOrValue aov);
             void add(AddressOrValue aov);
+            std::string toString();
 
         private:
             std::vector<AddressOrValue> elements_;

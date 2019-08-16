@@ -6,7 +6,7 @@
 namespace frag {
     Parser::Parser() : store_(std::make_shared<ValueStore>()) {}
 
-    AddressOrValue Parser::readAddressOrValue(const YAML::Node& node) {
+    AddressOrValue Parser::readAddressOrValue(const YAML::Node& node, bool parse_swiz) {
         if (node.IsSequence()) {
             std::vector<float> v = {};
 
@@ -29,10 +29,10 @@ namespace frag {
             return Value(f);
         }
 
-        return readAddress(node);
+        return readAddress(node, parse_swiz);
     }
 
-    Address Parser::readAddress(const YAML::Node& node) {
+    Address Parser::readAddress(const YAML::Node& node, bool parse_swiz) {
         std::string str = node.as<std::string>();
         std::vector<std::string> tokens;
         std::string token;
@@ -42,14 +42,16 @@ namespace frag {
         }
 
         std::string swiz;
-        if (tokens.size() > 1) {
-            std::regex nonswiz_re("[^xyzwrgb]");
-            if (!std::regex_search(tokens.back(), nonswiz_re)) {
-                Address no_swiz_addr(tokens);
+        if (parse_swiz) {
+            if (tokens.size() > 1) {
+                std::regex nonswiz_re("[^xyzwrgb]");
+                if (!std::regex_search(tokens.back(), nonswiz_re)) {
+                    Address no_swiz_addr(tokens);
 
-                if (store_->getGroup(no_swiz_addr.withoutTail()) == nullptr) {
-                    swiz = tokens.back();
-                    tokens.pop_back();
+                    if (store_->getGroup(no_swiz_addr.withoutTail()) == nullptr) {
+                        swiz = tokens.back();
+                        tokens.pop_back();
+                    }
                 }
             }
         }
@@ -69,18 +71,18 @@ namespace frag {
     }
 
 
-    Address Parser::requireAddress(const YAML::Node& parent, const std::string& key, const std::string& err) {
-        return readAddress(requireNode(parent, key, err));
+    Address Parser::requireAddress(const YAML::Node& parent, const std::string& key, const std::string& err, bool parse_swiz) {
+        return readAddress(requireNode(parent, key, err), parse_swiz);
     }
 
     Trigger Parser::readTrigger(const YAML::Node& node) {
         Trigger trig;
         if (node.IsSequence()) {
             for (const auto& addr_node : node) {
-                trig.push_back(readAddress(addr_node));
+                trig.push_back(readAddress(addr_node, false));
             }
         } else {
-            trig.push_back(readAddress(node));
+            trig.push_back(readAddress(node, false));
         }
 
         return trig;

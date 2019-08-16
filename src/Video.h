@@ -40,6 +40,8 @@ namespace frag {
 
             static bool isVideo(const std::string& path);
 
+            std::string getPath() const;
+
         private:
             void next();
             void seek(int pos);

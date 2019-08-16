@@ -44,6 +44,7 @@
 #define CONTROLLER_TYPE_MIDI "midi"
 #define MEDIA_TYPE_IMAGE "image"
 #define MEDIA_TYPE_VIDEO "video"
+#define KEY_VARS "vars"
 
 namespace frag {
     PatchParser::PatchParser(const std::string& path) : Parser(), path_(path) {}
@@ -52,6 +53,7 @@ namespace frag {
         const YAML::Node patch = YAML::LoadFile(path_);
 
         parseMedia(patch);
+        parseVars(patch);
         parseGroups(patch);
         parseControllers(patch);
         parseModules(patch);
@@ -102,6 +104,26 @@ namespace frag {
         return command;
     }
 
+    void PatchParser::parseVars(const YAML::Node& patch) {
+        if (!patch[KEY_VARS]) {
+            return;
+        }
+
+        for (const auto& kv : patch[KEY_VARS]) {
+            const YAML::Node& addr_n = kv.first;
+            const YAML::Node& value_n = kv.second;
+
+            Address addr = readAddress(addr_n, false);
+            AddressOrValue aov = readAddressOrValue(value_n, true);
+
+            if (isAddress(aov)) {
+                store_->set(addr, std::get<Address>(aov));
+            } else if (isValue(aov)) {
+                store_->set(addr, std::get<Value>(aov));
+            }
+        }
+    }
+
     void PatchParser::parseCommands(const YAML::Node& patch) {
         if (!patch[KEY_COMMANDS]) {
             return;
@@ -126,7 +148,7 @@ namespace frag {
                         if (j++ == 0) {
                             trigger = readTrigger(arg);
                         } else {
-                            args.push_back(readAddressOrValue(arg));
+                            args.push_back(readAddressOrValue(arg, true));
                         }
                     }
 
@@ -142,7 +164,7 @@ namespace frag {
                 std::vector<AddressOrValue> args;
                 if (settings[KEY_ARGS]) {
                     for (const auto& arg : settings[KEY_ARGS]) {
-                        args.push_back(readAddressOrValue(arg));
+                        args.push_back(readAddressOrValue(arg, true));
                     }
                 }
 
@@ -164,7 +186,7 @@ namespace frag {
 
             if (kv.second.IsSequence()) {
                 for (const auto el : settings) {
-                    group->add(readAddressOrValue(el));
+                    group->add(readAddressOrValue(el, true));
                 }
             } else {
                 const YAML::Node elements = requireNode(
@@ -175,7 +197,7 @@ namespace frag {
 
                 int el_size = 0;
                 for (const auto el : elements) {
-                    group->add(readAddressOrValue(el));
+                    group->add(readAddressOrValue(el, true));
                     el_size++;
                 }
 
@@ -226,8 +248,7 @@ namespace frag {
         for (const auto& kv : patch[KEY_MEDIAS]) {
             const std::string name = kv.first.as<std::string>();
             const YAML::Node& settings = kv.second;
-
-            store_->setIsMedia(Address(name), true);
+            Address addr = Address(name);
 
             std::string path;
             if (settings.IsMap() && settings[KEY_PATH]) {
@@ -253,8 +274,10 @@ namespace frag {
 
             if (type == MEDIA_TYPE_IMAGE) {
                 images_[name] = loadImage(name, path, settings);
+                store_->set(addr, images_[name]);
             } else if (type == MEDIA_TYPE_VIDEO) {
                 videos_[name] = loadVideo(name, path, settings);
+                store_->set(addr, videos_[name]);
             } else {
                 throw std::runtime_error("unsupported media type " + type);
             }
@@ -309,17 +332,17 @@ namespace frag {
                     Module::Param param;
 
                     if (value.Type() == YAML::NodeType::Map) {
-                        param.value = readAddressOrValue(value[KEY_INPUT]);
+                        param.value = readAddressOrValue(value[KEY_INPUT], true);
 
                         if (value[KEY_AMP]) {
-                            param.amp = readAddressOrValue(value[KEY_AMP]);
+                            param.amp = readAddressOrValue(value[KEY_AMP], true);
                         }
 
                         if (value[KEY_SHIFT]) {
-                            param.shift = readAddressOrValue(value[KEY_SHIFT]);
+                            param.shift = readAddressOrValue(value[KEY_SHIFT], true);
                         }
                     } else {
-                        param.value = readAddressOrValue(value);
+                        param.value = readAddressOrValue(value, true);
                     }
 
                     mod->setParam(key, param);
@@ -359,6 +382,9 @@ namespace frag {
 
         res.width = res_node[KEY_WIDTH].as<int>();
         res.height = res_node[KEY_HEIGHT].as<int>();
+
+        store_->set(Address("resolution", "width"), Value(res.width));
+        store_->set(Address("resolution", "height"), Value(res.height));
 
         return res;
     }

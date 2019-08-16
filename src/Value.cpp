@@ -1,9 +1,12 @@
 #include "Value.h"
 
+// STL
+#include <sstream>
+
 namespace frag {
     Value::Value() : Value(0.0f) {}
     Value::Value(bool v) : Value(v ? 1.0f : 0.0f) {}
-
+    Value::Value(int v) : Value(static_cast<float>(v)) {}
     Value::Value(float v) : Value(std::vector({v})) {}
 
     Value::Value(std::vector<float> v) {
@@ -33,5 +36,17 @@ namespace frag {
     std::vector<float> Value::getVec4() {
         return value_;
     }
-}
 
+    std::string Value::toString() const {
+        std::stringstream ss;
+
+        std::string sep = "";
+        for (const auto& v : value_) {
+            ss << sep;
+            ss << v;
+            sep = ", ";
+        }
+
+        return ss.str();
+    }
+}

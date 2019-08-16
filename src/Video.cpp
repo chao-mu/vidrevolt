@@ -25,6 +25,10 @@ namespace frag {
         stop();
     }
 
+    std::string Video::getPath() const {
+        return path_;
+    }
+
     void Video::outFocus() {
         requested_reset_ = auto_reset_;
         last_update_.reset();
@@ -268,6 +272,7 @@ namespace frag {
         }
         */
 
+
         // This is a guess, apparently it can be wrong
         total_frames_ = static_cast<int>(vid_->get(cv::CAP_PROP_FRAME_COUNT));
         if (total_frames_ < 0) {
@@ -282,6 +287,11 @@ namespace frag {
         }
 
         next();
+        {
+            // Set the resolution (a side effect of populate)
+            std::pair<int, std::shared_ptr<cv::Mat>> frame = buffer_.at(cursor_);
+            populate(*frame.second);
+        }
 
         running_ = true;
         thread_ = std::thread([this] {

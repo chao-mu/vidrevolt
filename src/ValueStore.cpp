@@ -1,8 +1,11 @@
 #include "ValueStore.h"
 
-#include "MathUtil.h"
-
+// STL
 #include <iostream>
+#include <sstream>
+
+// Ours
+#include "MathUtil.h"
 
 namespace frag {
     bool ValueStore::isTriggered(const Trigger& trigger) const {
@@ -25,6 +28,10 @@ namespace frag {
 
     void ValueStore::set(Address alias, Address target) {
         aliases_[alias] = target;
+        std::shared_ptr<Media> media = getMedia(target);
+        if (media != nullptr) {
+            setMedia(alias, media);
+        }
     }
 
     Address ValueStore::getAddress(Address addr) const {
@@ -140,12 +147,58 @@ namespace frag {
             bool last_pressed = last_opt.has_value() && last_opt.value().getBool();
 
             values_[addr + "hold"] = Value(c.isPressed());
-
             values_[addr + "release"] = Value(last_pressed && !c.isPressed());
             values_[addr + "press"] = Value(!last_pressed && c.isPressed());
             values_[addr] = Value(static_cast<float>(c.value) >= 0.5 ? true : false);
         } else {
             values_[addr] = Value(remap(c.value, c.low, c.high, 0, 1));
         }
+    }
+
+    std::string ValueStore::toString() const {
+        std::stringstream s;
+
+        s << "Values:" << std::endl;
+        for (const auto& kv : values_) {
+            bool is_media = isMedia(kv.first);
+
+            s << "    - " << kv.first.toString() << " [" << (is_media ? "M" : "") << "]"  << ": " << kv.second.toString() << std::endl;
+        }
+
+        s << "Media:" << std::endl;
+        for (const auto& kv : media_) {
+            bool is_media = isMedia(kv.first);
+
+            s << "    - " << kv.first.toString() << " [" << (is_media ? "M" : "") << "]" << std::endl;
+        }
+
+        s << "Videos:" << std::endl;
+        for (const auto& kv : videos_) {
+            bool is_media = isMedia(kv.first);
+
+            s << "    - " << kv.first.toString() << " [" << (is_media ? "M" : "") << "]" << ": " << kv.second->getPath() << std::endl;
+        }
+
+        s << "Groups:" << std::endl;
+        for (const auto& kv : groups_) {
+            bool is_media = isMedia(kv.first);
+
+            s << "    - " << kv.first.toString() << " [" << (is_media ? "M" : "") << "]" << ": " << kv.second->toString() << std::endl;
+        }
+
+        s << "AddressOrValues:" << std::endl;
+        for (const auto& kv : aovs_) {
+            bool is_media = isMedia(kv.first);
+
+            s << "    - " << kv.first.toString() << " [" << (is_media ? "M" : "") << "]" << ": " << aovToString(kv.second) << std::endl;
+        }
+
+        s << "Aliases:" << std::endl;
+        for (const auto& kv : aliases_) {
+            bool is_media = isMedia(kv.first);
+
+            s << "    - " << kv.first.toString() << " [" << (is_media ? "M" : "") << "]" << ": " << kv.second.toString() << std::endl;
+        }
+        return s.str();
     }
 }

@@ -1,6 +1,8 @@
 #include "Group.h"
 
+// STL
 #include <algorithm>
+#include <sstream>
 
 namespace frag {
     void Group::add(AddressOrValue aov) {
@@ -11,6 +13,23 @@ namespace frag {
         } else if (elements_.size() == 2)  {
             setMapping("second", 1);
         }
+    }
+
+
+    std::string Group::toString() {
+        std::stringstream s;
+
+        s << "Group(";
+        std::string sep = "";
+        for (const auto& kv : getMappings()) {
+            s << sep;
+            s << kv.first << "=" << aovToString(kv.second);
+            sep  = ", ";
+        }
+
+        s << ")";
+
+        return s.str();
     }
 
     void Group::rotate() {

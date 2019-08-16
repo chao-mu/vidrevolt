@@ -36,6 +36,8 @@ namespace frag {
 
             bool isTriggered(const Trigger& trigger) const;
 
+            std::string toString() const;
+
         private:
             void setMedia(Address addr, std::shared_ptr<Media> m);
 
@@ -50,4 +52,3 @@ namespace frag {
 }
 
 #endif
-

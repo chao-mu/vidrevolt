@@ -85,6 +85,7 @@ int main(int argc, const char** argv) {
     TCLAP::ValueArg<int> height_arg("", "height", "window height (width will be calculated automatically)", false, 720, "int", cmd);
     TCLAP::ValueArg<double> fps_arg("", "fps", "FPS to aim for", false, 120, "float", cmd);
     TCLAP::SwitchArg debug_timer_arg("", "debug-timer", "debug time between frames", cmd);
+    TCLAP::SwitchArg debug_store_arg("", "debug-store", "print out the value store", cmd);
     TCLAP::SwitchArg full_arg("", "full", "maximized, no titlebar", cmd);
 
     // Parse command line arguments
@@ -203,7 +204,6 @@ int main(int argc, const char** argv) {
     media.insert(videos.begin(), videos.end());
     media.insert(images.begin(), images.end());
 
-
     std::map<std::string, std::shared_ptr<frag::Texture>> modules_output;
 
     // Initialize values
@@ -225,6 +225,15 @@ int main(int argc, const char** argv) {
     DEBUG_TIME_DECLARE(loop)
     DEBUG_TIME_DECLARE(draw)
     DEBUG_TIME_DECLARE(prepStore)
+
+    std::string store_str;
+    if (debug_store_arg.getValue()) {
+        store_str = store->toString();
+
+        std::cout << "---STORE START ---" << std::endl;
+        std::cout << store_str << std::endl;
+        std::cout << "---STORE STOP ---" << std::endl;
+    }
 
     while (!glfwWindowShouldClose(window)) {
         //std::chrono::time_point<std::chrono::high_resolution_clock> fps_timer_start =
@@ -339,6 +348,17 @@ int main(int argc, const char** argv) {
             //std::this_thread::sleep_for(std::chrono::duration<double, std::milli>(remainder));
         }
         */
+
+        if (debug_store_arg.getValue()) {
+            std::string ss = store->toString();
+
+            if (ss != store_str) {
+                std::cout << "---STORE START ---" << std::endl;
+                std::cout << store_str << std::endl;
+                std::cout << "---STORE STOP ---" << std::endl;
+                store_str = ss;
+            }
+        }
     }
 
     return 0;
