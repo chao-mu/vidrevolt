@@ -124,6 +124,24 @@ namespace frag {
         }
     }
 
+    void PatchParser::connectCommand(std::shared_ptr<cmd::Command> c) {
+        Trigger trigger = c->getTrigger();
+        std::string dev = trigger.getFront();
+        std::string control = trigger.getBack();
+
+        if (controllers_.count(dev) == 0) {
+            throw std::runtime_error("Controller '" + dev + "' not found");
+        }
+
+        std::shared_ptr<ValueStore> store = store_;
+        controllers_.at(dev)->connect(control, [c, store](Value /*v*/) {
+            std::optional<Value> v_opt = store->getValue(c->getTrigger());
+            if (v_opt.has_value() && v_opt.value().getBool()) {
+                c->run(store);
+            }
+        });
+    }
+
     void PatchParser::parseCommands(const YAML::Node& patch) {
         if (!patch[KEY_COMMANDS]) {
             return;
@@ -139,6 +157,7 @@ namespace frag {
                 "expected command #" + std::to_string(i) + " to have key '" + KEY_COMMAND + "'"
             ).as<std::string>();
 
+            std::shared_ptr<cmd::Command> c;
             if (settings[KEY_TRIGGER_AND_ARGS]) {
                 for (const auto& trig_args : settings[KEY_TRIGGER_AND_ARGS]) {
                     Trigger trigger;
@@ -152,7 +171,7 @@ namespace frag {
                         }
                     }
 
-                    commands_.push_back(loadCommand(i, command_name, trigger, args));
+                    c = loadCommand(i, command_name, trigger, args);
                 }
             } else {
                 Trigger trigger = requireTrigger(
@@ -168,8 +187,11 @@ namespace frag {
                     }
                 }
 
-                commands_.push_back(loadCommand(i, command_name, trigger, args));
+                c = loadCommand(i, command_name, trigger, args);
             }
+
+            connectCommand(c);
+            commands_.push_back(c);
         }
     }
 

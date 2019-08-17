@@ -48,6 +48,8 @@ namespace frag {
 
             std::string getBuiltinShader(const std::string& path);
 
+            void connectCommand(std::shared_ptr<cmd::Command> c);
+
             std::shared_ptr<Image> loadImage(const std::string& name, const std::string& path, const YAML::Node& settings) const;
             std::shared_ptr<Video> loadVideo(const std::string& name, const std::string& path, const YAML::Node& settings) const;
             std::shared_ptr<midi::Device> loadMidiDevice(const std::string& name, const YAML::Node& settings) const;

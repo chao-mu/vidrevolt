@@ -6,6 +6,7 @@
 namespace frag {
     namespace cmd {
         void Overwrite::run(std::shared_ptr<ValueStore> store) const {
+            std::cout << "TRIGGERED!" << std::endl;
             Address src = std::get<Address>(args_.at(0));
             Address group_addr = src.withoutBack();
             const std::string back = src.getBack();

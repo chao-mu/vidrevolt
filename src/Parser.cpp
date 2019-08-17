@@ -48,7 +48,7 @@ namespace frag {
                 if (!std::regex_search(tokens.back(), nonswiz_re)) {
                     Address no_swiz_addr = Address(tokens).withoutBack();
 
-                    if (store_->getGroup(no_swiz_addr) != nullptr) {
+                    if (store_->getMedia(no_swiz_addr) != nullptr) {
                         swiz = tokens.back();
                         tokens.pop_back();
                     }
@@ -76,7 +76,7 @@ namespace frag {
     }
 
     Trigger Parser::readTrigger(const YAML::Node& node) {
-        Trigger trig;
+        /*Trigger trig;
         if (node.IsSequence()) {
             for (const auto& addr_node : node) {
                 trig.push_back(readAddress(addr_node, false));
@@ -86,6 +86,8 @@ namespace frag {
         }
 
         return trig;
+        */
+        return readAddress(node, false);
     }
 
     Trigger Parser::requireTrigger(

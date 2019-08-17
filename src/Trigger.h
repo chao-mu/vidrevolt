@@ -4,7 +4,7 @@
 #include "Address.h"
 
 namespace frag {
-    using Trigger = std::vector<Address>;
+    using Trigger = Address;
 }
 
 #endif

@@ -124,9 +124,7 @@ namespace frag {
                                     value = 0;
                                 }
 
-                                if (control->type != CONTROL_TYPE_BUTTON) {
-                                    value = remap(value, control->low, control->high, 0, 1);
-                                }
+                                value = remap(value, control->low, control->high, 0, 1);
 
                                 control->change(Value(value));
                             }

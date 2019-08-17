@@ -13,17 +13,24 @@ namespace frag {
     }
 
     std::optional<AddressOrValue> ValueStore::getGroupMember(const Address& addr) const {
-        if (groups_.count(addr.getFront()) == 0) {
-            return {};
+        {
+            std::lock_guard<std::mutex> guard(groups_mutex_);
+            if (groups_.count(addr.getFront()) == 0) {
+                return {};
+            }
         }
 
-        std::shared_ptr<Group> group = groups_.at(addr.getFront());
-        std::optional<AddressOrValue> aov_opt = group->get(addr.getBack());
-        if (!aov_opt.has_value()) {
-            return {};
+        AddressOrValue aov;
+        {
+            std::lock_guard<std::mutex> guard(groups_mutex_);
+            std::shared_ptr<Group> group = groups_.at(addr.getFront());
+            std::optional<AddressOrValue> aov_opt = group->get(addr.getBack());
+            if (!aov_opt.has_value()) {
+                return {};
+            }
+            aov = aov_opt.value();
         }
 
-        AddressOrValue aov = aov_opt.value();
 
         // Re-add swizzle
         if (isAddress(aov)) {
@@ -41,15 +48,17 @@ namespace frag {
     }
 
     Address ValueStore::getAddressDeep(const Address& addr) const {
-        if (images_.count(addr) > 0 ||
-                videos_.count(addr) > 0 ||
-                render_out_.count(addr) > 0 ||
-                groups_.count(addr) > 0) {
-            return addr;
+        bool is_alias;
+        Address alias_target;
+        {
+            std::lock_guard<std::mutex> guard(aliases_mutex_);
+            is_alias = aliases_.count(addr) > 0;
+            if (is_alias) {
+                alias_target = aliases_.at(addr);
+            }
         }
-
-        if (aliases_.count(addr) > 0) {
-            return getAddressDeep(aliases_.at(addr));
+        if (is_alias) {
+            return getAddressDeep(alias_target);
         }
 
         {
@@ -58,6 +67,35 @@ namespace frag {
                 return addr;
             }
         }
+
+        {
+            std::lock_guard<std::mutex> guard(groups_mutex_);
+            if (groups_.count(addr) > 0) {
+                return addr;
+            }
+        }
+
+        {
+            std::lock_guard<std::mutex> guard(images_mutex_);
+            if (images_.count(addr) > 0) {
+                return addr;
+            }
+        }
+
+        {
+            std::lock_guard<std::mutex> guard(videos_mutex_);
+            if (videos_.count(addr) > 0) {
+                return addr;
+            }
+        }
+
+        {
+            std::lock_guard<std::mutex> guard(render_out_mutex_);
+            if (render_out_.count(addr) > 0) {
+                return addr;
+            }
+        }
+
 
         // Maybe it's a group member
         std::optional<AddressOrValue> member_opt = getGroupMember(addr);
@@ -104,6 +142,7 @@ namespace frag {
     std::shared_ptr<Video> ValueStore::getVideo(const Address& addr) const {
         Address resolved_addr = getAddressDeep(addr);
 
+        std::lock_guard<std::mutex> guard(videos_mutex_);
         if (videos_.count(resolved_addr) > 0) {
             return videos_.at(resolved_addr);
         } else {
@@ -114,6 +153,7 @@ namespace frag {
     std::shared_ptr<Group> ValueStore::getGroup(const Address& addr) const {
         Address resolved_addr = getAddressDeep(addr);
 
+        std::lock_guard<std::mutex> guard(groups_mutex_);
         if (groups_.count(resolved_addr) > 0) {
             return groups_.at(resolved_addr);
         } else {
@@ -124,26 +164,37 @@ namespace frag {
     std::shared_ptr<Media> ValueStore::getMedia(const Address& addr) const {
         Address resolved_addr = getAddressDeep(addr);
 
-        if (videos_.count(resolved_addr) > 0) {
-            return videos_.at(resolved_addr);
+        {
+            std::lock_guard<std::mutex> guard(videos_mutex_);
+            if (videos_.count(resolved_addr) > 0) {
+                return videos_.at(resolved_addr);
+            }
         }
 
-        if (images_.count(resolved_addr) > 0) {
-            return images_.at(resolved_addr);
+        {
+            std::lock_guard<std::mutex> guard(images_mutex_);
+            if (images_.count(resolved_addr) > 0) {
+                return images_.at(resolved_addr);
+            }
         }
 
-        if (render_out_.count(resolved_addr) > 0) {
-            return render_out_.at(resolved_addr);
+        {
+            std::lock_guard<std::mutex> guard(render_out_mutex_);
+            if (render_out_.count(resolved_addr) > 0) {
+                return render_out_.at(resolved_addr);
+            }
         }
 
         return nullptr;
     }
 
     void ValueStore::set(Address alias, Address target) {
+        std::lock_guard<std::mutex> guard(aliases_mutex_);
         aliases_[alias] = target;
     }
 
     void ValueStore::set(const Address& addr, std::shared_ptr<Texture> o) {
+        std::lock_guard<std::mutex> guard(render_out_mutex_);
         render_out_[addr] = o;
     }
 
@@ -157,10 +208,12 @@ namespace frag {
     }
 
     void ValueStore::set(const Address& addr, std::shared_ptr<Video> v) {
+        std::lock_guard<std::mutex> guard(videos_mutex_);
         videos_[addr] = v;
     }
 
     void ValueStore::set(const Address& addr, std::shared_ptr<Image> img) {
+        std::lock_guard<std::mutex> guard(images_mutex_);
         images_[addr] = img;
     }
 
@@ -189,29 +242,43 @@ namespace frag {
         }
 
         s << "Images:" << std::endl;
-        for (const auto& kv : images_) {
-            s << "    - " << kv.first.str() << ": " << kv.second->getPath() << std::endl;
+        {
+            std::lock_guard<std::mutex> guard(images_mutex_);
+            for (const auto& kv : images_) {
+                s << "    - " << kv.first.str() << ": " << kv.second->getPath() << std::endl;
+            }
         }
 
         s << "Videos:" << std::endl;
-        for (const auto& kv : videos_) {
-            s << "    - " << kv.first.str() << ": " << kv.second->getPath() << std::endl;
+        {
+            std::lock_guard<std::mutex> guard(videos_mutex_);
+            for (const auto& kv : videos_) {
+                s << "    - " << kv.first.str() << ": " << kv.second->getPath() << std::endl;
+            }
         }
 
         s << "Groups:" << std::endl;
-        for (const auto& kv : groups_) {
-            s << "    - " << kv.first.str() << ": " << kv.second->str() << std::endl;
+        {
+            std::lock_guard<std::mutex> guard(groups_mutex_);
+            for (const auto& kv : groups_) {
+                s << "    - " << kv.first.str() << ": " << kv.second->str() << std::endl;
+            }
         }
 
         s << "Aliases:" << std::endl;
-        for (const auto& kv : aliases_) {
-            s << "    - " << kv.first.str() << ": " << kv.second.str();
-            s << " (getAddressDeep -> " << getAddressDeep(kv.first).str() << ")" << std::endl;
+        {
+            std::lock_guard<std::mutex> guard(aliases_mutex_);
+            for (const auto& kv : aliases_) {
+                s << "    - " << kv.first.str() << ": " << kv.second.str() << std::endl;
+            }
         }
 
         s << "Render outputs:" << std::endl;
-        for (const auto& kv : render_out_) {
-            s << "    - " << kv.first.str() << std::endl;
+        {
+            std::lock_guard<std::mutex> guard(render_out_mutex_);
+            for (const auto& kv : render_out_) {
+                s << "    - " << kv.first.str() << std::endl;
+            }
         }
 
         s << "--- ValueStore END ---";

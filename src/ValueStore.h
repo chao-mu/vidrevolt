@@ -52,6 +52,11 @@ namespace frag {
             std::map<Address, Address> aliases_;
 
             mutable std::mutex values_mutex_;
+            mutable std::mutex groups_mutex_;
+            mutable std::mutex images_mutex_;
+            mutable std::mutex videos_mutex_;
+            mutable std::mutex render_out_mutex_;
+            mutable std::mutex aliases_mutex_;
     };
 }
 
