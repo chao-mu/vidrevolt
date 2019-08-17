@@ -9,6 +9,7 @@
 #include <thread>
 #include <atomic>
 #include <regex>
+#include <vector>
 
 // RtMidi
 #include "rtmidi/RtMidi.h"
@@ -27,8 +28,8 @@ namespace frag {
                 void start();
                 void update();
 
-                Control getControl(const std::string& name);
-                std::vector<Control> getControls();
+                void connect(const std::string& control_name, std::function<void(Value)> f);
+                std::vector<std::string> getControlNames() const;
 
             private:
                 void load();
@@ -36,11 +37,11 @@ namespace frag {
 
                 std::string path_;
                 std::regex name_re_;
-                std::mutex controls_mutex_;
+                mutable std::mutex controls_mutex_;
                 std::string port_name_;
 
                 std::shared_ptr<RtMidiIn> midi_in_;
-                std::map<std::string, Control> controls_;
+                std::map<std::string, std::shared_ptr<Control>> controls_;
                 std::thread thread_;
                 std::atomic<bool> running_;
         };

@@ -19,7 +19,7 @@ namespace frag {
             int getInt();
             std::vector<float> getVec4();
 
-            std::string toString() const;
+            std::string str() const;
 
         private:
             std::vector<float> value_;
@@ -27,4 +27,3 @@ namespace frag {
 }
 
 #endif
-

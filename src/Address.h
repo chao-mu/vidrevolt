@@ -13,18 +13,19 @@ namespace frag {
             template<class ...Ts> Address(Ts... fields) : fields_{fields...} {}
             //template<class ...Ts> Address(Ts... fields, const std::string& last) : fields_{fields..., last} {}
 
-            Address withoutTail() const;
+            Address withoutBack() const;
+            Address withoutFront() const;
 
-            std::string getHead();
-            std::string getTail();
+            std::string getFront() const;
+            std::string getBack() const;
 
             void setSwiz(const std::string& str);
-            std::string getSwiz();
+            std::string getSwiz() const;
 
             bool operator <(const Address& b) const;
             Address operator +(const std::string& str) const;
 
-            std::string toString() const;
+            std::string str() const;
 
             std::vector<std::string> getFields() const;
         private:

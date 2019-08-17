@@ -10,7 +10,7 @@ namespace frag {
 
         void Command::throwIncompatible() const {
             throw std::runtime_error(
-                    "Command '" + name_ + "' is incompatible with target '" + target_.toString() + "'");
+                    "Command '" + name_ + "' is incompatible with target '" + target_.str() + "'");
         }
 
         std::string Command::getName() const {

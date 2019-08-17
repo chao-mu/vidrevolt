@@ -6,7 +6,7 @@ namespace frag {
         fields_.push_back(tail);
     }
 
-    std::string Address::toString() const {
+    std::string Address::str() const {
         std::string str;
 
         std::string sep = "";
@@ -24,12 +24,23 @@ namespace frag {
         return str;
     }
 
-    Address Address::withoutTail() const {
+    Address Address::withoutBack() const {
+        if (fields_.empty()) {
+            return Address();
+        }
+
         return Address(std::vector(fields_.cbegin(), fields_.cend() - 1));
     }
 
+    Address Address::withoutFront() const {
+        if (fields_.empty()) {
+            return Address();
+        }
 
-    std::string Address::getSwiz() {
+        return Address(std::vector(fields_.cbegin() + 1, fields_.cend()));
+    }
+
+    std::string Address::getSwiz() const {
         return swiz_;
     }
 
@@ -37,11 +48,11 @@ namespace frag {
         swiz_ = str;
     }
 
-    std::string Address::getTail() {
+    std::string Address::getBack() const {
         return fields_.back();
     }
 
-    std::string Address::getHead() {
+    std::string Address::getFront() const {
         return fields_.front();
     }
 
@@ -54,6 +65,6 @@ namespace frag {
     }
     // This can often be seen written as
     bool Address::operator<(const Address& b) const {
-        return toString() < b.toString();
+        return str() < b.str();
     }
 }

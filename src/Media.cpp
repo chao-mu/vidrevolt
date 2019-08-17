@@ -5,6 +5,10 @@ namespace frag {
         in_use_ = true;
     }
 
+    std::string Media::getPath() const {
+        return "";
+    }
+
     bool Media::isInUse() {
         return in_use_;
     }

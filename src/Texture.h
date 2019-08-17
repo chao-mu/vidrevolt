@@ -30,8 +30,8 @@ namespace frag {
             GLuint getID() const;
 
         private:
-            void borrowBind(std::function<void()> f);
             unsigned int glID_ = 0;
+            Resolution res_;
     };
 }
 

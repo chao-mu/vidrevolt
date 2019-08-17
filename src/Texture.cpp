@@ -19,21 +19,12 @@ namespace frag {
     }
 
     void Texture::setScaleFilter(GLint min_param, GLint mag_param) {
-        this->borrowBind([min_param, mag_param]() {
-            GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, min_param));
-            GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, mag_param));
-        });
+        GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, min_param));
+        GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, mag_param));
     }
 
     Resolution Texture::getResolution() {
-        Resolution res;
-
-        this->borrowBind([&res]() {
-            GLCall(glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &res.width));
-            GLCall(glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &res.height));
-        });
-
-        return res;
+        return res_;
     }
 
     void Texture::save(const std::string& path) {
@@ -68,22 +59,10 @@ namespace frag {
     void Texture::populate(GLint internal_format, GLsizei width, GLsizei height,
             GLenum format, GLenum type, const GLvoid* data) {
 
-        this->borrowBind([this, internal_format, width, height, format, type, data]() {
-            GLCall(glTexImage2D(GL_TEXTURE_2D, 0, internal_format, width, height, 0, format, type, data));
-        });
-    }
+        GLCall(glTexImage2D(GL_TEXTURE_2D, 0, internal_format, width, height, 0, format, type, data));
 
-    void Texture::borrowBind(std::function<void()> f) {
-        // Lookup current active texture so we can restore.
-        GLint prev_active = 0;
-        GLCall(glGetIntegerv(GL_ACTIVE_TEXTURE, &prev_active));
-
-        this->bind();
-
-        f();
-
-        // Restore active texture
-        GLCall(glActiveTexture(prev_active));
+        GLCall(glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &res_.width));
+        GLCall(glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &res_.height));
     }
 
     void Texture::bind(unsigned int slot) {

@@ -72,8 +72,6 @@ namespace frag {
         std::pair<int, std::shared_ptr<cv::Mat>> frame = buffer_.at(cursor_);
         populate(*frame.second);
 
-        //std::cout << path_ << " " << frame.first << std::endl;
-
         if (playback_ == Mirror) {
             if (frame.first >= last_frame_.load()) {
                 reverse_ = true;

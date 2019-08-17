@@ -43,23 +43,6 @@ namespace frag {
             thread_ = std::thread(&Device::loop, this);
         }
 
-        std::vector<Control> Device::getControls() {
-            std::lock_guard<std::mutex> guard(controls_mutex_);
-
-            std::vector<Control> ctrls;
-            for (const auto& kv : controls_) {
-                ctrls.push_back(kv.second);
-            }
-
-            return ctrls;
-        }
-
-        Control Device::getControl(const std::string& name) {
-            std::lock_guard<std::mutex> guard(controls_mutex_);
-            Control ctrl = controls_[name];
-            return ctrl;
-        }
-
         void Device::load() {
             YAML::Node settings = YAML::LoadFile(path_);
             if (!settings["regex"]) {
@@ -76,13 +59,13 @@ namespace frag {
                 std::string name = mapping.first.as<std::string>();
                 YAML::Node props = mapping.second;
 
-                Control control;
-                control.channel = (unsigned char) props["channel"].as<int>();
-                control.function = (unsigned char) props["function"].as<int>();
-                control.low = (unsigned char) props["low"].as<int>();
-                control.high = (unsigned char) props["high"].as<int>();
-                control.type = props["type"].as<std::string>() == "button" ? CONTROL_TYPE_BUTTON : CONTROL_TYPE_FADER;
-                control.name = name;
+                std::shared_ptr<Control> control = std::make_shared<Control>();
+                control->channel = (unsigned char) props["channel"].as<int>();
+                control->function = (unsigned char) props["function"].as<int>();
+                control->low = (unsigned char) props["low"].as<int>();
+                control->high = (unsigned char) props["high"].as<int>();
+                control->type = props["type"].as<std::string>() == "button" ? CONTROL_TYPE_BUTTON : CONTROL_TYPE_FADER;
+                control->name = name;
 
                 controls_[name] = control;
             }
@@ -92,6 +75,27 @@ namespace frag {
             if (thread_.joinable()) {
                 running_ = false;
                 thread_.join();
+            }
+        }
+
+        std::vector<std::string> Device::getControlNames() const {
+            std::vector<std::string> names;
+            {
+                std::lock_guard<std::mutex> guard(controls_mutex_);
+                for (const auto& kv : controls_) {
+                    names.push_back(kv.first);
+                }
+            }
+
+            return names;
+        }
+
+        void Device::connect(const std::string& control_name, std::function<void(Value)> f) {
+            if (controls_.count(control_name) > 0) {
+                controls_.at(control_name)->change.connect(f);
+            } else {
+                throw std::runtime_error(
+                        "Unknown control name " + control_name + " for midi device " + path_);
             }
         }
 
@@ -110,20 +114,21 @@ namespace frag {
                         continue;
                     }
 
-                    std::lock_guard<std::mutex> guard(controls_mutex_);
-                    for (auto& kv : controls_) {
-                        auto& control = kv.second;
-                        if (control.function == msg.getFunction() && control.type == type && msg.getChannel() == control.channel) {
-                            unsigned char value = msg.getValue();
-                            if (msg.getType() == MESSAGE_TYPE_NOTE_OFF) {
-                                value = 0;
-                            }
+                    {
+                        std::lock_guard<std::mutex> guard(controls_mutex_);
+                        for (auto& kv : controls_) {
+                            auto control = kv.second;
+                            if (control->function == msg.getFunction() && control->type == type && msg.getChannel() == control->channel) {
+                                float value = msg.getValue();
+                                if (msg.getType() == MESSAGE_TYPE_NOTE_OFF) {
+                                    value = 0;
+                                }
 
-                            control.last_value = control.value;
-                            control.value = value;
+                                if (control->type != CONTROL_TYPE_BUTTON) {
+                                    value = remap(value, control->low, control->high, 0, 1);
+                                }
 
-                            if (control.isPressed() && control.last_value <= 0.5) {
-                                control.toggle = !control.toggle;
+                                control->change(Value(value));
                             }
                         }
                     }

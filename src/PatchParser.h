@@ -12,7 +12,7 @@
 
 // Ours
 #include "Video.h"
-#include "Texture.h"
+#include "Image.h"
 #include "Module.h"
 #include "Resolution.h"
 #include "AddressOrValue.h"
@@ -29,7 +29,7 @@ namespace frag {
             void parse();
 
             std::map<std::string, std::shared_ptr<Video>> getVideos();
-            std::map<std::string, std::shared_ptr<Texture>> getImages();
+            std::map<std::string, std::shared_ptr<Image>> getImages();
             std::vector<std::shared_ptr<Module>> getModules();
             std::map<std::string, std::shared_ptr<midi::Device>> getControllers();
             std::map<std::string, std::shared_ptr<Group>> getGroups();
@@ -48,14 +48,14 @@ namespace frag {
 
             std::string getBuiltinShader(const std::string& path);
 
-            std::shared_ptr<Texture> loadImage(const std::string& name, const std::string& path, const YAML::Node& settings) const;
+            std::shared_ptr<Image> loadImage(const std::string& name, const std::string& path, const YAML::Node& settings) const;
             std::shared_ptr<Video> loadVideo(const std::string& name, const std::string& path, const YAML::Node& settings) const;
             std::shared_ptr<midi::Device> loadMidiDevice(const std::string& name, const YAML::Node& settings) const;
             std::shared_ptr<cmd::Command> loadCommand(int num, const std::string& name, Trigger trigger, std::vector<AddressOrValue> args);
 
             const std::string path_;
             std::map<std::string, std::shared_ptr<Video>> videos_;
-            std::map<std::string, std::shared_ptr<Texture>> images_;
+            std::map<std::string, std::shared_ptr<Image>> images_;
             std::map<std::string, std::shared_ptr<midi::Device>> controllers_;
             std::vector<std::shared_ptr<Module>> modules_;
             std::map<std::string, std::shared_ptr<Group>> groups_;

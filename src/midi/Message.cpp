@@ -5,7 +5,7 @@ namespace frag {
         Message::Message(std::vector<unsigned char> message) : message_(message) {
         }
 
-        MessageType Message::getType() {
+        MessageType Message::getType() const {
             unsigned char type = message_[0];
 
             switch(type & 0xf0) {
@@ -17,7 +17,7 @@ namespace frag {
             return MESSAGE_TYPE_UNKNOWN;
         }
 
-        std::string Message::toString() {
+        std::string Message::str() const {
             return "Message(channel=" + std::to_string(static_cast<int>(getChannel())) +
                 ", note=" + std::to_string(static_cast<int>(getNote())) +
                 ", value=" + std::to_string(static_cast<int>(getValue())) +
@@ -25,29 +25,29 @@ namespace frag {
                 ")";
         }
 
-        unsigned char Message::getChannel() {
+        unsigned char Message::getChannel() const {
             return message_[0] & 0x0f;
 
         }
 
         // Retrieves the note number. Available for MESSAGE_TYPE_NOTE_ON/OFF.
-        unsigned char Message::getNote() {
+        unsigned char Message::getNote() const {
             return message_[1];
         }
 
         // Retrieves the velocity of a note. Available for MESSAGE_TYPE_NOTE_ON/OFF.
-        unsigned char Message::getVelocity() {
+        unsigned char Message::getVelocity() const {
             return message_[2];
         }
 
         // Retrieves the function of a control event. Available for MESSAGE_TYPE_CONTROL.
-        unsigned char Message::getFunction() {
+        unsigned char Message::getFunction() const {
             return message_[1];
         }
 
         // Retrieves the value of a control event. Available for MESSAGE_TYPE_CONTROL.
         // Note: Does not take into consideration LSB vs MSB.
-        unsigned char Message::getValue() {
+        unsigned char Message::getValue() const {
             return message_[2];
         }
     }

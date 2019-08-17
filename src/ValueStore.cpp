@@ -8,197 +8,214 @@
 #include "MathUtil.h"
 
 namespace frag {
-    bool ValueStore::isTriggered(const Trigger& trigger) const {
-        for (const auto& addr : trigger) {
-            std::optional<Value> val_opt = getValue(getAddress(addr));
+    bool ValueStore::isMedia(const Address& addr) const {
+        return getMedia(addr) != nullptr;
+    }
 
-            if (!val_opt.has_value()  || !val_opt.value().getBool()) {
-                return false;
+    std::optional<AddressOrValue> ValueStore::getGroupMember(const Address& addr) const {
+        if (groups_.count(addr.getFront()) == 0) {
+            return {};
+        }
+
+        std::shared_ptr<Group> group = groups_.at(addr.getFront());
+        std::optional<AddressOrValue> aov_opt = group->get(addr.getBack());
+        if (!aov_opt.has_value()) {
+            return {};
+        }
+
+        AddressOrValue aov = aov_opt.value();
+
+        // Re-add swizzle
+        if (isAddress(aov)) {
+            Address member = std::get<Address>(aov);
+            std::string swiz = addr.getSwiz();
+
+            if (swiz != "") {
+                member.setSwiz(swiz);
             }
+
+            return member;
         }
 
-        return true;
+        return aov;
     }
 
-    bool ValueStore::isMedia(Address addr) const {
-        addr = getAddress(addr);
-
-        return is_media_.count(addr) > 0 && is_media_.at(addr);
-    }
-
-    void ValueStore::set(Address alias, Address target) {
-        aliases_[alias] = target;
-        std::shared_ptr<Media> media = getMedia(target);
-        if (media != nullptr) {
-            setMedia(alias, media);
-        }
-    }
-
-    Address ValueStore::getAddress(Address addr) const {
-        if (values_.count(addr) > 0 || is_media_.count(addr) > 0 || groups_.count(addr) > 0) {
+    Address ValueStore::getAddressDeep(const Address& addr) const {
+        if (images_.count(addr) > 0 ||
+                videos_.count(addr) > 0 ||
+                render_out_.count(addr) > 0 ||
+                groups_.count(addr) > 0) {
             return addr;
         }
 
         if (aliases_.count(addr) > 0) {
-            return getAddress(aliases_.at(addr));
+            return getAddressDeep(aliases_.at(addr));
         }
 
-        std::vector<std::string> fields = addr.getFields();
-        std::vector<std::string> tail;
-        while (!fields.empty()) {
-            Address attempt = Address(fields);
-            if (aovs_.count(attempt)) {
-                const AddressOrValue& aov = aovs_.at(attempt);
-                if (isAddress(aov)) {
-                    std::vector<std::string> aov_fields = std::get<Address>(aov).getFields();
-                    tail.insert(tail.begin(), aov_fields.begin(), aov_fields.end());
-                    return Address(tail);
-                } else {
-                    return addr;
-                }
+        {
+            std::lock_guard<std::mutex> guard(values_mutex_);
+            if (values_.count(addr) > 0) {
+                return addr;
             }
+        }
 
-            tail.push_back(fields.back());
-            fields.pop_back();
+        // Maybe it's a group member
+        std::optional<AddressOrValue> member_opt = getGroupMember(addr);
+        if (member_opt.has_value()) {
+            AddressOrValue aov = member_opt.value();
+            if (isAddress(aov)) {
+                return getAddressDeep(std::get<Address>(aov));
+            } else {
+                return addr;
+            }
         }
 
         return addr;
     }
 
-    void ValueStore::setIsMedia(Address addr, bool is_media) {
-        is_media_[addr] = is_media;
-    }
+    std::optional<Value> ValueStore::getValue(const Address& addr) const {
+        Address resolved_addr = getAddressDeep(addr);
 
-    std::optional<Value> ValueStore::getValue(Address addr) const {
-        addr = getAddress(addr);
-        if (values_.count(addr)) {
-            return values_.at(addr);
-        } else if (aovs_.count(addr)) {
-            AddressOrValue aov = aovs_.at(addr);
-            if (isValue(aov)) {
-                return std::get<Value>(aov);
+        {
+            std::lock_guard<std::mutex> guard(values_mutex_);
+            if (values_.count(resolved_addr)) {
+                return values_.at(resolved_addr);
+            }
+        }
+
+        std::optional<AddressOrValue> aov_opt = getGroupMember(resolved_addr);
+        if (aov_opt.has_value() && isValue(aov_opt.value())) {
+            return std::get<Value>(aov_opt.value());
+        }
+
+        if (resolved_addr.getBack() == "resolution") {
+            std::shared_ptr<Media> media = getMedia(resolved_addr.withoutBack());
+            if (media != nullptr) {
+                Resolution res = media->getResolution();
+                return frag::Value(
+                        std::vector({static_cast<float>(res.width), static_cast<float>(res.height)}));
+
             }
         }
 
         return {};
     }
 
-    std::shared_ptr<Video> ValueStore::getVideo(Address addr) const {
-        addr = getAddress(addr);
+    std::shared_ptr<Video> ValueStore::getVideo(const Address& addr) const {
+        Address resolved_addr = getAddressDeep(addr);
 
-        if (videos_.count(addr)) {
-            return videos_.at(addr);
+        if (videos_.count(resolved_addr) > 0) {
+            return videos_.at(resolved_addr);
         } else {
             return nullptr;
         }
     }
 
-    std::shared_ptr<Group> ValueStore::getGroup(Address addr) const {
-        addr = getAddress(addr);
+    std::shared_ptr<Group> ValueStore::getGroup(const Address& addr) const {
+        Address resolved_addr = getAddressDeep(addr);
 
-        if (groups_.count(addr)) {
-            return groups_.at(addr);
+        if (groups_.count(resolved_addr) > 0) {
+            return groups_.at(resolved_addr);
         } else {
             return nullptr;
         }
     }
 
-    std::shared_ptr<Media> ValueStore::getMedia(Address addr) const {
-        addr = getAddress(addr);
+    std::shared_ptr<Media> ValueStore::getMedia(const Address& addr) const {
+        Address resolved_addr = getAddressDeep(addr);
 
-        if (media_.count(addr)) {
-            return media_.at(addr);
-        } else {
-            return nullptr;
+        if (videos_.count(resolved_addr) > 0) {
+            return videos_.at(resolved_addr);
         }
+
+        if (images_.count(resolved_addr) > 0) {
+            return images_.at(resolved_addr);
+        }
+
+        if (render_out_.count(resolved_addr) > 0) {
+            return render_out_.at(resolved_addr);
+        }
+
+        return nullptr;
     }
 
-    void ValueStore::set(Address addr, std::shared_ptr<Group> g) {
-        for (const auto& kv : g->getMappings()) {
-            aovs_[addr + kv.first] = kv.second;
-        }
+    void ValueStore::set(Address alias, Address target) {
+        aliases_[alias] = target;
+    }
 
+    void ValueStore::set(const Address& addr, std::shared_ptr<Texture> o) {
+        render_out_[addr] = o;
+    }
+
+    void ValueStore::set(const Address& addr, std::shared_ptr<Group> g) {
         groups_[addr] = g;
     }
 
-    void ValueStore::set(Address addr, Value v) {
+    void ValueStore::set(const Address& addr, Value v) {
+        std::lock_guard<std::mutex> guard(values_mutex_);
         values_[addr] = v;
     }
 
-    void ValueStore::set(Address addr, std::shared_ptr<Video> v) {
+    void ValueStore::set(const Address& addr, std::shared_ptr<Video> v) {
         videos_[addr] = v;
-        setMedia(addr, v);
     }
 
-    void ValueStore::set(Address addr, std::shared_ptr<Texture> t) {
-        setMedia(addr, t);
+    void ValueStore::set(const Address& addr, std::shared_ptr<Image> img) {
+        images_[addr] = img;
     }
 
-    void ValueStore::setMedia(Address addr, std::shared_ptr<Media> m) {
-        setIsMedia(addr, true);
-        media_[addr] = m;
-        Resolution res = m->getResolution();
-        set(addr + "resolution", frag::Value(std::vector({static_cast<float>(res.width), static_cast<float>(res.height)})));
-    }
-
-    void ValueStore::set(Address addr, midi::Control c) {
-        if (c.type == midi::CONTROL_TYPE_BUTTON) {
-            std::optional<Value> last_opt = getValue(addr + "hold");
-            bool last_pressed = last_opt.has_value() && last_opt.value().getBool();
-
-            values_[addr + "hold"] = Value(c.isPressed());
-            values_[addr + "release"] = Value(last_pressed && !c.isPressed());
-            values_[addr + "press"] = Value(!last_pressed && c.isPressed());
-            values_[addr] = Value(static_cast<float>(c.value) >= 0.5 ? true : false);
-        } else {
-            values_[addr] = Value(remap(c.value, c.low, c.high, 0, 1));
+    void ValueStore::set(const Address& addr, std::shared_ptr<midi::Device> d) {
+        for (const auto ctrl_name : d->getControlNames()) {
+            Address ctrl_addr = addr + ctrl_name;
+            d->connect(ctrl_name, [ctrl_addr, this](Value v) {
+                set(ctrl_addr, v);
+            });
         }
+
+        midi_devices_[addr] = d;
     }
 
-    std::string ValueStore::toString() const {
+    std::string ValueStore::str() const {
         std::stringstream s;
 
-        s << "Values:" << std::endl;
-        for (const auto& kv : values_) {
-            bool is_media = isMedia(kv.first);
+        s << "--- ValueStore START ---" << std::endl;
 
-            s << "    - " << kv.first.toString() << " [" << (is_media ? "M" : "") << "]"  << ": " << kv.second.toString() << std::endl;
+        s << "Values:" << std::endl;
+        {
+            std::lock_guard<std::mutex> guard(values_mutex_);
+            for (const auto& kv : values_) {
+                s << "    - " << kv.first.str() << ": " << kv.second.str() << std::endl;
+            }
         }
 
-        s << "Media:" << std::endl;
-        for (const auto& kv : media_) {
-            bool is_media = isMedia(kv.first);
-
-            s << "    - " << kv.first.toString() << " [" << (is_media ? "M" : "") << "]" << std::endl;
+        s << "Images:" << std::endl;
+        for (const auto& kv : images_) {
+            s << "    - " << kv.first.str() << ": " << kv.second->getPath() << std::endl;
         }
 
         s << "Videos:" << std::endl;
         for (const auto& kv : videos_) {
-            bool is_media = isMedia(kv.first);
-
-            s << "    - " << kv.first.toString() << " [" << (is_media ? "M" : "") << "]" << ": " << kv.second->getPath() << std::endl;
+            s << "    - " << kv.first.str() << ": " << kv.second->getPath() << std::endl;
         }
 
         s << "Groups:" << std::endl;
         for (const auto& kv : groups_) {
-            bool is_media = isMedia(kv.first);
-
-            s << "    - " << kv.first.toString() << " [" << (is_media ? "M" : "") << "]" << ": " << kv.second->toString() << std::endl;
-        }
-
-        s << "AddressOrValues:" << std::endl;
-        for (const auto& kv : aovs_) {
-            bool is_media = isMedia(kv.first);
-
-            s << "    - " << kv.first.toString() << " [" << (is_media ? "M" : "") << "]" << ": " << aovToString(kv.second) << std::endl;
+            s << "    - " << kv.first.str() << ": " << kv.second->str() << std::endl;
         }
 
         s << "Aliases:" << std::endl;
         for (const auto& kv : aliases_) {
-            bool is_media = isMedia(kv.first);
-
-            s << "    - " << kv.first.toString() << " [" << (is_media ? "M" : "") << "]" << ": " << kv.second.toString() << std::endl;
+            s << "    - " << kv.first.str() << ": " << kv.second.str();
+            s << " (getAddressDeep -> " << getAddressDeep(kv.first).str() << ")" << std::endl;
         }
+
+        s << "Render outputs:" << std::endl;
+        for (const auto& kv : render_out_) {
+            s << "    - " << kv.first.str() << std::endl;
+        }
+
+        s << "--- ValueStore END ---";
+
         return s.str();
     }
 }

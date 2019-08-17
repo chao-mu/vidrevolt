@@ -37,7 +37,7 @@ namespace frag {
         return value_;
     }
 
-    std::string Value::toString() const {
+    std::string Value::str() const {
         std::stringstream ss;
 
         std::string sep = "";

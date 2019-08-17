@@ -22,7 +22,6 @@
 #include "MathUtil.h"
 #include "Video.h"
 #include "Resolution.h"
-#include "midi/Device.h"
 #include "VertexBuffer.h"
 #include "VertexArray.h"
 #include "IndexBuffer.h"
@@ -194,13 +193,13 @@ int main(int argc, const char** argv) {
         return 1;
     }
 
-    std::map<std::string, std::shared_ptr<frag::Video>> videos = parser.getVideos();
-    std::map<std::string, std::shared_ptr<frag::Texture>> images = parser.getImages();
-    std::map<std::string, std::shared_ptr<frag::midi::Device>> controllers = parser.getControllers();
     std::shared_ptr<frag::ValueStore> store = parser.getValueStore();
     std::vector<std::shared_ptr<frag::cmd::Command>> commands = parser.getCommands();
 
     std::map<std::string, std::shared_ptr<frag::Media>> media;
+    std::map<std::string, std::shared_ptr<frag::Video>> videos = parser.getVideos();
+    std::map<std::string, std::shared_ptr<frag::Image>> images = parser.getImages();
+
     media.insert(videos.begin(), videos.end());
     media.insert(images.begin(), images.end());
 
@@ -224,15 +223,11 @@ int main(int argc, const char** argv) {
     DEBUG_TIME_DECLARE(render)
     DEBUG_TIME_DECLARE(loop)
     DEBUG_TIME_DECLARE(draw)
-    DEBUG_TIME_DECLARE(prepStore)
 
     std::string store_str;
     if (debug_store_arg.getValue()) {
-        store_str = store->toString();
-
-        std::cout << "---STORE START ---" << std::endl;
+        store_str = store->str();
         std::cout << store_str << std::endl;
-        std::cout << "---STORE STOP ---" << std::endl;
     }
 
     while (!glfwWindowShouldClose(window)) {
@@ -250,31 +245,6 @@ int main(int argc, const char** argv) {
             kv.second->resetInUse();
         }
 
-        DEBUG_TIME_START(prepStore)
-        store->set(frag::Address("iteration"), frag::Value(static_cast<float>(iter)));
-
-        for (const auto& kv : controllers) {
-            const std::string& controller_name = kv.first;
-            for (const frag::midi::Control& ctrl : kv.second->getControls()) {
-                store->set(frag::Address(controller_name, ctrl.name), ctrl);
-            }
-        }
-
-        for (const auto& kv : videos) {
-            store->set(frag::Address(kv.first), kv.second);
-        }
-
-        for (const auto& kv : images) {
-            store->set(frag::Address(kv.first), kv.second);
-        }
-
-        for (const auto& cmd : commands) {
-            if (store->isTriggered(cmd->getTrigger())) {
-                cmd->run(store);
-            }
-        }
-        DEBUG_TIME_END(prepStore)
-
         for (size_t i=0; i < modules.size(); i++) {
             auto& mod = modules.at(i);
             mod->bind();
@@ -289,9 +259,6 @@ int main(int argc, const char** argv) {
             mod->unbind();
 
             store->set(frag::Address(mod->getOutput()), mod->getLastOutTex());
-            const frag::Resolution res = mod->getResolution();
-            store->set(frag::Address(mod->getOutput(), "resolution"),
-                frag::Value(std::vector({static_cast<float>(res.width), static_cast<float>(res.height)})));
         }
 
         for (const auto& kv : videos) {
@@ -350,12 +317,10 @@ int main(int argc, const char** argv) {
         */
 
         if (debug_store_arg.getValue()) {
-            std::string ss = store->toString();
+            std::string ss = store->str();
 
             if (ss != store_str) {
-                std::cout << "---STORE START ---" << std::endl;
                 std::cout << store_str << std::endl;
-                std::cout << "---STORE STOP ---" << std::endl;
                 store_str = ss;
             }
         }

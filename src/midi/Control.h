@@ -3,6 +3,13 @@
 
 // STL
 #include <string>
+#include <functional>
+
+// Boost
+#include <boost/signals2.hpp>
+
+// Ours
+#include "../Value.h"
 
 namespace frag {
     namespace midi {
@@ -15,11 +22,11 @@ namespace frag {
         struct Control {
             bool isPressed();
 
+            boost::signals2::signal<void(Value)> change;
+
             std::string name = "";
             ControlType type = CONTROL_TYPE_UNKNOWN;
             bool toggle = false;
-            unsigned char value = 0;
-            unsigned char last_value = 0;
             unsigned char low = 0;
             unsigned char high = 0;
             unsigned char function = 0;

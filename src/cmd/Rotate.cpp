@@ -13,7 +13,7 @@ namespace frag {
             std::shared_ptr<Group> group = store->getGroup(target);
             if (group == nullptr) {
                 throw std::runtime_error("Command '" + name_ + "' expected '" +
-                        target.toString() + "' to be a group.");
+                        target.str() + "' to be a group.");
             }
 
             group->rotate();

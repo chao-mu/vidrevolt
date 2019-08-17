@@ -7,16 +7,16 @@ namespace frag {
     namespace cmd {
         void Overwrite::run(std::shared_ptr<ValueStore> store) const {
             Address src = std::get<Address>(args_.at(0));
-            Address group_addr = src.withoutTail();
-            const std::string tail = src.getTail();
+            Address group_addr = src.withoutBack();
+            const std::string back = src.getBack();
             std::shared_ptr<Group> group = store->getGroup(group_addr);
             if (group == nullptr) {
                 throw std::runtime_error(
                         "Command '" + name_ + "' expects argument 1 to be a member of a group." +
-                        " Instead was '" + src.toString() + "'");
+                        " Instead was '" + src.str() + "'");
             }
 
-            group->overwrite(tail, args_.at(1));
+            group->overwrite(back, args_.at(1));
 
             store->set(group_addr, group);
         }

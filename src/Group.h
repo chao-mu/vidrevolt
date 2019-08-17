@@ -10,14 +10,15 @@
 namespace frag {
     class Group {
         public:
-            std::map<std::string, AddressOrValue> getMappings();
+            std::map<std::string, AddressOrValue> getMappings() const;
             void setMapping(const std::string& key, int i);
 
             void rotate();
             AddressOrValue exchange(const std::string& key, AddressOrValue aov);
             void overwrite(const std::string& key, AddressOrValue aov);
             void add(AddressOrValue aov);
-            std::string toString();
+            std::optional<AddressOrValue> get(std::string mem) const;
+            std::string str() const;
 
         private:
             std::vector<AddressOrValue> elements_;

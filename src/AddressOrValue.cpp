@@ -12,9 +12,9 @@ namespace frag {
     std::string aovToString(const AddressOrValue& aov) {
         std::string s = "AddressOrValue(";
         if (isValue(aov)) {
-             s += std::get<Value>(aov).toString();
+             s += std::get<Value>(aov).str();
         } else if (isAddress(aov)) {
-            s += std::get<Address>(aov).toString();
+            s += std::get<Address>(aov).str();
         } else {
             s += "undefined";
         }

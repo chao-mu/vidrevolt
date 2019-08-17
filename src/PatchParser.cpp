@@ -68,7 +68,7 @@ namespace frag {
         return videos_;
     }
 
-    std::map<std::string, std::shared_ptr<Texture>> PatchParser::getImages() {
+    std::map<std::string, std::shared_ptr<Image>> PatchParser::getImages() {
         return images_;
     }
 
@@ -234,6 +234,7 @@ namespace frag {
             const std::string type = settings[KEY_TYPE].as<std::string>();
             if (type == CONTROLLER_TYPE_MIDI) {
                 controllers_[name] = loadMidiDevice(name, settings);
+                store_->set(Address(name), controllers_.at(name));
             } else {
                 throw std::runtime_error("unsupported controller type " + type);
             }
@@ -301,10 +302,9 @@ namespace frag {
             }
 
             const std::string output = settings[KEY_OUTPUT].as<std::string>();
-            store_->setIsMedia(Address(output), true);
 
             if (settings[KEY_INPUT]) {
-                Address addr = settings[KEY_INPUT].as<std::string>();
+                Address addr = readAddress(settings[KEY_INPUT], true);
                 Module::Param param;
                 param.value = addr;
 
@@ -383,9 +383,6 @@ namespace frag {
         res.width = res_node[KEY_WIDTH].as<int>();
         res.height = res_node[KEY_HEIGHT].as<int>();
 
-        store_->set(Address("resolution", "width"), Value(res.width));
-        store_->set(Address("resolution", "height"), Value(res.height));
-
         return res;
     }
 
@@ -433,19 +430,11 @@ namespace frag {
         return vid;
     }
 
-    std::shared_ptr<Texture> PatchParser::loadImage(const std::string& name, const std::string& path, const YAML::Node& /*settings*/) const {
-        cv::Mat image = cv::imread(path);
-        if (image.empty()) {
-            throw std::runtime_error("For media '" + name + "', unable to load image " + path);
-        }
+    std::shared_ptr<Image> PatchParser::loadImage(const std::string& /*name*/, const std::string& path, const YAML::Node& /*settings*/) const {
+        auto image = std::make_shared<frag::Image>(path);
 
-        cv::cvtColor(image, image, cv::COLOR_BGR2RGB);
-        flip(image, image, 0);
+        image->load();
 
-        // Load image into texture
-        auto image_tex = std::make_shared<frag::Texture>();
-        image_tex->populate(image);
-
-        return image_tex;
+        return image;
     }
 }

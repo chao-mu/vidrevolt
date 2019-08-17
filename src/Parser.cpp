@@ -46,9 +46,9 @@ namespace frag {
             if (tokens.size() > 1) {
                 std::regex nonswiz_re("[^xyzwrgb]");
                 if (!std::regex_search(tokens.back(), nonswiz_re)) {
-                    Address no_swiz_addr(tokens);
+                    Address no_swiz_addr = Address(tokens).withoutBack();
 
-                    if (store_->getGroup(no_swiz_addr.withoutTail()) == nullptr) {
+                    if (store_->getGroup(no_swiz_addr) != nullptr) {
                         swiz = tokens.back();
                         tokens.pop_back();
                     }

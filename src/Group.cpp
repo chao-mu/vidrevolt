@@ -16,7 +16,15 @@ namespace frag {
     }
 
 
-    std::string Group::toString() {
+    std::optional<AddressOrValue> Group::get(std::string mem) const {
+         if (mappings_.count(mem) > 0) {
+             return elements_.at(mappings_.at(mem));
+         } else {
+             return {};
+         }
+    }
+
+    std::string Group::str() const {
         std::stringstream s;
 
         s << "Group(";
@@ -55,7 +63,7 @@ namespace frag {
         elements_[mappings_.at(key)] = aov;
     }
 
-    std::map<std::string, AddressOrValue> Group::getMappings() {
+    std::map<std::string, AddressOrValue> Group::getMappings() const {
         std::map<std::string, AddressOrValue> mappings;
 
         for (const auto& kv : mappings_) {

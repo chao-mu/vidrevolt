@@ -16,6 +16,8 @@ namespace frag {
             virtual Resolution getResolution() = 0;
             virtual void inFocus();
             virtual void outFocus();
+            virtual std::string getPath() const;
+
 
             bool isInUse();
             bool wasInUse();

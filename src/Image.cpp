@@ -3,6 +3,27 @@
 #include "fileutil.h"
 
 namespace frag {
+    Image::Image(const std::string& path) : path_(path) {}
+
+    void Image::load() {
+        cv::Mat image = cv::imread(path_);
+        if (image.empty()) {
+            throw std::runtime_error("Unable to load image " + path_);
+        }
+
+        cv::cvtColor(image, image, cv::COLOR_BGR2RGB);
+        flip(image, image, 0);
+
+        // Load image into texture
+        bind();
+        populate(image);
+        unbind();
+    }
+
+    std::string Image::getPath() const {
+        return path_;
+    }
+
     bool Image::isImage(const std::string& path) {
         const std::string exts[] = {
             "ase", "art", "bmp", "blp", "cd5", "cit", "cpt", "cr2", "cut", "dds",

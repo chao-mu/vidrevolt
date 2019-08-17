@@ -17,13 +17,13 @@ namespace frag {
         class Message {
             public:
                 explicit Message(std::vector<unsigned char> message);
-                MessageType getType();
-                unsigned char getVelocity();
-                unsigned char getFunction();
-                unsigned char getNote();
-                unsigned char getValue();
-                unsigned char getChannel();
-                std::string toString();
+                MessageType getType() const;
+                unsigned char getVelocity() const;
+                unsigned char getFunction() const;
+                unsigned char getNote() const;
+                unsigned char getValue() const;
+                unsigned char getChannel() const;
+                std::string str() const;
 
             private:
                 std::vector<unsigned char> message_;

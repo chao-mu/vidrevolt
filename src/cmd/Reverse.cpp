@@ -13,7 +13,7 @@ namespace frag {
             std::shared_ptr<Video> video = store->getVideo(target);
             if (video == nullptr) {
                 throw std::runtime_error("Command '" + name_ + "' expected '" +
-                        target.toString() + "' to be a video.");
+                        target.str() + "' to be a video.");
             }
 
             video->flipPlayback();
