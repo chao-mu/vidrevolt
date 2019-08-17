@@ -7,8 +7,11 @@ ffmpeg -i gif_me.mkv -vf fps=10 frames/ffout%03d.png
 convert -loop 0 frames/ffout*.png out.gif
 ```
 
+Converting to limit keyframes for chopping (usally second argument ends with the extenton .mov)
 ```
-ffmpeg -i 4096_Misc_TV_Commercials_Epic_Coffee.m4v -c:v mjpeg -qscale:v 1 -vendor ap10 -pix_fmt yuvj422p 4096_Misc_TV_Commercials_Epic_Coffee/full.mov
+function make-choppable() {
+    ffmpeg -i "$1" -c:v mjpeg -qscale:v 1 -vendor ap10 -pix_fmt yuvj422p "$2"
+}
 ```
 
 Lengths: 
