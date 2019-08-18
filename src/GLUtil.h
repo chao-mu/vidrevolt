@@ -14,12 +14,12 @@
 #define GLCall(x) \
     while (glGetError() != GL_NO_ERROR); \
     x; \
-    if (!frag::GLLogCall(#x, __FILE__, __LINE__)) throw std::runtime_error("OpenGL Error");
+    if (!vidrevolt::GLLogCall(#x, __FILE__, __LINE__)) throw std::runtime_error("OpenGL Error");
 
     //if (!GLLogCall(#x, __FILE__, __LINE__)) exit(EXIT_FAILURE);
 
 
-namespace frag {
+namespace vidrevolt {
     bool GLLogCall(const char* function, const char* file, int line);
 }
 

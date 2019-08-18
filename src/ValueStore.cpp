@@ -7,7 +7,7 @@
 // Ours
 #include "MathUtil.h"
 
-namespace frag {
+namespace vidrevolt {
     bool ValueStore::isMedia(const Address& addr) const {
         return getMedia(addr) != nullptr;
     }
@@ -157,7 +157,7 @@ namespace frag {
             std::shared_ptr<Media> media = getMedia(resolved_addr.withoutBack());
             if (media != nullptr) {
                 Resolution res = media->getResolution();
-                return frag::Value(
+                return vidrevolt::Value(
                         std::vector({static_cast<float>(res.width), static_cast<float>(res.height)}));
 
             }

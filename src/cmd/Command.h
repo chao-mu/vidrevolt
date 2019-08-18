@@ -6,7 +6,7 @@
 #include "../ValueStore.h"
 #include "../Trigger.h"
 
-namespace frag {
+namespace vidrevolt {
     namespace cmd {
         class Command {
             public:

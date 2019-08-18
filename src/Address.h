@@ -5,7 +5,7 @@
 #include <string>
 #include <vector>
 
-namespace frag {
+namespace vidrevolt {
     class Address {
         public:
             Address(const std::vector<std::string>& fields);

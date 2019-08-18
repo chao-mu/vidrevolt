@@ -3,7 +3,7 @@
 
 #include "GLUtil.h"
 
-namespace frag {
+namespace vidrevolt {
     class VertexBuffer {
         public:
             VertexBuffer(const void* data, unsigned int size);

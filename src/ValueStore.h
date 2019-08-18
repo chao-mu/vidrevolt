@@ -15,7 +15,7 @@
 #include "midi/Device.h"
 #include "Trigger.h"
 
-namespace frag {
+namespace vidrevolt {
     class ValueStore {
         public:
             bool isMedia(const Address& addr) const;

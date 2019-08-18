@@ -5,7 +5,7 @@
 #include "Command.h"
 #include "../Video.h"
 
-namespace frag {
+namespace vidrevolt {
     namespace cmd {
         class OverwriteGroup : public Command {
             public:

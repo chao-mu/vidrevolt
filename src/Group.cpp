@@ -4,7 +4,7 @@
 #include <algorithm>
 #include <sstream>
 
-namespace frag {
+namespace vidrevolt {
     void Group::add(AddressOrValue aov) {
         {
             std::lock_guard<std::mutex> guard(elements_mutex_);

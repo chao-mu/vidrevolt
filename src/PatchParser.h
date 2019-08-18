@@ -21,7 +21,7 @@
 #include "cmd/Command.h"
 #include "Parser.h"
 
-namespace frag {
+namespace vidrevolt {
     class PatchParser : Parser {
         public:
             PatchParser(const std::string& path);

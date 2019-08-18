@@ -5,7 +5,7 @@
 #include <vector>
 #include <string>
 
-namespace frag {
+namespace vidrevolt {
     class Value {
         public:
             Value();

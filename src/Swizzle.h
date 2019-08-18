@@ -1,7 +1,7 @@
 #ifndef FRAG_VALUESTORE_H_
 #define FRAG_VALUESTORE_H_
 
-namespace frag {
+namespace vidrevolt {
     struct Swizzle {
         char first = 'x';
         char second = 'y';

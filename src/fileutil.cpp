@@ -9,7 +9,7 @@
 // Boost
 #include <boost/filesystem.hpp>
 
-namespace frag {
+namespace vidrevolt {
     namespace fileutil {
         std::string slurp(const std::string& path) {
             std::ifstream ifs(path);

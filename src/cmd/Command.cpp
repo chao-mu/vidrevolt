@@ -3,7 +3,7 @@
 // STL
 #include <stdexcept>
 
-namespace frag {
+namespace vidrevolt {
     namespace cmd {
         Command::Command(const std::string& name, const Trigger& trigger, std::vector<AddressOrValue> args) :
             name_(name), trigger_(trigger), args_(args) {}

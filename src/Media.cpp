@@ -1,6 +1,6 @@
 #include "Media.h"
 
-namespace frag {
+namespace vidrevolt {
     void Media::update() {
         in_use_ = true;
     }

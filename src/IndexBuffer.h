@@ -3,7 +3,7 @@
 
 #include "GLUtil.h"
 
-namespace frag {
+namespace vidrevolt {
     class IndexBuffer {
         public:
             IndexBuffer(const void* data, unsigned int count);

@@ -8,7 +8,7 @@
 #include "Texture.h"
 #include "GLUtil.h"
 
-namespace frag {
+namespace vidrevolt {
     class PingPongTexture {
         public:
             PingPongTexture(GLenum src, GLenum dest);

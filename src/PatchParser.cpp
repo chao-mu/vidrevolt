@@ -47,7 +47,7 @@
 #define MEDIA_TYPE_VIDEO "video"
 #define KEY_VARS "vars"
 
-namespace frag {
+namespace vidrevolt {
     PatchParser::PatchParser(const std::string& path) : Parser(), path_(path) {}
 
     void PatchParser::parse() {
@@ -456,7 +456,7 @@ namespace frag {
     }
 
     std::shared_ptr<Image> PatchParser::loadImage(const std::string& /*name*/, const std::string& path, const YAML::Node& /*settings*/) const {
-        auto image = std::make_shared<frag::Image>(path);
+        auto image = std::make_shared<vidrevolt::Image>(path);
 
         image->load();
 

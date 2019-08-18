@@ -1,5 +1,5 @@
 ```
-find ~/vj/assets/ -name "*.mkv" | perl -nle '$line++; print "vid$line:\n    type: video\n    path: $_\n"'
+find assets/ -name "*.mkv" | grep -v foo | egrep '.*/.*/.*' | perl -nle '$line++; print "vid$line: $_"'
 ```
 
 ```
@@ -11,6 +11,13 @@ Converting to limit keyframes for chopping (usally second argument ends with the
 ```
 function make-choppable() {
     ffmpeg -i "$1" -c:v mjpeg -qscale:v 1 -vendor ap10 -pix_fmt yuvj422p "$2"
+}
+
+function org-chopable() {
+    name="${1%.*}"
+    ext="${1##*.}"
+    mkdir -p "$name"
+    ffmpeg -i "$name.$ext" -c:v mjpeg -qscale:v 1 -vendor ap10 -pix_fmt yuvj422p "$name/full.mov"
 }
 ```
 
@@ -32,3 +39,8 @@ Recording
 ```
 ffmpeg -thread_queue_size 1028 -f x11grab -video_size 1920x1080 -framerate 30 -i :0.0 -thread_queue_size 1028 -f pulse -i default -c:v mjpeg -qscale:v 1 -vendor ap10 -pix_fmt yuvj422p -r 30 -c:a aac take-3.mov
 ```
+
+
+```
+
+``

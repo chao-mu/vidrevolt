@@ -7,7 +7,7 @@
 // Ours
 #include "fileutil.h"
 
-namespace frag {
+namespace vidrevolt {
     Module::Module(
             const std::string& output,
             const std::string& path,
@@ -15,7 +15,7 @@ namespace frag {
         ) : output_(output), path_(path), resolution_(res) , program_(std::make_shared<ShaderProgram>()) {
 
         // Our render target
-        ping_pong_ = std::make_shared<frag::PingPongTexture>(
+        ping_pong_ = std::make_shared<vidrevolt::PingPongTexture>(
                 GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1);
 
         // Initialize with blank images

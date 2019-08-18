@@ -9,7 +9,7 @@
 
 #define SLEEP_FOR_MS 5
 
-namespace frag {
+namespace vidrevolt {
     namespace midi {
         Device::Device(const std::string& path) : path_(path), midi_in_(new RtMidiIn()), running_(false) {
         }

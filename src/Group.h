@@ -8,7 +8,7 @@
 // Ours
 #include "AddressOrValue.h"
 
-namespace frag {
+namespace vidrevolt {
     class Group {
         public:
             std::map<std::string, AddressOrValue> getMappings() const;

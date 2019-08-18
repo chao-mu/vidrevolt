@@ -17,7 +17,7 @@
 // Ours
 #include "Control.h"
 
-namespace frag {
+namespace vidrevolt {
     namespace midi {
         class Device {
             public:

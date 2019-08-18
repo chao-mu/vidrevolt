@@ -3,7 +3,7 @@
 
 #include "Address.h"
 
-namespace frag {
+namespace vidrevolt {
     using Trigger = Address;
 }
 

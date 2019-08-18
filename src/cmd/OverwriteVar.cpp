@@ -3,7 +3,7 @@
 // STL
 #include <stdexcept>
 
-namespace frag {
+namespace vidrevolt {
     namespace cmd {
         void OverwriteVar::run(std::shared_ptr<ValueStore> store) const {
             Address dest = std::get<Address>(args_.at(0));

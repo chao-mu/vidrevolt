@@ -8,7 +8,7 @@
 #include "Address.h"
 #include "ValueStore.h"
 
-namespace frag {
+namespace vidrevolt {
     class Parser {
         public:
             Parser();

@@ -15,7 +15,7 @@
 // Ours
 #include "Texture.h"
 
-namespace frag {
+namespace vidrevolt {
     class Video : public Texture {
         public:
             enum Playback {

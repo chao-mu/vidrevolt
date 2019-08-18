@@ -1,6 +1,6 @@
 #include "Message.h"
 
-namespace frag {
+namespace vidrevolt {
     namespace midi {
         Message::Message(std::vector<unsigned char> message) : message_(message) {
         }

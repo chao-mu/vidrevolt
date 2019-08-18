@@ -1,6 +1,6 @@
 #include "VertexBuffer.h"
 
-namespace frag {
+namespace vidrevolt {
     VertexBuffer::VertexBuffer(const void* data, unsigned int size) {
         // Copy position vetex attributes
         glGenBuffers(1, &glID_);

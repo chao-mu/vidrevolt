@@ -31,7 +31,7 @@
 #include "GLUtil.h"
 #include "debug.h"
 
-void screenshot(std::shared_ptr<frag::Texture> out, const std::string& path="") {
+void screenshot(std::shared_ptr<vidrevolt::Texture> out, const std::string& path="") {
     std::string dest = path;
     if (dest.empty()) {
         std::stringstream s;
@@ -43,7 +43,9 @@ void screenshot(std::shared_ptr<frag::Texture> out, const std::string& path="") 
         dest = s.str();
     }
 
+    out->bind();
     out->save(dest);
+    out->unbind();
 }
 
 // GLFW error callback
@@ -57,7 +59,7 @@ void onWindowSize(GLFWwindow* /* window */, int width, int height) {
     GLCall(glViewport(0,0, width, height));
 }
 
-std::shared_ptr<frag::Texture> tex_out;
+std::shared_ptr<vidrevolt::Texture> tex_out;
 std::string out_path;
 
 // GLFW key press callback
@@ -128,8 +130,8 @@ int main(int argc, const char** argv) {
         glfwWindowHint(GLFW_MAXIMIZED, true);
     }
 
-    frag::PatchParser parser(patch_arg.getValue());
-    const frag::Resolution resolution = parser.getResolution();
+    vidrevolt::PatchParser parser(patch_arg.getValue());
+    const vidrevolt::Resolution resolution = parser.getResolution();
 
     float height = static_cast<float>(height_arg.getValue());
     float ratio = static_cast<float>(resolution.height) / height;
@@ -159,7 +161,7 @@ int main(int argc, const char** argv) {
     glewInit();
 
     // Bind vertex array object
-    frag::VertexArray vao;
+    vidrevolt::VertexArray vao;
     vao.bind();
 
     // Copy indices into element buffer
@@ -167,7 +169,7 @@ int main(int argc, const char** argv) {
         0, 1, 3,   // first triangle
         1, 2, 3    // second triangle
     };
-    frag::IndexBuffer ebo(indices, 6);
+    vidrevolt::IndexBuffer ebo(indices, 6);
     ebo.bind();
 
     // Copy position vetex attributes
@@ -177,7 +179,7 @@ int main(int argc, const char** argv) {
         -1.0f, -1.0f, 0.0f,
         -1.0f,  1.0f, 0.0f,
     };
-    frag::VertexBuffer pos_vbo(pos, sizeof(pos));
+    vidrevolt::VertexBuffer pos_vbo(pos, sizeof(pos));
     pos_vbo.bind();
 
     GLCall(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL));
@@ -187,29 +189,29 @@ int main(int argc, const char** argv) {
     // Load all the goodies
     parser.parse();
 
-    std::vector<std::shared_ptr<frag::Module>> modules = parser.getModules();
+    std::vector<std::shared_ptr<vidrevolt::Module>> modules = parser.getModules();
     if (modules.empty()) {
         std::cerr << "No modules specified. Nothing to do." << std::endl;
         return 1;
     }
 
-    std::shared_ptr<frag::ValueStore> store = parser.getValueStore();
-    std::vector<std::shared_ptr<frag::cmd::Command>> commands = parser.getCommands();
+    std::shared_ptr<vidrevolt::ValueStore> store = parser.getValueStore();
+    std::vector<std::shared_ptr<vidrevolt::cmd::Command>> commands = parser.getCommands();
 
-    std::map<std::string, std::shared_ptr<frag::Media>> media;
-    std::map<std::string, std::shared_ptr<frag::Video>> videos = parser.getVideos();
-    std::map<std::string, std::shared_ptr<frag::Image>> images = parser.getImages();
+    std::map<std::string, std::shared_ptr<vidrevolt::Media>> media;
+    std::map<std::string, std::shared_ptr<vidrevolt::Video>> videos = parser.getVideos();
+    std::map<std::string, std::shared_ptr<vidrevolt::Image>> images = parser.getImages();
 
     media.insert(videos.begin(), videos.end());
     media.insert(images.begin(), images.end());
 
-    std::map<std::string, std::shared_ptr<frag::Texture>> modules_output;
+    std::map<std::string, std::shared_ptr<vidrevolt::Texture>> modules_output;
 
     // Initialize values
     for (const auto& mod : modules) {
         mod->compile(store);
         const std::string out_name = mod->getOutput();
-        store->set(frag::Address(out_name), mod->getLastOutTex());
+        store->set(vidrevolt::Address(out_name), mod->getLastOutTex());
     }
 
     if (!sound_path.empty()) {
@@ -258,7 +260,7 @@ int main(int argc, const char** argv) {
             // Unbind and swap output/input textures
             mod->unbind();
 
-            store->set(frag::Address(mod->getOutput()), mod->getLastOutTex());
+            store->set(vidrevolt::Address(mod->getOutput()), mod->getLastOutTex());
         }
 
         for (const auto& kv : videos) {

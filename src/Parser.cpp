@@ -3,7 +3,7 @@
 // STL
 #include <regex>
 
-namespace frag {
+namespace vidrevolt {
     Parser::Parser() : store_(std::make_shared<ValueStore>()) {}
 
     AddressOrValue Parser::readAddressOrValue(const YAML::Node& node, bool parse_swiz) {

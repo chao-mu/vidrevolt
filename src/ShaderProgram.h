@@ -12,7 +12,7 @@
 // OpenGL
 #include <GL/glew.h>
 
-namespace frag {
+namespace vidrevolt {
     class ShaderProgram {
         public:
             ShaderProgram();

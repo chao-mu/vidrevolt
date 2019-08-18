@@ -2,7 +2,7 @@
 
 #include "fileutil.h"
 
-namespace frag {
+namespace vidrevolt {
     Image::Image(const std::string& path) : path_(path) {}
 
     void Image::load() {

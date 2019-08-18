@@ -3,7 +3,7 @@
 
 #include <string>
 
-namespace frag {
+namespace vidrevolt {
     namespace fileutil {
         std::string slurp(const std::string& path);
         std::string slurp(const std::string& relative_to, const std::string& path);

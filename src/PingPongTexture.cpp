@@ -3,7 +3,7 @@
 #define SRC 0
 #define DEST 1
 
-namespace frag {
+namespace vidrevolt {
     PingPongTexture::PingPongTexture(GLenum src, GLenum dest) {
         textures_[SRC] = std::make_shared<Texture>();
         textures_[DEST] = std::make_shared<Texture>();

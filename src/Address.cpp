@@ -1,6 +1,6 @@
 #include "Address.h"
 
-namespace frag {
+namespace vidrevolt {
     Address::Address(const std::vector<std::string>& fields) : fields_(fields) {}
     Address::Address(const std::vector<std::string>& fields, const std::string& tail) : fields_(fields) {
         fields_.push_back(tail);

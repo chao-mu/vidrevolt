@@ -1,6 +1,6 @@
 #include "Control.h"
 
-namespace frag {
+namespace vidrevolt {
     namespace midi {
     }
 }

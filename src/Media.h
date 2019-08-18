@@ -7,7 +7,7 @@
 // Ours
 #include "Resolution.h"
 
-namespace frag {
+namespace vidrevolt {
     class Media {
         public:
             virtual void update();

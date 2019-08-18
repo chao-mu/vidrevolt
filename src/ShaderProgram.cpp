@@ -9,7 +9,7 @@
 #include "fileutil.h"
 #include "MathUtil.h"
 
-namespace frag {
+namespace vidrevolt {
 
     // Start with a valid program
     ShaderProgram::ShaderProgram() : program_(glCreateProgram()) {}

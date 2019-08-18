@@ -6,7 +6,7 @@
 // Ours
 #include "../Video.h"
 
-namespace frag {
+namespace vidrevolt {
     namespace cmd {
         void Reverse::run(std::shared_ptr<ValueStore> store) const {
             Address target = std::get<Address>(args_.at(0));

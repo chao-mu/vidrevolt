@@ -3,7 +3,7 @@
 
 #include "GLUtil.h"
 
-namespace frag {
+namespace vidrevolt {
     class VertexArray {
         public:
             VertexArray();

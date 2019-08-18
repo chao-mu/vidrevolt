@@ -3,7 +3,7 @@
 // STL
 #include <stdexcept>
 
-namespace frag {
+namespace vidrevolt {
     namespace cmd {
         void OverwriteGroup::run(std::shared_ptr<ValueStore> store) const {
             store->setGroupMember(

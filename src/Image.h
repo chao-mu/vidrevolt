@@ -7,7 +7,7 @@
 // Ours
 #include "Texture.h"
 
-namespace frag {
+namespace vidrevolt {
     class Image : public Texture {
         public:
             Image(const std::string& path);

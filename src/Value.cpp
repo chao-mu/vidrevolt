@@ -3,7 +3,7 @@
 // STL
 #include <sstream>
 
-namespace frag {
+namespace vidrevolt {
     Value::Value() : Value(0.0f) {}
     Value::Value(bool v) : Value(v ? 1.0f : 0.0f) {}
     Value::Value(int v) : Value(static_cast<float>(v)) {}

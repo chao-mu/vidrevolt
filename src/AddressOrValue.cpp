@@ -1,6 +1,6 @@
 #include "AddressOrValue.h"
 
-namespace frag {
+namespace vidrevolt {
     bool isAddress(const AddressOrValue& aov) {
         return std::holds_alternative<Address>(aov);
     }

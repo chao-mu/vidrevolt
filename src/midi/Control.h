@@ -11,7 +11,7 @@
 // Ours
 #include "../Value.h"
 
-namespace frag {
+namespace vidrevolt {
     namespace midi {
         enum ControlType {
             CONTROL_TYPE_BUTTON,

@@ -12,7 +12,7 @@
 #include "Media.h"
 #include "Resolution.h"
 
-namespace frag {
+namespace vidrevolt {
     class Texture : public Media {
         public:
             Texture();

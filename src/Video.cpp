@@ -11,7 +11,7 @@
 
 #define WORK_THRESHOLD 3
 
-namespace frag {
+namespace vidrevolt {
     /*
     Video::Video(int device, double fps, cv::Size size) : device_(device), size_(size), fps_(fps), buffer_size_(1) {
     }

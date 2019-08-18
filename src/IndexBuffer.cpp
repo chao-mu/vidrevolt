@@ -1,6 +1,6 @@
 #include "IndexBuffer.h"
 
-namespace frag {
+namespace vidrevolt {
     IndexBuffer::IndexBuffer(const void* data, unsigned int count) : count_(count) {
         // Copy position vetex attributes
         glGenBuffers(1, &glID_);

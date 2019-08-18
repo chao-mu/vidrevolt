@@ -13,7 +13,7 @@
 #include "Value.h"
 #include "ValueStore.h"
 
-namespace frag {
+namespace vidrevolt {
     class Module {
         public:
             struct Param {

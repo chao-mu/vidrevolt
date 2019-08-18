@@ -9,7 +9,7 @@
 #include "Address.h"
 #include "Value.h"
 
-namespace frag {
+namespace vidrevolt {
     using AddressOrValue = std::variant<std::monostate, Address, Value>;
     bool isAddress(const AddressOrValue& aov);
     bool isValue(const AddressOrValue& aov);

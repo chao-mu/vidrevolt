@@ -1,6 +1,6 @@
 #include "Texture.h"
 
-namespace frag {
+namespace vidrevolt {
     Texture::Texture() {
         GLCall(glGenTextures(1, &glID_));
 

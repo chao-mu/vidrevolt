@@ -5,7 +5,7 @@
 #include <vector>
 #include <string>
 
-namespace frag {
+namespace vidrevolt {
     namespace midi {
         enum MessageType {
             MESSAGE_TYPE_UNKNOWN,

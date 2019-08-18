@@ -1,6 +1,6 @@
 #include "VertexArray.h"
 
-namespace frag {
+namespace vidrevolt {
     VertexArray::VertexArray() {
         glGenVertexArrays(1, &glID_);
     }
