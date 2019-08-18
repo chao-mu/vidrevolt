@@ -25,7 +25,7 @@ namespace frag {
             std::shared_ptr<Image> getImage(const Address& addr) const;
             std::shared_ptr<Group> getGroup(const Address& addr) const;
             std::shared_ptr<Media> getMedia(const Address& addr) const;
-
+            std::optional<AddressOrValue> getGroupMember(const Address& addr) const;
 
             void set(const Address& addr, Value v);
             void set(const Address& addr, midi::Control c);
@@ -35,14 +35,14 @@ namespace frag {
             void set(const Address& addr, std::shared_ptr<Texture> r);
             void set(const Address& addr, std::shared_ptr<midi::Device> d);
             void set(Address alias, Address target);
+            void setGroupMember(const Address& addr, AddressOrValue aov);
 
             Address getAddressDeep(const Address& addr) const;
+            Address resolveAlias(const Address& addr_in, int depth=50);
 
             std::string str() const;
 
         private:
-            std::optional<AddressOrValue> getGroupMember(const Address& addr) const;
-
             std::map<Address, Value> values_;
             std::map<Address, std::shared_ptr<Group>> groups_;
             std::map<Address, std::shared_ptr<Image>> images_;

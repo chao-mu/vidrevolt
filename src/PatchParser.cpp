@@ -11,7 +11,8 @@
 #include "Texture.h"
 #include "Video.h"
 #include "Image.h"
-#include "cmd/Overwrite.h"
+#include "cmd/OverwriteGroup.h"
+#include "cmd/OverwriteVar.h"
 #include "cmd/Reverse.h"
 #include "cmd/Rotate.h"
 #include "fileutil.h"
@@ -88,8 +89,10 @@ namespace frag {
         std::shared_ptr<cmd::Command> command;
         if (name == "reverse") {
             command = std::make_shared<cmd::Reverse>(name, trigger, args);
-        } else if (name == "overwrite") {
-            command = std::make_shared<cmd::Overwrite>(name, trigger, args);
+        } else if (name == "overwrite-var") {
+            command = std::make_shared<cmd::OverwriteVar>(name, trigger, args);
+        } else if (name == "overwrite-group") {
+            command = std::make_shared<cmd::OverwriteGroup>(name, trigger, args);
         } else if (name == "rotate") {
             command = std::make_shared<cmd::Rotate>(name, trigger, args);
         } else {
@@ -97,7 +100,6 @@ namespace frag {
                     "command #" + std::to_string(num) + " has unrecognized command name '" +
                     name + "'");
         }
-
 
         command->validate();
 
@@ -157,7 +159,6 @@ namespace frag {
                 "expected command #" + std::to_string(i) + " to have key '" + KEY_COMMAND + "'"
             ).as<std::string>();
 
-            std::shared_ptr<cmd::Command> c;
             if (settings[KEY_TRIGGER_AND_ARGS]) {
                 for (const auto& trig_args : settings[KEY_TRIGGER_AND_ARGS]) {
                     Trigger trigger;
@@ -171,7 +172,9 @@ namespace frag {
                         }
                     }
 
-                    c = loadCommand(i, command_name, trigger, args);
+                    std::shared_ptr<cmd::Command> c = loadCommand(i, command_name, trigger, args);
+                    connectCommand(c);
+                    commands_.push_back(c);
                 }
             } else {
                 Trigger trigger = requireTrigger(
@@ -187,11 +190,11 @@ namespace frag {
                     }
                 }
 
-                c = loadCommand(i, command_name, trigger, args);
+                std::shared_ptr<cmd::Command> c = loadCommand(i, command_name, trigger, args);
+                connectCommand(c);
+                commands_.push_back(c);
             }
 
-            connectCommand(c);
-            commands_.push_back(c);
         }
     }
 

@@ -1,5 +1,5 @@
-#ifndef FRAG_CMD_OVERWRITE_H_
-#define FRAG_CMD_OVERWRITE_H_
+#ifndef FRAG_CMD_OVERWRITE_VAR_H_
+#define FRAG_CMD_OVERWRITE_VAR_H_
 
 // Ours
 #include "Command.h"
@@ -7,7 +7,7 @@
 
 namespace frag {
     namespace cmd {
-        class Overwrite : public Command {
+        class OverwriteVar : public Command {
             public:
                 using Command::Command;
 

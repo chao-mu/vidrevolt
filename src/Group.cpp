@@ -6,7 +6,10 @@
 
 namespace frag {
     void Group::add(AddressOrValue aov) {
-        elements_.push_back(aov);
+        {
+            std::lock_guard<std::mutex> guard(elements_mutex_);
+            elements_.push_back(aov);
+        }
 
         if (elements_.size() == 1)  {
             setMapping("first", 0);
@@ -18,6 +21,7 @@ namespace frag {
 
     std::optional<AddressOrValue> Group::get(std::string mem) const {
          if (mappings_.count(mem) > 0) {
+             std::lock_guard<std::mutex> guard(elements_mutex_);
              return elements_.at(mappings_.at(mem));
          } else {
              return {};
@@ -41,6 +45,7 @@ namespace frag {
     }
 
     void Group::rotate() {
+        std::lock_guard<std::mutex> guard(elements_mutex_);
         std::rotate(elements_.begin(), elements_.begin() + 1, elements_.end());
     }
 
@@ -53,6 +58,8 @@ namespace frag {
     */
 
     AddressOrValue Group::exchange(const std::string& key, AddressOrValue aov) {
+        std::lock_guard<std::mutex> guard(elements_mutex_);
+
         AddressOrValue old = elements_.at(mappings_.at(key));
         elements_[mappings_.at(key)] = aov;
 
@@ -60,6 +67,8 @@ namespace frag {
     }
 
     void Group::overwrite(const std::string& key, AddressOrValue aov) {
+        std::lock_guard<std::mutex> guard(elements_mutex_);
+
         elements_[mappings_.at(key)] = aov;
     }
 
@@ -67,7 +76,10 @@ namespace frag {
         std::map<std::string, AddressOrValue> mappings;
 
         for (const auto& kv : mappings_) {
-            mappings[kv.first] = elements_.at(kv.second);
+            {
+                std::lock_guard<std::mutex> guard(elements_mutex_);
+                mappings[kv.first] = elements_.at(kv.second);
+            }
         }
 
         return mappings;

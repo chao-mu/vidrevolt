@@ -12,25 +12,53 @@ namespace frag {
         return getMedia(addr) != nullptr;
     }
 
+    Address ValueStore::resolveAlias(const Address& addr_in, int depth) {
+        if (depth < 0) {
+            throw std::runtime_error("Recursive aliases found for address " + addr_in.str());
+        }
+
+        if (aliases_.count(addr_in) > 0) {
+            return resolveAlias(aliases_.at(addr_in), depth - 1);
+        }
+
+        return addr_in;
+    }
+
+    void ValueStore::setGroupMember(const Address& addr_in, AddressOrValue aov) {
+        Address addr = resolveAlias(addr_in);
+
+        std::shared_ptr<Group> group = getGroup(addr.getFront());
+        if (group == nullptr) {
+            throw std::runtime_error("Expected " + addr_in.str() + "(" + addr.str() +
+                    ") to be a group member.");
+        }
+
+        group->overwrite(addr.getBack(), aov);
+    }
+
+
     std::optional<AddressOrValue> ValueStore::getGroupMember(const Address& addr) const {
+        std::shared_ptr<Group> group;
         {
             std::lock_guard<std::mutex> guard(groups_mutex_);
-            if (groups_.count(addr.getFront()) == 0) {
+            Address group_addr = addr.getFront();
+            if (groups_.count(group_addr) > 0) {
+                group = groups_.at(group_addr);
+            } else {
                 return {};
             }
+        }
+        if (group == nullptr) {
+            return {};
         }
 
         AddressOrValue aov;
-        {
-            std::lock_guard<std::mutex> guard(groups_mutex_);
-            std::shared_ptr<Group> group = groups_.at(addr.getFront());
-            std::optional<AddressOrValue> aov_opt = group->get(addr.getBack());
-            if (!aov_opt.has_value()) {
-                return {};
-            }
-            aov = aov_opt.value();
+        std::optional<AddressOrValue> aov_opt = group->get(addr.getBack());
+        if (!aov_opt.has_value()) {
+            return {};
         }
 
+        aov = aov_opt.value();
 
         // Re-add swizzle
         if (isAddress(aov)) {
@@ -95,7 +123,6 @@ namespace frag {
                 return addr;
             }
         }
-
 
         // Maybe it's a group member
         std::optional<AddressOrValue> member_opt = getGroupMember(addr);

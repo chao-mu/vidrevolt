@@ -207,7 +207,10 @@ namespace frag {
                 cursor_ += diff;
             }
         } else if (diff > 0) {
-            seek(back_pos + 1);
+            int pos = static_cast<int>(vid_->get(cv::CAP_PROP_POS_FRAMES));
+            if (pos != back_pos + 1) {
+                seek(back_pos + 1);
+            }
 
             std::vector<std::pair<int, std::shared_ptr<cv::Mat>>> tmp_buf;
             for (int i=0; i < diff; i++) {

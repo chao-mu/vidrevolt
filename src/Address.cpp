@@ -49,10 +49,18 @@ namespace frag {
     }
 
     std::string Address::getBack() const {
+        if (fields_.empty()) {
+            return "";
+        }
+
         return fields_.back();
     }
 
     std::string Address::getFront() const {
+        if (fields_.empty()) {
+            return "";
+        }
+
         return fields_.front();
     }
 

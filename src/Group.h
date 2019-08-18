@@ -3,6 +3,7 @@
 
 // STL
 #include <map>
+#include <mutex>
 
 // Ours
 #include "AddressOrValue.h"
@@ -23,6 +24,7 @@ namespace frag {
         private:
             std::vector<AddressOrValue> elements_;
             std::map<std::string, int> mappings_;
+            mutable std::mutex elements_mutex_;
     };
 }
 
