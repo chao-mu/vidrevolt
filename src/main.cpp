@@ -122,18 +122,26 @@ int main(int argc, const char** argv) {
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
+    /*
     if (full_arg.getValue()) {
         glfwWindowHint(GLFW_DECORATED, false);
         glfwWindowHint(GLFW_MAXIMIZED, true);
     }
+    */
 
     vidrevolt::PatchParser parser(patch_arg.getValue());
     const vidrevolt::Resolution resolution = parser.getResolution();
 
+
+    GLFWmonitor* monitor = nullptr;
+    if (full_arg.getValue()) {
+        monitor = glfwGetPrimaryMonitor();
+    }
+
     float height = static_cast<float>(height_arg.getValue());
     float ratio = static_cast<float>(resolution.height) / height;
     float width = static_cast<float>(resolution.width) / ratio;
-    GLFWwindow* window = glfwCreateWindow(static_cast<int>(width), static_cast<int>(height), "Awesome Art", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(static_cast<int>(width), static_cast<int>(height), "Awesome Art", monitor, NULL);
     if (!window) {
         glfwTerminate();
         std::cerr << "Failed to create window" << std::endl;
