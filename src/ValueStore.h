@@ -42,6 +42,7 @@ namespace vidrevolt {
 
             std::string str() const;
 
+            std::map<Address, std::shared_ptr<Media>> getMediaAll() const;
         private:
             std::map<Address, Value> values_;
             std::map<Address, std::shared_ptr<Group>> groups_;

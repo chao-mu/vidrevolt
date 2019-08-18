@@ -255,6 +255,22 @@ namespace vidrevolt {
         midi_devices_[addr] = d;
     }
 
+    std::map<Address, std::shared_ptr<Media>> ValueStore::getMediaAll() const {
+        std::map<Address, std::shared_ptr<Media>> media;
+
+        {
+            std::lock_guard<std::mutex> guard(images_mutex_);
+            media.insert(images_.cbegin(), images_.cend());
+        }
+
+        {
+            std::lock_guard<std::mutex> guard(videos_mutex_);
+            media.insert(videos_.cbegin(), videos_.cend());
+        }
+
+        return media;
+    }
+
     std::string ValueStore::str() const {
         std::stringstream s;
 

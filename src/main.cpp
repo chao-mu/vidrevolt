@@ -1,6 +1,5 @@
 // STL
 #include <iostream>
-#include <unordered_set>
 #include <climits>
 #include <chrono>
 #include <thread>
@@ -17,19 +16,17 @@
 
 // Ours
 #include "GLUtil.h"
-#include "cmd/Command.h"
-#include "ShaderProgram.h"
+#include "ValueStore.h"
 #include "MathUtil.h"
-#include "Video.h"
 #include "Resolution.h"
 #include "VertexBuffer.h"
 #include "VertexArray.h"
 #include "IndexBuffer.h"
 #include "Texture.h"
 #include "PatchParser.h"
-#include "PingPongTexture.h"
 #include "GLUtil.h"
 #include "debug.h"
+#include "RenderPipeline.h"
 
 void screenshot(std::shared_ptr<vidrevolt::Texture> out, const std::string& path="") {
     std::string dest = path;
@@ -77,7 +74,7 @@ void onKey(GLFWwindow* window, int key, int /*scancode*/, int action, int /*mods
 }
 
 int main(int argc, const char** argv) {
-    TCLAP::CmdLine cmd("Art! Woo!");
+    TCLAP::CmdLine cmd("VidRevolt");
 
     TCLAP::ValueArg<std::string> vert_arg("", "vert", "path to vertex shader", false, "vert.glsl", "string", cmd);
     TCLAP::ValueArg<std::string> patch_arg("i", "patch", "path to yaml patch", false, "patch.yml", "string", cmd);
@@ -196,32 +193,14 @@ int main(int argc, const char** argv) {
     }
 
     std::shared_ptr<vidrevolt::ValueStore> store = parser.getValueStore();
-    std::vector<std::shared_ptr<vidrevolt::cmd::Command>> commands = parser.getCommands();
-
-    std::map<std::string, std::shared_ptr<vidrevolt::Media>> media;
-    std::map<std::string, std::shared_ptr<vidrevolt::Video>> videos = parser.getVideos();
-    std::map<std::string, std::shared_ptr<vidrevolt::Image>> images = parser.getImages();
-
-    media.insert(videos.begin(), videos.end());
-    media.insert(images.begin(), images.end());
-
-    std::map<std::string, std::shared_ptr<vidrevolt::Texture>> modules_output;
-
-    // Initialize values
-    for (const auto& mod : modules) {
-        mod->compile(store);
-        const std::string out_name = mod->getOutput();
-        store->set(vidrevolt::Address(out_name), mod->getLastOutTex());
-    }
+    auto pipeline = std::make_shared<vidrevolt::RenderPipeline>(resolution, store, modules);
+    pipeline->load();
 
     if (!sound_path.empty()) {
         music.play();
     }
 
     // Our run loop
-    unsigned int iter = 0;
-    bool first_pass = true;
-
     DEBUG_TIME_DECLARE(render)
     DEBUG_TIME_DECLARE(loop)
     DEBUG_TIME_DECLARE(draw)
@@ -241,36 +220,7 @@ int main(int argc, const char** argv) {
 
         DEBUG_TIME_START(render)
 
-        iter = (iter + 1) % INT_MAX;
-
-        for (const auto& kv : media) {
-            kv.second->resetInUse();
-        }
-
-        for (size_t i=0; i < modules.size(); i++) {
-            auto& mod = modules.at(i);
-            mod->bind();
-            mod->setValues(store, first_pass);
-
-            glViewport(0,0, resolution.width, resolution.height);
-
-            // Draw our vertices
-            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-
-            // Unbind and swap output/input textures
-            mod->unbind();
-
-            store->set(vidrevolt::Address(mod->getOutput()), mod->getLastOutTex());
-        }
-
-        for (const auto& kv : videos) {
-            const auto& m = kv.second;
-            if (m->wasInUse() && !m->isInUse()) {
-                m->outFocus();
-            } else if (!m->wasInUse() && m->isInUse()) {
-                m->inFocus();
-            }
-        }
+        pipeline->render();
 
         DEBUG_TIME_END(render)
 
@@ -284,7 +234,7 @@ int main(int argc, const char** argv) {
             static_cast<float>(win_height)
         );
 
-        auto& mod = modules.back();
+        std::shared_ptr<vidrevolt::Module> mod = pipeline->getLastStep();
         tex_out = mod->getLastOutTex();
 
         // Draw to the screen
@@ -304,7 +254,6 @@ int main(int argc, const char** argv) {
         // Show buffer
         glfwSwapBuffers(window);
 
-        first_pass = false;
         /*
         std::chrono::duration<double, std::milli> time_elapsed(std::chrono::high_resolution_clock::now() - fps_timer_start);
 
