@@ -12,7 +12,7 @@
 #include "Media.h"
 #include "Video.h"
 #include "Image.h"
-#include "midi/Device.h"
+#include "Controller.h"
 #include "Trigger.h"
 
 namespace vidrevolt {
@@ -28,12 +28,11 @@ namespace vidrevolt {
             std::optional<AddressOrValue> getGroupMember(const Address& addr) const;
 
             void set(const Address& addr, Value v);
-            void set(const Address& addr, midi::Control c);
             void set(const Address& addr, std::shared_ptr<Group> g);
             void set(const Address& addr, std::shared_ptr<Video> v);
             void set(const Address& addr, std::shared_ptr<Image> t);
             void set(const Address& addr, std::shared_ptr<Texture> r);
-            void set(const Address& addr, std::shared_ptr<midi::Device> d);
+            void set(const Address& addr, std::shared_ptr<Controller> c);
             void set(Address alias, Address target);
             void setGroupMember(const Address& addr, AddressOrValue aov);
 
@@ -49,7 +48,7 @@ namespace vidrevolt {
             std::map<Address, std::shared_ptr<Image>> images_;
             std::map<Address, std::shared_ptr<Video>> videos_;
             std::map<Address, std::shared_ptr<Texture>> render_out_;
-            std::map<Address, std::shared_ptr<midi::Device>> midi_devices_;
+            std::map<Address, std::shared_ptr<Controller>> controllers_;
             std::map<Address, Address> aliases_;
 
             mutable std::mutex values_mutex_;

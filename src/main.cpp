@@ -18,6 +18,7 @@
 #include "GLUtil.h"
 #include "ValueStore.h"
 #include "MathUtil.h"
+#include "Keyboard.h"
 #include "Resolution.h"
 #include "VertexBuffer.h"
 #include "VertexArray.h"
@@ -28,23 +29,6 @@
 #include "debug.h"
 #include "RenderPipeline.h"
 
-void screenshot(std::shared_ptr<vidrevolt::Texture> out, const std::string& path="") {
-    std::string dest = path;
-    if (dest.empty()) {
-        std::stringstream s;
-        auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(
-                std::chrono::system_clock::now().time_since_epoch()
-                ).count();
-        std::time_t now = std::time(nullptr);
-        s << "output-" << std::put_time(std::localtime(&now), "%Y-%m-%d_") << ms << ".png";
-        dest = s.str();
-    }
-
-    out->bind();
-    out->save(dest);
-    out->unbind();
-}
-
 // GLFW error callback
 void onError(int errc, const char* desc) {
     std::cerr << "Error (" << std::to_string(errc) << "): " << std::string(desc) << std::endl;
@@ -54,23 +38,6 @@ void onError(int errc, const char* desc) {
 void onWindowSize(GLFWwindow* /* window */, int width, int height) {
     // Resize the view port when a window resize is requested
     GLCall(glViewport(0,0, width, height));
-}
-
-std::shared_ptr<vidrevolt::Texture> tex_out;
-std::string out_path;
-
-// GLFW key press callback
-void onKey(GLFWwindow* window, int key, int /*scancode*/, int action, int /*mods*/) {
-    if (action == GLFW_RELEASE) {
-        switch (key) {
-            case GLFW_KEY_Q:
-                GLCall(glfwSetWindowShouldClose(window, GLFW_TRUE));
-                break;
-            case GLFW_KEY_P:
-                screenshot(tex_out, out_path);
-                break;
-        }
-    }
 }
 
 int main(int argc, const char** argv) {
@@ -104,8 +71,6 @@ int main(int argc, const char** argv) {
             return 1;
         }
     }
-
-    out_path = img_out_arg.getValue();
 
     // Set GLFW error callback
     glfwSetErrorCallback(onError);
@@ -156,7 +121,7 @@ int main(int argc, const char** argv) {
     glfwSetWindowSizeCallback(window, onWindowSize);
 
     // Set key press callback
-    glfwSetKeyCallback(window, onKey);
+    glfwSetKeyCallback(window, vidrevolt::Keyboard::onKey);
 
     // Make the context of the specified window current for our current thread
     glfwMakeContextCurrent(window);
@@ -219,6 +184,43 @@ int main(int argc, const char** argv) {
         std::cout << store_str << std::endl;
     }
 
+    // Keyboard mappings
+    vidrevolt::Keyboard keyboard;
+
+    // Screenshot key
+    std::string out_path = img_out_arg.getValue();
+    keyboard.connect("p", [&out_path, &pipeline](vidrevolt::Value v) {
+        // On key release
+        if (v.getBool()) {
+            return;
+        }
+
+        std::string dest = out_path;
+        if (dest.empty()) {
+            std::stringstream s;
+            auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+                    std::chrono::system_clock::now().time_since_epoch()
+                    ).count();
+            std::time_t now = std::time(nullptr);
+            s << "output-" << std::put_time(std::localtime(&now), "%Y-%m-%d_") << ms << ".png";
+            dest = s.str();
+        }
+
+        pipeline->getLastStep()->getLastOutTex()->save(dest);
+
+        std::cout << "Screenshot saved at " << dest << std::endl;
+    });
+
+    // Exit key
+    keyboard.connect("escape", [&window](vidrevolt::Value v) {
+        // On key release
+        if (v.getBool()) {
+            return;
+        }
+
+        GLCall(glfwSetWindowShouldClose(window, GLFW_TRUE));
+    });
+
     while (!glfwWindowShouldClose(window)) {
         //std::chrono::time_point<std::chrono::high_resolution_clock> fps_timer_start =
         //    std::chrono::high_resolution_clock::now();
@@ -243,7 +245,6 @@ int main(int argc, const char** argv) {
         );
 
         std::shared_ptr<vidrevolt::Module> mod = pipeline->getLastStep();
-        tex_out = mod->getLastOutTex();
 
         // Draw to the screen
         DEBUG_TIME_START(draw)

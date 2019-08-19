@@ -157,9 +157,7 @@ namespace vidrevolt {
             std::shared_ptr<Media> media = getMedia(resolved_addr.withoutBack());
             if (media != nullptr) {
                 Resolution res = media->getResolution();
-                return vidrevolt::Value(
-                        std::vector({static_cast<float>(res.width), static_cast<float>(res.height)}));
-
+                return Value(std::vector({static_cast<float>(res.width), static_cast<float>(res.height)}));
             }
         }
 
@@ -244,15 +242,15 @@ namespace vidrevolt {
         images_[addr] = img;
     }
 
-    void ValueStore::set(const Address& addr, std::shared_ptr<midi::Device> d) {
-        for (const auto ctrl_name : d->getControlNames()) {
+    void ValueStore::set(const Address& addr, std::shared_ptr<Controller> c) {
+        for (const auto ctrl_name : c->getControlNames()) {
             Address ctrl_addr = addr + ctrl_name;
-            d->connect(ctrl_name, [ctrl_addr, this](Value v) {
+            c->connect(ctrl_name, [ctrl_addr, this](Value v) {
                 set(ctrl_addr, v);
             });
         }
 
-        midi_devices_[addr] = d;
+        controllers_[addr] = c;
     }
 
     std::map<Address, std::shared_ptr<Media>> ValueStore::getMediaAll() const {

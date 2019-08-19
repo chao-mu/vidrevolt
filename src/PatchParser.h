@@ -18,6 +18,7 @@
 #include "AddressOrValue.h"
 #include "Trigger.h"
 #include "midi/Device.h"
+#include "Controller.h"
 #include "cmd/Command.h"
 #include "Parser.h"
 
@@ -31,7 +32,7 @@ namespace vidrevolt {
             std::map<std::string, std::shared_ptr<Video>> getVideos();
             std::map<std::string, std::shared_ptr<Image>> getImages();
             std::vector<std::shared_ptr<Module>> getModules();
-            std::map<std::string, std::shared_ptr<midi::Device>> getControllers();
+            std::map<std::string, std::shared_ptr<Controller>> getControllers();
             std::map<std::string, std::shared_ptr<Group>> getGroups();
             std::shared_ptr<ValueStore> getValueStore();
             std::vector<std::shared_ptr<cmd::Command>> getCommands();
@@ -58,7 +59,7 @@ namespace vidrevolt {
             const std::string path_;
             std::map<std::string, std::shared_ptr<Video>> videos_;
             std::map<std::string, std::shared_ptr<Image>> images_;
-            std::map<std::string, std::shared_ptr<midi::Device>> controllers_;
+            std::map<std::string, std::shared_ptr<Controller>> controllers_;
             std::vector<std::shared_ptr<Module>> modules_;
             std::map<std::string, std::shared_ptr<Group>> groups_;
             std::vector<std::shared_ptr<cmd::Command>> commands_;

@@ -4,14 +4,12 @@ namespace vidrevolt {
     Texture::Texture() {
         GLCall(glGenTextures(1, &glID_));
 
-        GLCall(glBindTexture(GL_TEXTURE_2D, glID_));
+        borrowBind([this]() {
+            GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT));
+            GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT));
 
-        GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT));
-        GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT));
-
-        setScaleFilter(GL_LINEAR, GL_LINEAR);
-
-        GLCall(glBindTexture(GL_TEXTURE_2D, 0));
+            setScaleFilter(GL_LINEAR, GL_LINEAR);
+        });
     }
 
     Texture::~Texture() {
@@ -24,30 +22,36 @@ namespace vidrevolt {
     }
 
     Resolution Texture::getResolution() {
+        if (res_.width == 0) {
+            borrowBind([this]() {
+                GLCall(glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &res_.width));
+                GLCall(glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &res_.height));
+            });
+
+        }
         return res_;
     }
 
     void Texture::save(const std::string& path) {
-        bind();
+        borrowBind([path, this]() {
+            GLint alignment;
+            GLCall(glGetIntegerv(GL_PACK_ALIGNMENT, &alignment));
 
-        GLint alignment;
-        GLCall(glGetIntegerv(GL_PACK_ALIGNMENT, &alignment));
+            Resolution res = getResolution();
+            int width = res.width;
+            int height = res.height;
 
-        Resolution res = getResolution();
-        int width = res.width;
-        int height = res.height;
+            // Load the actual image daata
+            char* data = new char[width * height * 3];
+            GLCall(glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_UNSIGNED_BYTE, data));
 
-        // Load the actual image daata
-        char* data = new char[width * height * 3];
-        GLCall(glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_UNSIGNED_BYTE, data));
+            cv::Mat image(height, width, CV_8UC3, data);
 
-        cv::Mat image(height, width, CV_8UC3, data);
+            cv::cvtColor(image, image, cv::COLOR_BGR2RGB);
+            flip(image, image, 0);
+            cv::imwrite(path, image);
 
-        cv::cvtColor(image, image, cv::COLOR_BGR2RGB);
-        flip(image, image, 0);
-        cv::imwrite(path, image);
-
-        unbind();
+        });
     }
 
     void Texture::populate(cv::Mat& frame) {
@@ -60,9 +64,24 @@ namespace vidrevolt {
             GLenum format, GLenum type, const GLvoid* data) {
 
         GLCall(glTexImage2D(GL_TEXTURE_2D, 0, internal_format, width, height, 0, format, type, data));
+    }
 
-        GLCall(glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &res_.width));
-        GLCall(glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &res_.height));
+    void Texture::borrowBind(std::function<void()> f) {
+        // Lookup current active texture so we can restore.
+        GLint prev_active = 0;
+        GLint prev_tex = 0;
+
+        GLCall(glGetIntegerv(GL_ACTIVE_TEXTURE, &prev_active));
+        GLCall(glGetIntegerv(GL_TEXTURE_2D, &prev_tex));
+
+        this->bind();
+
+        f();
+
+        // Restore active texture
+        GLCall(glActiveTexture(prev_active));
+        GLCall(glBindTexture(GL_TEXTURE_2D,  static_cast<GLuint>(prev_tex)));
+        GLCall(glActiveTexture(prev_active));
     }
 
     void Texture::bind(unsigned int slot) {

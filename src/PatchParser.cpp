@@ -16,6 +16,7 @@
 #include "cmd/Reverse.h"
 #include "cmd/Rotate.h"
 #include "fileutil.h"
+#include "Keyboard.h"
 
 #define KEY_RESET "reset"
 #define KEY_MEMBERS "members"
@@ -43,6 +44,7 @@
 #define KEY_SCALE_FILTER "sizeFilter"
 #define KEY_CONTROLLERS "controllers"
 #define CONTROLLER_TYPE_MIDI "midi"
+#define CONTROLLER_TYPE_KEYBOARD "keyboard"
 #define MEDIA_TYPE_IMAGE "image"
 #define MEDIA_TYPE_VIDEO "video"
 #define KEY_VARS "vars"
@@ -73,7 +75,7 @@ namespace vidrevolt {
         return images_;
     }
 
-    std::map<std::string, std::shared_ptr<midi::Device>> PatchParser::getControllers() {
+    std::map<std::string, std::shared_ptr<Controller>> PatchParser::getControllers() {
         return controllers_;
     }
 
@@ -136,6 +138,7 @@ namespace vidrevolt {
         }
 
         std::shared_ptr<ValueStore> store = store_;
+        // TODO: Why are we doing the lookup when we're given the value?
         controllers_.at(dev)->connect(control, [c, store](Value /*v*/) {
             std::optional<Value> v_opt = store->getValue(c->getTrigger());
             if (v_opt.has_value() && v_opt.value().getBool()) {
@@ -259,10 +262,13 @@ namespace vidrevolt {
             const std::string type = settings[KEY_TYPE].as<std::string>();
             if (type == CONTROLLER_TYPE_MIDI) {
                 controllers_[name] = loadMidiDevice(name, settings);
-                store_->set(Address(name), controllers_.at(name));
+            } else if (type == CONTROLLER_TYPE_KEYBOARD) {
+                controllers_[name] = std::make_shared<Keyboard>();
             } else {
                 throw std::runtime_error("unsupported controller type " + type);
             }
+
+            store_->set(Address(name), controllers_.at(name));
         }
     }
 

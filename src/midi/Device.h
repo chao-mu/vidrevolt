@@ -14,12 +14,15 @@
 // RtMidi
 #include "rtmidi/RtMidi.h"
 
-// Ours
+// Ours (midi)
 #include "Control.h"
+
+// Ours
+#include "../Controller.h"
 
 namespace vidrevolt {
     namespace midi {
-        class Device {
+        class Device : public Controller {
             public:
                 Device(const std::string& path);
                 ~Device();
@@ -28,8 +31,8 @@ namespace vidrevolt {
                 void start();
                 void update();
 
-                void connect(const std::string& control_name, std::function<void(Value)> f);
-                std::vector<std::string> getControlNames() const;
+                virtual void connect(const std::string& control_name, std::function<void(Value)> f) override;
+                virtual std::vector<std::string> getControlNames() const override;
 
             private:
                 void load();
