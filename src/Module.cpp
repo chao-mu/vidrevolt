@@ -15,38 +15,12 @@ namespace vidrevolt {
         ) : output_(output), path_(path), resolution_(res) , program_(std::make_shared<gl::ShaderProgram>()) {
 
         // Our render target
-        ping_pong_ = std::make_shared<gl::PingPongTexture>(
+        render_out_ = std::make_shared<gl::RenderOut>(
+                res,
                 GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1);
 
-        // Initialize with blank images
-        for (const auto& tex : {ping_pong_->getSrcTex(), ping_pong_->getDestTex()}) {
-            tex->bind();
-            // NOTE: If this does not need to be a GL_RGB32F we might get a performance improvement
-            // if we downgrade
-            GLCall(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, resolution_.width, resolution_.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0));
-            tex->unbind();
-        }
-
-        // Create and bind the frame buffer we will be rendering to
-        GLCall(glGenFramebuffers(1, &fbo_));
-
-        // Bind the FBO in order to then associate texture's with it
-        GLCall(glBindFramebuffer(GL_FRAMEBUFFER, fbo_));
-
-        // Bind the textures to the frame buffer
-        GLCall(glFramebufferTexture(
-            GL_FRAMEBUFFER,
-            ping_pong_->getSrcDrawBuf(),
-            ping_pong_->getSrcTex()->getID(),
-            0
-        ));
-
-        GLCall(glFramebufferTexture(
-            GL_FRAMEBUFFER,
-            ping_pong_->getDestDrawBuf(),
-            ping_pong_->getDestTex()->getID(),
-            0
-        ));
+        // TODO: Move - can throw
+        render_out_->load();
     }
 
     Resolution Module::getResolution() {
@@ -58,28 +32,23 @@ namespace vidrevolt {
     }
 
     GLenum Module::getReadableBuf() {
-        return ping_pong_->getSrcDrawBuf();
+        return render_out_->getSrcDrawBuf();
     }
 
     GLuint Module::getFBO() {
-        return fbo_;
+        return render_out_->getFBO();
     }
 
     std::shared_ptr<gl::Texture> Module::getLastOutTex() {
-        return ping_pong_->getSrcTex();
+        return render_out_->getSrcTex();
     }
 
     void Module::unbind() {
-        program_->unbind();
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        ping_pong_->swap();
+        render_out_->unbind(program_);
     }
 
     void Module::bind() {
-        // Create and bind the frame buffer we will be rendering to
-        GLCall(glBindFramebuffer(GL_FRAMEBUFFER, fbo_));
-        program_->bind();
-        GLCall(glDrawBuffer(ping_pong_->getDestDrawBuf()));
+        render_out_->bind(program_);
     }
 
     void Module::setParam(const std::string& name, Param p) {
@@ -308,7 +277,6 @@ namespace vidrevolt {
 
         for (const auto& kv : program_->getUniformTypes()) {
             const std::string& uni_name = kv.first;
-            GLint gl_type = kv.second;
 
             // Do we have info about this uniform?
             if (uniforms_.count(uni_name) == 0) {
@@ -328,53 +296,7 @@ namespace vidrevolt {
 
             if (val_opt.has_value()) {
                 Value val = val_opt.value();
-                switch (gl_type) {
-                    case GL_FLOAT: {
-                        float v = val.getFloat();
-                        program_->setUniform(uni_name, [&v](GLint& id) {
-                            glUniform1f(id, v);
-                        });
-                        break;
-                    }
-                    case GL_INT: {
-                        int v = val.getInt();
-                        program_->setUniform(uni_name, [&v](GLint& id) {
-                            glUniform1i(id, v);
-                        });
-                        break;
-                    }
-                    case GL_BOOL: {
-                        bool v = val.getBool();
-                        program_->setUniform(uni_name, [&v](GLint& id) {
-                            glUniform1i(id, v ? 1 : 0);
-                        });
-                        break;
-                    }
-                    case GL_FLOAT_VEC2: {
-                        std::vector<float> v = val.getVec4();
-                        program_->setUniform(uni_name, [&v](GLint& id) {
-                            glUniform2f(id, v[0], v[1]);
-                        });
-
-                        break;
-                    }
-                    case GL_FLOAT_VEC3: {
-                        std::vector<float> v = val.getVec4();
-                        program_->setUniform(uni_name, [&v](GLint& id) {
-                            glUniform3f(id, v[0], v[1], v[2]);
-                        });
-
-                        break;
-                    }
-                    case GL_FLOAT_VEC4: {
-                        std::vector<float> v = val.getVec4();
-                        program_->setUniform(uni_name, [&v](GLint& id) {
-                            glUniform4f(id, v[0], v[1], v[2], v[3]);
-                        });
-
-                        break;
-                    }
-                }
+                program_->setUniform(uni_name, val);
             } else if (addr_opt.has_value() && store->isMedia(addr_opt.value())) {
                 std::shared_ptr<Media> tex = store->getMedia(addr_opt.value());
                 program_->setUniform(uni_name, [&tex, &slot](GLint& id) {

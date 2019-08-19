@@ -12,6 +12,9 @@
 // OpenGL
 #include <GL/glew.h>
 
+// Ours
+#include "../Value.h"
+
 namespace vidrevolt {
     namespace gl {
         class ShaderProgram {
@@ -39,6 +42,9 @@ namespace vidrevolt {
 
                 // Sets a uniform and marks it as being in use
                 void setUniform(const std::string& name, std::function<void(GLint&)> f);
+
+                // Sets a uniform and marks it as being in use
+                void setUniform(const std::string& name, Value v);
 
                 // Marks a uniform as being in use to prevent a warning of it not being in use
                 void markUniformInUse(const std::string& name);

@@ -29,6 +29,60 @@ namespace vidrevolt {
             glUseProgram(0);
         }
 
+        void ShaderProgram::setUniform(const std::string& name, Value val) {
+            if (uniform_types_.count(name) <= 0) {
+                return;
+            }
+
+            switch (uniform_types_.at(name)) {
+                case GL_FLOAT: {
+                    float v = val.getFloat();
+                    setUniform(name, [&v](GLint& id) {
+                        glUniform1f(id, v);
+                    });
+                    break;
+                }
+                case GL_INT: {
+                    int v = val.getInt();
+                    setUniform(name, [&v](GLint& id) {
+                        glUniform1i(id, v);
+                    });
+                    break;
+                }
+                case GL_BOOL: {
+                    bool v = val.getBool();
+                    setUniform(name, [&v](GLint& id) {
+                        glUniform1i(id, v ? 1 : 0);
+                    });
+                    break;
+                }
+                case GL_FLOAT_VEC2: {
+                    std::vector<float> v = val.getVec4();
+                    setUniform(name, [&v](GLint& id) {
+                        glUniform2f(id, v[0], v[1]);
+                    });
+
+                    break;
+                }
+                case GL_FLOAT_VEC3: {
+                    std::vector<float> v = val.getVec4();
+                    setUniform(name, [&v](GLint& id) {
+                        glUniform3f(id, v[0], v[1], v[2]);
+                    });
+
+                    break;
+                }
+                case GL_FLOAT_VEC4: {
+                    std::vector<float> v = val.getVec4();
+                    setUniform(name, [&v](GLint& id) {
+                        glUniform4f(id, v[0], v[1], v[2], v[3]);
+                    });
+
+                    break;
+                }
+            }
+        }
+
         std::map<std::string, GLenum> ShaderProgram::getUniformTypes() {
             return uniform_types_;
         }

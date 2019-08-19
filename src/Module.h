@@ -1,5 +1,5 @@
-#ifndef FRAG_MODULE_H_
-#define FRAG_MODULE_H_
+#ifndef VIDREVOLT_MODULE_H_
+#define VIDREVOLT_MODULE_H_
 
 // STL
 #include <string>
@@ -7,7 +7,7 @@
 // Ours
 #include "gl/GLUtil.h"
 #include "gl/ShaderProgram.h"
-#include "gl/PingPongTexture.h"
+#include "gl/RenderOut.h"
 #include "AddressOrValue.h"
 #include "Address.h"
 #include "Value.h"
@@ -46,8 +46,7 @@ namespace vidrevolt {
             const std::string path_;
             std::map<std::string, Param> params_;
             std::map<std::string, AddressOrValue> uniforms_;
-            std::shared_ptr<gl::PingPongTexture> ping_pong_;
-            GLuint fbo_;
+            std::shared_ptr<gl::RenderOut> render_out_;
             const Resolution resolution_;
             std::shared_ptr<gl::ShaderProgram> program_;
 
