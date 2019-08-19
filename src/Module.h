@@ -5,9 +5,9 @@
 #include <string>
 
 // Ours
-#include "GLUtil.h"
-#include "ShaderProgram.h"
-#include "PingPongTexture.h"
+#include "gl/GLUtil.h"
+#include "gl/ShaderProgram.h"
+#include "gl/PingPongTexture.h"
 #include "AddressOrValue.h"
 #include "Address.h"
 #include "Value.h"
@@ -28,10 +28,10 @@ namespace vidrevolt {
             void setParam(const std::string& input, Param src);
             const std::string& getOutput() const;
             const std::string& getPath() const;
-            std::shared_ptr<ShaderProgram> getShaderProgram();
+            std::shared_ptr<gl::ShaderProgram> getShaderProgram();
             GLuint getFBO();
             GLenum getReadableBuf();
-            std::shared_ptr<Texture> getLastOutTex();
+            std::shared_ptr<gl::Texture> getLastOutTex();
             Resolution getResolution();
 
             void setValues(std::shared_ptr<ValueStore> store, bool first_pass);
@@ -46,10 +46,10 @@ namespace vidrevolt {
             const std::string path_;
             std::map<std::string, Param> params_;
             std::map<std::string, AddressOrValue> uniforms_;
-            std::shared_ptr<PingPongTexture> ping_pong_;
+            std::shared_ptr<gl::PingPongTexture> ping_pong_;
             GLuint fbo_;
             const Resolution resolution_;
-            std::shared_ptr<ShaderProgram> program_;
+            std::shared_ptr<gl::ShaderProgram> program_;
 
             static std::string toInputName(const std::string& name);
     };

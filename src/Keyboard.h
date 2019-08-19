@@ -9,7 +9,7 @@
 #include <boost/signals2.hpp>
 
 // Ours
-#include "GLUtil.h"
+#include "gl/GLUtil.h"
 #include "Value.h"
 #include "Controller.h"
 

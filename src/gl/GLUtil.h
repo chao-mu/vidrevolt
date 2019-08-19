@@ -1,10 +1,8 @@
-#ifndef FRAG_GLUTIL_H_
-#define FRAG_GLUTIL_H_
+#ifndef VIDREVOLT_GL_GLUTIL_H_
+#define VIDREVOLT_GL_GLUTIL_H_
 
 // STL
 #include <stdlib.h>
-
-// STL
 #include <stdexcept>
 
 // OpenGL
@@ -14,13 +12,15 @@
 #define GLCall(x) \
     while (glGetError() != GL_NO_ERROR); \
     x; \
-    if (!vidrevolt::GLLogCall(#x, __FILE__, __LINE__)) throw std::runtime_error("OpenGL Error");
+    if (!vidrevolt::gl::GLLogCall(#x, __FILE__, __LINE__)) throw std::runtime_error("OpenGL Error");
 
     //if (!GLLogCall(#x, __FILE__, __LINE__)) exit(EXIT_FAILURE);
 
 
 namespace vidrevolt {
-    bool GLLogCall(const char* function, const char* file, int line);
+    namespace gl {
+        bool GLLogCall(const char* function, const char* file, int line);
+    }
 }
 
 #endif

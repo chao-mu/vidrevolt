@@ -5,10 +5,10 @@
 #include <string>
 
 // Ours
-#include "Texture.h"
+#include "gl/Texture.h"
 
 namespace vidrevolt {
-    class Image : public Texture {
+    class Image : public gl::Texture {
         public:
             Image(const std::string& path);
             void load();

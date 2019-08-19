@@ -15,19 +15,20 @@
 #include <SFML/Audio.hpp>
 
 // Ours
-#include "GLUtil.h"
 #include "ValueStore.h"
 #include "MathUtil.h"
 #include "Keyboard.h"
 #include "Resolution.h"
-#include "VertexBuffer.h"
-#include "VertexArray.h"
-#include "IndexBuffer.h"
-#include "Texture.h"
 #include "PatchParser.h"
-#include "GLUtil.h"
 #include "debug.h"
-#include "RenderPipeline.h"
+
+// Ours (OpenGL)
+#include "gl/GLUtil.h"
+#include "gl/VertexBuffer.h"
+#include "gl/VertexArray.h"
+#include "gl/IndexBuffer.h"
+#include "gl/Texture.h"
+#include "gl/RenderPipeline.h"
 
 // GLFW error callback
 void onError(int errc, const char* desc) {
@@ -131,7 +132,7 @@ int main(int argc, const char** argv) {
     glewInit();
 
     // Bind vertex array object
-    vidrevolt::VertexArray vao;
+    vidrevolt::gl::VertexArray vao;
     vao.bind();
 
     // Copy indices into element buffer
@@ -139,7 +140,7 @@ int main(int argc, const char** argv) {
         0, 1, 3,   // first triangle
         1, 2, 3    // second triangle
     };
-    vidrevolt::IndexBuffer ebo(indices, 6);
+    vidrevolt::gl::IndexBuffer ebo(indices, 6);
     ebo.bind();
 
     // Copy position vetex attributes
@@ -149,7 +150,7 @@ int main(int argc, const char** argv) {
         -1.0f, -1.0f, 0.0f,
         -1.0f,  1.0f, 0.0f,
     };
-    vidrevolt::VertexBuffer pos_vbo(pos, sizeof(pos));
+    vidrevolt::gl::VertexBuffer pos_vbo(pos, sizeof(pos));
     pos_vbo.bind();
 
     GLCall(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL));
@@ -166,7 +167,7 @@ int main(int argc, const char** argv) {
     }
 
     std::shared_ptr<vidrevolt::ValueStore> store = parser.getValueStore();
-    auto pipeline = std::make_shared<vidrevolt::RenderPipeline>(resolution, store, modules);
+    auto pipeline = std::make_shared<vidrevolt::gl::RenderPipeline>(resolution, store, modules);
     pipeline->load();
 
     if (!sound_path.empty()) {

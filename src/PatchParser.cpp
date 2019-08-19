@@ -8,7 +8,6 @@
 #include <opencv2/opencv.hpp>
 
 // Ours
-#include "Texture.h"
 #include "Video.h"
 #include "Image.h"
 #include "cmd/OverwriteGroup.h"

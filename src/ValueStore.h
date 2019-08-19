@@ -31,7 +31,7 @@ namespace vidrevolt {
             void set(const Address& addr, std::shared_ptr<Group> g);
             void set(const Address& addr, std::shared_ptr<Video> v);
             void set(const Address& addr, std::shared_ptr<Image> t);
-            void set(const Address& addr, std::shared_ptr<Texture> r);
+            void set(const Address& addr, std::shared_ptr<gl::Texture> r);
             void set(const Address& addr, std::shared_ptr<Controller> c);
             void set(Address alias, Address target);
             void setGroupMember(const Address& addr, AddressOrValue aov);
@@ -47,7 +47,7 @@ namespace vidrevolt {
             std::map<Address, std::shared_ptr<Group>> groups_;
             std::map<Address, std::shared_ptr<Image>> images_;
             std::map<Address, std::shared_ptr<Video>> videos_;
-            std::map<Address, std::shared_ptr<Texture>> render_out_;
+            std::map<Address, std::shared_ptr<gl::Texture>> render_out_;
             std::map<Address, std::shared_ptr<Controller>> controllers_;
             std::map<Address, Address> aliases_;
 

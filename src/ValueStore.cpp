@@ -36,7 +36,6 @@ namespace vidrevolt {
         group->overwrite(addr.getBack(), aov);
     }
 
-
     std::optional<AddressOrValue> ValueStore::getGroupMember(const Address& addr) const {
         std::shared_ptr<Group> group;
         {
@@ -218,7 +217,7 @@ namespace vidrevolt {
         aliases_[alias] = target;
     }
 
-    void ValueStore::set(const Address& addr, std::shared_ptr<Texture> o) {
+    void ValueStore::set(const Address& addr, std::shared_ptr<gl::Texture> o) {
         std::lock_guard<std::mutex> guard(render_out_mutex_);
         render_out_[addr] = o;
     }

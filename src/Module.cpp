@@ -12,10 +12,10 @@ namespace vidrevolt {
             const std::string& output,
             const std::string& path,
             const Resolution& res
-        ) : output_(output), path_(path), resolution_(res) , program_(std::make_shared<ShaderProgram>()) {
+        ) : output_(output), path_(path), resolution_(res) , program_(std::make_shared<gl::ShaderProgram>()) {
 
         // Our render target
-        ping_pong_ = std::make_shared<vidrevolt::PingPongTexture>(
+        ping_pong_ = std::make_shared<gl::PingPongTexture>(
                 GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1);
 
         // Initialize with blank images
@@ -65,7 +65,7 @@ namespace vidrevolt {
         return fbo_;
     }
 
-    std::shared_ptr<Texture> Module::getLastOutTex() {
+    std::shared_ptr<gl::Texture> Module::getLastOutTex() {
         return ping_pong_->getSrcTex();
     }
 
@@ -99,7 +99,7 @@ namespace vidrevolt {
         return path_;
     }
 
-    std::shared_ptr<ShaderProgram> Module::getShaderProgram() {
+    std::shared_ptr<gl::ShaderProgram> Module::getShaderProgram() {
         return program_;
     }
 

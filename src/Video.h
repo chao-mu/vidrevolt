@@ -13,10 +13,10 @@
 #include <opencv2/opencv.hpp>
 
 // Ours
-#include "Texture.h"
+#include "gl/Texture.h"
 
 namespace vidrevolt {
-    class Video : public Texture {
+    class Video : public gl::Texture {
         public:
             enum Playback {
                 Mirror,
