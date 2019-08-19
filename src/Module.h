@@ -12,6 +12,7 @@
 #include "Address.h"
 #include "Value.h"
 #include "ValueStore.h"
+#include "gl/module.h"
 
 namespace vidrevolt {
     class Module {
@@ -44,7 +45,7 @@ namespace vidrevolt {
         private:
             const std::string output_;
             const std::string path_;
-            std::map<std::string, Param> params_;
+            std::map<std::string, gl::module::Param> params_;
             std::map<std::string, AddressOrValue> uniforms_;
             std::shared_ptr<gl::RenderOut> render_out_;
             const Resolution resolution_;
