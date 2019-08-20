@@ -207,7 +207,7 @@ int main(int argc, const char** argv) {
             dest = s.str();
         }
 
-        pipeline->getLastStep()->getLastOutTex()->save(dest);
+        pipeline->getLastOutTex()->save(dest);
 
         std::cout << "Screenshot saved at " << dest << std::endl;
     });
@@ -245,13 +245,11 @@ int main(int argc, const char** argv) {
             static_cast<float>(win_height)
         );
 
-        std::shared_ptr<vidrevolt::Module> mod = pipeline->getLastStep();
-
         // Draw to the screen
         DEBUG_TIME_START(draw)
         glDrawBuffer(GL_BACK);
-        glBindFramebuffer(GL_READ_FRAMEBUFFER, mod->getFBO());
-        glReadBuffer(mod->getReadableBuf());
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, pipeline->getFBO());
+        glReadBuffer(pipeline->getReadableBuf());
         glViewport(0,0, win_width, win_height);
         glBlitFramebuffer(
             0,0, resolution.width, resolution.height,

@@ -16,7 +16,7 @@ namespace vidrevolt {
 
             std::pair<std::shared_ptr<ShaderProgram>, UniformNeeds> compile(
                    const std::string path,
-                   std::map<std::string, Param> params,
+                   std::map<std::string, Module::Param> params,
                    std::shared_ptr<ValueStore> store) {
 
                 UniformNeeds uniforms;
@@ -38,7 +38,7 @@ namespace vidrevolt {
             }
 
 
-            std::pair<std::string, UniformNeeds> readVertShader(const std::map<std::string, Param>& params, std::shared_ptr<ValueStore> store) {
+            std::pair<std::string, UniformNeeds> readVertShader(const std::map<std::string, Module::Param>& params, std::shared_ptr<ValueStore> store) {
                 std::string shader = R"V(
                     #version 410
 
@@ -118,7 +118,7 @@ namespace vidrevolt {
                 return std::make_pair(shader, UniformNeeds());
             }
 
-            std::pair<std::string, UniformNeeds> readFragShader(const std::string path, std::map<std::string, Param> params, std::shared_ptr<ValueStore> store) {
+            std::pair<std::string, UniformNeeds> readFragShader(const std::string path, std::map<std::string, Module::Param> params, std::shared_ptr<ValueStore> store) {
                 UniformNeeds uniforms;
 
                 std::ifstream ifs(path);
@@ -157,7 +157,7 @@ namespace vidrevolt {
                             bool defined = params.count(name) > 0;
                             std::optional<Address> addr_opt;
                             if (defined) {
-                                Param& p = params.at(name);
+                                Module::Param& p = params.at(name);
 
                                 uniforms[internal_name] = p.value;
                                 uniforms[internal_name_amp] = p.amp;

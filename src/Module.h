@@ -5,14 +5,10 @@
 #include <string>
 
 // Ours
-#include "gl/GLUtil.h"
-#include "gl/ShaderProgram.h"
-#include "gl/RenderOut.h"
 #include "AddressOrValue.h"
 #include "Address.h"
 #include "Value.h"
 #include "ValueStore.h"
-#include "gl/module.h"
 
 namespace vidrevolt {
     class Module {
@@ -26,32 +22,21 @@ namespace vidrevolt {
 
             Module(const std::string& output, const std::string& path, const Resolution& res);
 
+            std::map<std::string, Module::Param> getParams();
+
             void setParam(const std::string& input, Param src);
+
             const std::string& getOutput() const;
+
             const std::string& getPath() const;
-            std::shared_ptr<gl::ShaderProgram> getShaderProgram();
-            GLuint getFBO();
-            GLenum getReadableBuf();
-            std::shared_ptr<gl::Texture> getLastOutTex();
+
             Resolution getResolution();
-
-            void setValues(std::shared_ptr<ValueStore> store, bool first_pass);
-
-            void bind();
-            void unbind();
-
-            void compile(std::shared_ptr<ValueStore> store);
 
         private:
             const std::string output_;
             const std::string path_;
-            std::map<std::string, gl::module::Param> params_;
-            std::map<std::string, AddressOrValue> uniforms_;
-            std::shared_ptr<gl::RenderOut> render_out_;
+            std::map<std::string, Param> params_;
             const Resolution resolution_;
-            std::shared_ptr<gl::ShaderProgram> program_;
-
-            static std::string toInputName(const std::string& name);
     };
 }
 
