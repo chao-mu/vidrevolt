@@ -62,3 +62,16 @@ vars:
 "render" is a list of steps that define the rendering process, referred to as "render steps". This is where you would apply effects and mix media. The final render step outputs to the screen.
 
 Each step defines what destination address the step will render to and the details of what is being rendered and how. 
+
+## Contributing
+
+Right now the biggest thing we need is people using it, finding pain points, and filing tickets on github for bugs and feature requests.
+
+Hashtag your posts #vidrevolt
+
+### Developer Tools
+
+* https://github.com/include-what-you-use/include-what-you-use (Unused Include Files)
+
+
+
