@@ -21,6 +21,7 @@
 #include "Controller.h"
 #include "cmd/Command.h"
 #include "Parser.h"
+#include "BPMSync.h"
 
 namespace vidrevolt {
     class PatchParser : Parser {
@@ -62,6 +63,7 @@ namespace vidrevolt {
             std::map<std::string, std::shared_ptr<Controller>> controllers_;
             std::vector<std::shared_ptr<Module>> modules_;
             std::map<std::string, std::shared_ptr<Group>> groups_;
+            std::map<Address, std::shared_ptr<BPMSync>> bpm_syncs_;
             std::vector<std::shared_ptr<cmd::Command>> commands_;
     };
 }

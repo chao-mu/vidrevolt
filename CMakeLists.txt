@@ -10,7 +10,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
 # My stuff
-add_executable(${PROJECT_NAME} src/gl/module.cpp src/gl/RenderOut.cpp src/ValueStore.cpp src/Keyboard.cpp src/main.cpp src/PatchParser.cpp src/Parser.cpp src/AddressOrValue.cpp src/Video.cpp src/midi/Device.cpp src/midi/Message.cpp src/midi/Control.cpp src/Image.cpp src/Value.cpp src/Address.cpp src/MathUtil.cpp src/gl/Texture.cpp src/gl/GLUtil.cpp src/gl/ShaderProgram.cpp src/gl/RenderPipeline.cpp src/gl/IndexBuffer.cpp src/gl/VertexArray.cpp src/gl/VertexBuffer.cpp src/Group.cpp src/cmd/OverwriteGroup.cpp src/cmd/Command.cpp src/cmd/Rotate.cpp src/cmd/Reverse.cpp src/cmd/OverwriteVar.cpp src/Media.cpp src/Controller.cpp src/Module.cpp src/fileutil.cpp)
+add_executable(${PROJECT_NAME} src/BPMSync.cpp src/cmd/TapTempo.cpp src/gl/module.cpp src/gl/RenderOut.cpp src/ValueStore.cpp src/Keyboard.cpp src/main.cpp src/PatchParser.cpp src/Parser.cpp src/AddressOrValue.cpp src/Video.cpp src/midi/Device.cpp src/midi/Message.cpp src/midi/Control.cpp src/Image.cpp src/Value.cpp src/Address.cpp src/MathUtil.cpp src/gl/Texture.cpp src/gl/GLUtil.cpp src/gl/ShaderProgram.cpp src/gl/RenderPipeline.cpp src/gl/IndexBuffer.cpp src/gl/VertexArray.cpp src/gl/VertexBuffer.cpp src/Group.cpp src/cmd/OverwriteGroup.cpp src/cmd/Command.cpp src/cmd/Rotate.cpp src/cmd/Reverse.cpp src/cmd/OverwriteVar.cpp src/Media.cpp src/Controller.cpp src/Module.cpp src/fileutil.cpp)
 
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_compile_options(${PROJECT_NAME} PRIVATE "-Wextra" "-Werror" "-Wall" "-pedantic-errors" "-Wconversion")

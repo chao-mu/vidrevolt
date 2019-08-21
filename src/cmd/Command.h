@@ -14,15 +14,12 @@ namespace vidrevolt {
                 virtual ~Command() = default;
 
                 virtual void run(std::shared_ptr<ValueStore> store) const = 0;
-
-                virtual void validate() const = 0;
+                virtual void validate() const;
 
                 Trigger getTrigger() const;
                 std::string getName() const;
 
             protected:
-                void throwIncompatible() const;
-
                 const std::string name_;
                 const Address target_;
                 const Trigger trigger_;

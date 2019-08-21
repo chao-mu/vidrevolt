@@ -6,6 +6,10 @@
 namespace vidrevolt {
     Parser::Parser() : store_(std::make_shared<ValueStore>()) {}
 
+    Address Parser::resolveAddress(const Address& addr) {
+        return store_->getAddressDeep(addr);
+    }
+
     AddressOrValue Parser::readAddressOrValue(const YAML::Node& node, bool parse_swiz) {
         if (node.IsSequence()) {
             std::vector<float> v = {};

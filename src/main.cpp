@@ -36,6 +36,7 @@
 #include "Resolution.h"
 #include "Value.h"
 #include "ValueStore.h"
+#include "Controller.h"
 
 // GLFW error callback
 void onError(int errc, const char* desc) {
@@ -196,6 +197,8 @@ int main(int argc, const char** argv) {
         return 1;
     }
 
+    std::map<std::string, std::shared_ptr<vidrevolt::Controller>> controllers = parser.getControllers();
+
     std::shared_ptr<vidrevolt::ValueStore> store = parser.getValueStore();
     auto pipeline = std::make_shared<vidrevolt::gl::RenderPipeline>(resolution, store, modules);
     pipeline->load();
@@ -258,6 +261,10 @@ int main(int argc, const char** argv) {
 
         DEBUG_TIME_START(loop)
         GLCall(glfwPollEvents());
+
+        for (auto& kv : controllers) {
+            kv.second->tick();
+        }
 
         DEBUG_TIME_START(render)
         pipeline->render();

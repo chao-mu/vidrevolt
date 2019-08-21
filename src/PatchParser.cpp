@@ -14,6 +14,7 @@
 #include "cmd/OverwriteVar.h"
 #include "cmd/Reverse.h"
 #include "cmd/Rotate.h"
+#include "cmd/TapTempo.h"
 #include "fileutil.h"
 #include "Keyboard.h"
 
@@ -44,6 +45,7 @@
 #define KEY_CONTROLLERS "controllers"
 #define CONTROLLER_TYPE_MIDI "midi"
 #define CONTROLLER_TYPE_KEYBOARD "keyboard"
+#define CONTROLLER_TYPE_BPM_SYNC "bpm-sync"
 #define MEDIA_TYPE_IMAGE "image"
 #define MEDIA_TYPE_VIDEO "video"
 #define KEY_VARS "vars"
@@ -96,6 +98,13 @@ namespace vidrevolt {
             command = std::make_shared<cmd::OverwriteGroup>(name, trigger, args);
         } else if (name == "rotate") {
             command = std::make_shared<cmd::Rotate>(name, trigger, args);
+        } else if (name == "tap-tempo") {
+            if (args.size() != 1 || !isAddress(args.at(0)) || bpm_syncs_.count(std::get<Address>(args.at(0))) <= 0) {
+                throw std::runtime_error("command #" + std::to_string(num) + " (" + name + ") expects 1 argument; a bpm-sync");
+            }
+
+            std::shared_ptr<BPMSync> sync = bpm_syncs_.at(std::get<Address>(args.at(0)));
+            command = std::make_shared<cmd::TapTempo>(name, trigger, args, sync);
         } else {
             throw std::runtime_error(
                     "command #" + std::to_string(num) + " has unrecognized command name '" +
@@ -263,6 +272,10 @@ namespace vidrevolt {
                 controllers_[name] = loadMidiDevice(name, settings);
             } else if (type == CONTROLLER_TYPE_KEYBOARD) {
                 controllers_[name] = std::make_shared<Keyboard>();
+            } else if (type == CONTROLLER_TYPE_BPM_SYNC) {
+                auto sync = std::make_shared<BPMSync>();
+                controllers_[name] = sync;
+                bpm_syncs_[Address(name)] = sync;
             } else {
                 throw std::runtime_error("unsupported controller type " + type);
             }

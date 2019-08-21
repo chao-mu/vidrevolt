@@ -14,6 +14,8 @@ namespace vidrevolt {
             Parser();
 
         protected:
+            Address resolveAddress(const Address& addr);
+
             AddressOrValue readAddressOrValue(const YAML::Node& node, bool parse_swiz);
             Address readAddress(const YAML::Node& node, bool parse_swiz);
             Trigger readTrigger(const YAML::Node& node);

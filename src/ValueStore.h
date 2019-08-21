@@ -15,6 +15,9 @@
 #include "Controller.h"
 #include "Trigger.h"
 
+// TODO: Remove deep address resolution. Have Parser be the only one who
+// knows about aliases?
+
 namespace vidrevolt {
     class ValueStore {
         public:

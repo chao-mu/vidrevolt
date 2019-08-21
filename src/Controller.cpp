@@ -1,6 +1,7 @@
 #include "Controller.h"
 
-namespace frag {
-
+namespace vidrevolt {
+    void Controller::tick() {
+    }
 }
 
