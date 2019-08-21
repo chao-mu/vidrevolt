@@ -69,7 +69,7 @@ namespace vidrevolt {
             return {};
         }
 
-        Frame frame = buffer_.at(cursor_);
+        Frame frame = buffer_.at(static_cast<size_t>(cursor_));
 
         if (playback_ == Mirror) {
             if (frame.first >= last_frame_.load()) {
@@ -143,10 +143,10 @@ namespace vidrevolt {
             reverse_ = false;
 
             bool found = false;
-            for (int i=0; i < static_cast<int>(buffer_size_); i++) {
+            for (size_t i=0; i < buffer_size_; i++) {
                 if (buffer_.at(i).first == 0) {
                     found = true;
-                    cursor_ = i;
+                    cursor_ = static_cast<int>(i);
                     break;
                 }
             }
@@ -161,10 +161,10 @@ namespace vidrevolt {
 
             // Start from half the buffersize before the end of the video.
             seek(-middle);
-            for (int i=0; i < static_cast<int>(buffer_size_); i++) {
+            for (size_t i=0; i < buffer_size_; i++) {
                 Frame frame = readFrame();
                 if (frame.first == 0) {
-                    cursor_ = i;
+                    cursor_ = static_cast<int>(i);
                 }
 
                 buffer_.push_back(frame);

@@ -222,14 +222,14 @@ namespace vidrevolt {
                     "expected group '" + name + "' to have field '" + KEY_MEMBERS + "'"
                 );
 
-                int el_size = 0;
+                size_t el_size = 0;
                 for (const auto el : elements) {
                     group->add(readAddressOrValue(el, true));
                     el_size++;
                 }
 
                 if (settings[KEY_INDEX]) {
-                    int i = 0;
+                    size_t i = 0;
                     for (const auto idx_name : settings[KEY_INDEX]) {
                         if (i > el_size - 1) {
                             throw std::runtime_error("Index specification for group '" + name + "' is longer than members");

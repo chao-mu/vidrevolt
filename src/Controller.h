@@ -12,6 +12,8 @@
 namespace vidrevolt {
     class Controller {
         public:
+            virtual ~Controller() = default;
+
             virtual void connect(const std::string& control_name, std::function<void(Value)> f) = 0;
             virtual std::vector<std::string> getControlNames() const = 0;
     };

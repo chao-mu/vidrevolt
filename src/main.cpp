@@ -1,34 +1,41 @@
 // STL
-#include <iostream>
-#include <climits>
+#include <cxxabi.h>
+#include <stdio.h>
 #include <chrono>
-#include <thread>
-#include <filesystem>
+#include <ctime>
+#include <iomanip>
+#include <iostream>
+#include <memory>
+#include <string>
+#include <vector>
+
+// Open GL
+#include <GL/glew.h>
+#include <GLFW/glfw3.h>
 
 // TCLAP
+#include <tclap/ArgException.h>
 #include <tclap/CmdLine.h>
+#include <tclap/SwitchArg.h>
+#include <tclap/ValueArg.h>
 
-// OpenCV
-#include <opencv2/opencv.hpp>
-
-// SFML
-#include <SFML/Audio.hpp>
+// SMFL
+#include <SFML/Audio/Music.hpp>
 
 // Ours
-#include "ValueStore.h"
-#include "MathUtil.h"
 #include "Keyboard.h"
-#include "Resolution.h"
+#include "MathUtil.h"
 #include "PatchParser.h"
 #include "debug.h"
-
-// Ours (OpenGL)
 #include "gl/GLUtil.h"
-#include "gl/VertexBuffer.h"
-#include "gl/VertexArray.h"
 #include "gl/IndexBuffer.h"
-#include "gl/Texture.h"
 #include "gl/RenderPipeline.h"
+#include "gl/Texture.h"
+#include "gl/VertexArray.h"
+#include "gl/VertexBuffer.h"
+#include "Resolution.h"
+#include "Value.h"
+#include "ValueStore.h"
 
 // GLFW error callback
 void onError(int errc, const char* desc) {
@@ -253,9 +260,7 @@ int main(int argc, const char** argv) {
         GLCall(glfwPollEvents());
 
         DEBUG_TIME_START(render)
-
         pipeline->render();
-
         DEBUG_TIME_END(render)
 
         // Calculate blit settings
@@ -306,6 +311,8 @@ int main(int argc, const char** argv) {
                 store_str = ss;
             }
         }
+
+        DEBUG_TIME_END(loop)
     }
 
     return 0;

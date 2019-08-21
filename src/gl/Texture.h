@@ -26,7 +26,7 @@ namespace vidrevolt {
                 void populate(cv::Mat& frame);
                 void borrowBind(std::function<void()> f);
                 void setScaleFilter(GLint min_param, GLint mag_param);
-                virtual Resolution getResolution();
+                Resolution getResolution();
 
                 GLuint getID() const;
 

@@ -85,7 +85,7 @@ namespace vidrevolt {
         return mappings;
     }
 
-    void Group::setMapping(const std::string& key, int i) {
+    void Group::setMapping(const std::string& key, size_t i) {
         mappings_[key] = i;
     }
 }

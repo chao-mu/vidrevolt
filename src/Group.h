@@ -12,7 +12,7 @@ namespace vidrevolt {
     class Group {
         public:
             std::map<std::string, AddressOrValue> getMappings() const;
-            void setMapping(const std::string& key, int i);
+            void setMapping(const std::string& key, size_t i);
 
             void rotate();
             AddressOrValue exchange(const std::string& key, AddressOrValue aov);
@@ -23,7 +23,7 @@ namespace vidrevolt {
 
         private:
             std::vector<AddressOrValue> elements_;
-            std::map<std::string, int> mappings_;
+            std::map<std::string, size_t> mappings_;
             mutable std::mutex elements_mutex_;
     };
 }

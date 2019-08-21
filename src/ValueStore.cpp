@@ -2,10 +2,6 @@
 
 // STL
 #include <iostream>
-#include <sstream>
-
-// Ours
-#include "MathUtil.h"
 
 namespace vidrevolt {
     bool ValueStore::isMedia(const Address& addr) const {

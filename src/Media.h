@@ -16,6 +16,8 @@ namespace vidrevolt {
         public:
             Media(const Address& addr);
 
+            virtual ~Media() = default;
+
             virtual Resolution getResolution() = 0;
             virtual void inFocus();
             virtual void outFocus();

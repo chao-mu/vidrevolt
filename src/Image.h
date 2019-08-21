@@ -18,7 +18,7 @@ namespace vidrevolt {
 
             virtual std::optional<cv::Mat> nextFrame() override;
 
-            Resolution getResolution();
+            virtual Resolution getResolution() override;
 
         private:
             std::string path_;

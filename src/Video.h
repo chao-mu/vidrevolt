@@ -45,7 +45,7 @@ namespace vidrevolt {
 
             static bool isVideo(const std::string& path);
 
-            std::string getPath() const;
+            virtual std::string getPath() const override;
 
         private:
             void next();

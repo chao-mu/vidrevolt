@@ -11,6 +11,7 @@ namespace vidrevolt {
         class Command {
             public:
                 Command(const std::string& name, const Trigger& trigger, std::vector<AddressOrValue> args);
+                virtual ~Command() = default;
 
                 virtual void run(std::shared_ptr<ValueStore> store) const = 0;
 

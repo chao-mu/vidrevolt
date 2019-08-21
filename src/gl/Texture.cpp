@@ -43,7 +43,7 @@ namespace vidrevolt {
                 int height = res.height;
 
                 // Load the actual image daata
-                char* data = new char[width * height * 3];
+                char* data = new char[static_cast<size_t>(width) * static_cast<size_t>(height) * 3];
                 GLCall(glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_UNSIGNED_BYTE, data));
 
                 cv::Mat image(height, width, CV_8UC3, data);

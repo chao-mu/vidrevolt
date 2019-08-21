@@ -85,7 +85,7 @@ namespace vidrevolt {
 
                 out->bind(program);
 
-                int slot = 0;
+                unsigned int slot = 0;
                 for (const auto& kv : uniforms) {
                     const std::string& uni_name = kv.first;
                     AddressOrValue addr_or_val = kv.second;
@@ -109,7 +109,7 @@ namespace vidrevolt {
                     } else if (addr_opt.has_value()) {
                         std::shared_ptr<Texture> tex = getReadableTexture(addr_opt.value());
                         if (tex != nullptr) {
-                            program->setUniform(uni_name, [tex, &slot, this](GLint& id) {
+                            program->setUniform(uni_name, [tex, &slot](GLint& id) {
                                 tex->bind(slot);
                                 glUniform1i(id, slot);
                                 slot++;
