@@ -35,13 +35,15 @@ namespace vidrevolt {
 
             private:
                 std::shared_ptr<RenderOut> getLast();
+                std::shared_ptr<Texture> getReadableTexture(const Address& addr);
 
                 const Resolution resolution_;
                 std::shared_ptr<ValueStore> store_;
                 std::vector<std::shared_ptr<Module>> modules_;
-                std::map<Address, std::shared_ptr<Media>> media_;
 
-                std::map<std::string, std::shared_ptr<RenderOut>> render_outs_;
+                std::map<Address, std::shared_ptr<Texture>> textures_;
+                std::map<Address, std::shared_ptr<Media>> media_;
+                std::map<Address, std::shared_ptr<RenderOut>> render_outs_;
                 std::vector<module::UniformNeeds> uniform_needs_;
                 std::vector<std::shared_ptr<ShaderProgram>> programs_;
 

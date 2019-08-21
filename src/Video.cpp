@@ -15,11 +15,11 @@ namespace vidrevolt {
     /*
     Video::Video(int device, double fps, cv::Size size) : device_(device), size_(size), fps_(fps), buffer_size_(1) {
     }
-
     */
 
-    Video::Video(const std::string& path, bool auto_reset, Playback pb) : path_(path), buffer_size_(30), reverse_(pb == Reverse), auto_reset_(auto_reset), playback_(pb) {
-    }
+    Video::Video(const Address& addr, const std::string& path, bool auto_reset, Playback pb) :
+        Media(addr), path_(path), buffer_size_(30), reverse_(pb == Reverse),
+        auto_reset_(auto_reset), playback_(pb) {}
 
     Video::~Video() {
         stop();
@@ -41,8 +41,8 @@ namespace vidrevolt {
         work_ready_cv_.notify_one();
     }
 
-    void Video::update() {
-        Media::update();
+    std::optional<cv::Mat> Video::nextFrame() {
+        setInUse(true);
 
         std::chrono::high_resolution_clock::time_point now =
             std::chrono::high_resolution_clock::now();
@@ -54,7 +54,7 @@ namespace vidrevolt {
             // The amount we are past the next time we should display a frame
             float past_target = duration.count() - frame_dur;
             if (past_target < 0) {
-                return;
+                return {};
             } else if (past_target > frame_dur) {
                 std::cerr << "WARNING: Skipped a frame! Since last frame " << past_target << "ms has traspired in " << path_ << std::endl;
             }
@@ -66,11 +66,10 @@ namespace vidrevolt {
             std::cerr << "WARNING: Video buffer empty! Try a video with a lower frame rate. Path:" <<
                 path_ << std::endl;
 
-            return;
+            return {};
         }
 
-        std::pair<int, std::shared_ptr<cv::Mat>> frame = buffer_.at(cursor_);
-        populate(*frame.second);
+        Frame frame = buffer_.at(cursor_);
 
         if (playback_ == Mirror) {
             if (frame.first >= last_frame_.load()) {
@@ -95,12 +94,13 @@ namespace vidrevolt {
         }
 
         last_update_ = std::chrono::high_resolution_clock::now();
+
+        return frame.second;
     }
 
-    std::pair<int, std::shared_ptr<cv::Mat>> Video::readFrame() {
+    Video::Frame Video::readFrame() {
         int pos = static_cast<int>(vid_->get(cv::CAP_PROP_POS_FRAMES));
-        auto ptr = std::make_shared<cv::Mat>();
-        cv::Mat& frame = *ptr;
+        cv::Mat frame;
         if (vid_->read(frame)) {
             cv::cvtColor(frame, frame, cv::COLOR_BGR2RGB);
             // Flip if capture device
@@ -117,7 +117,7 @@ namespace vidrevolt {
             return readFrame();
         }
 
-        return std::make_pair(pos, ptr);
+        return std::make_pair(pos, frame);
     }
 
     void Video::seek(int pos) {
@@ -162,7 +162,7 @@ namespace vidrevolt {
             // Start from half the buffersize before the end of the video.
             seek(-middle);
             for (int i=0; i < static_cast<int>(buffer_size_); i++) {
-                std::pair<int, std::shared_ptr<cv::Mat>> frame = readFrame();
+                Frame frame = readFrame();
                 if (frame.first == 0) {
                     cursor_ = i;
                 }
@@ -193,7 +193,7 @@ namespace vidrevolt {
             // Jump back by the amount we need to read to catch up.
             seek(front_pos - diff);
 
-            std::vector<std::pair<int, std::shared_ptr<cv::Mat>>> tmp_buf;
+            std::vector<Frame> tmp_buf;
             for (int i=0; i < diff; i++) {
                 tmp_buf.push_back(readFrame());
             }
@@ -212,7 +212,7 @@ namespace vidrevolt {
                 seek(back_pos + 1);
             }
 
-            std::vector<std::pair<int, std::shared_ptr<cv::Mat>>> tmp_buf;
+            std::vector<Frame> tmp_buf;
             for (int i=0; i < diff; i++) {
                 tmp_buf.push_back(readFrame());
             }
@@ -288,11 +288,9 @@ namespace vidrevolt {
         }
 
         next();
-        {
-            // Set the resolution (a side effect of populate)
-            std::pair<int, std::shared_ptr<cv::Mat>> frame = buffer_.at(cursor_);
-            populate(*frame.second);
-        }
+
+        res_.width = buffer_.front().second.size().width;
+        res_.height = buffer_.front().second.size().height;
 
         running_ = true;
         thread_ = std::thread([this] {
@@ -317,6 +315,10 @@ namespace vidrevolt {
                 }
             }
         });
+    }
+
+    Resolution Video::getResolution() {
+        return res_;
     }
 
     void Video::flipPlayback() {

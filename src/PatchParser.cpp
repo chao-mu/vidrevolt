@@ -341,6 +341,7 @@ namespace vidrevolt {
                 auto mod = std::make_shared<Module>(output, getBuiltinShader("pass.glsl"), res);
 
                 mod->setParam("img0", param);
+
                 modules_.push_back(mod);
 
                 continue;
@@ -388,6 +389,10 @@ namespace vidrevolt {
                 modules_.push_back(mod);
             }
         }
+
+        for (const auto& mod : modules_) {
+            store_->setIsMedia(Address(mod->getOutput()), true);
+        }
     }
 
     std::vector<std::shared_ptr<Module>> PatchParser::getModules() {
@@ -412,6 +417,9 @@ namespace vidrevolt {
 
         res.width = res_node[KEY_WIDTH].as<int>();
         res.height = res_node[KEY_HEIGHT].as<int>();
+
+        store_->set(Address("resolution"),
+                Value({static_cast<float>(res.width), static_cast<float>(res.height)}));
 
         return res;
     }
@@ -445,23 +453,15 @@ namespace vidrevolt {
             }
         }
 
-        auto vid = std::make_shared<Video>(path, auto_reset, pb);
-        if (settings.IsMap() && settings[KEY_SCALE_FILTER]) {
-            const std::string filter = settings[KEY_SCALE_FILTER].as<std::string>();
-            if (filter == "nearest") {
-                vid->setScaleFilter(GL_NEAREST, GL_NEAREST);
-            } else {
-                throw std::runtime_error("Invalid scale filter for media '" + name + "'");
-            }
-        }
+        auto vid = std::make_shared<Video>(Address(name), path, auto_reset, pb);
 
         vid->start();
 
         return vid;
     }
 
-    std::shared_ptr<Image> PatchParser::loadImage(const std::string& /*name*/, const std::string& path, const YAML::Node& /*settings*/) const {
-        auto image = std::make_shared<vidrevolt::Image>(path);
+    std::shared_ptr<Image> PatchParser::loadImage(const std::string& name, const std::string& path, const YAML::Node& /*settings*/) const {
+        auto image = std::make_shared<vidrevolt::Image>(Address(name), path);
 
         image->load();
 

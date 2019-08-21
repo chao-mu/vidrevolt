@@ -9,7 +9,11 @@
 
 namespace vidrevolt {
     bool ValueStore::isMedia(const Address& addr) const {
-        return getMedia(addr) != nullptr;
+        if (is_media_.count(addr) > 0) {
+            return is_media_.at(addr);
+        } else {
+            return getMedia(addr) != nullptr;
+        }
     }
 
     Address ValueStore::resolveAlias(const Address& addr_in, int depth) {
@@ -116,13 +120,6 @@ namespace vidrevolt {
             }
         }
 
-        {
-            std::lock_guard<std::mutex> guard(render_out_mutex_);
-            if (render_out_.count(addr) > 0) {
-                return addr;
-            }
-        }
-
         // Maybe it's a group member
         std::optional<AddressOrValue> member_opt = getGroupMember(addr);
         if (member_opt.has_value()) {
@@ -157,10 +154,19 @@ namespace vidrevolt {
             if (media != nullptr) {
                 Resolution res = media->getResolution();
                 return Value(std::vector({static_cast<float>(res.width), static_cast<float>(res.height)}));
+            } else {
+                std::lock_guard<std::mutex> guard(values_mutex_);
+                return values_.at("resolution");
             }
         }
 
         return {};
+    }
+
+    void ValueStore::setIsMedia(Address addr, bool t) {
+        std::lock_guard<std::mutex> guard(is_media_mutex_);
+
+        is_media_[addr] = t;
     }
 
     std::shared_ptr<Video> ValueStore::getVideo(const Address& addr) const {
@@ -202,12 +208,6 @@ namespace vidrevolt {
             }
         }
 
-        {
-            std::lock_guard<std::mutex> guard(render_out_mutex_);
-            if (render_out_.count(resolved_addr) > 0) {
-                return render_out_.at(resolved_addr);
-            }
-        }
 
         return nullptr;
     }
@@ -215,11 +215,6 @@ namespace vidrevolt {
     void ValueStore::set(Address alias, Address target) {
         std::lock_guard<std::mutex> guard(aliases_mutex_);
         aliases_[alias] = target;
-    }
-
-    void ValueStore::set(const Address& addr, std::shared_ptr<gl::Texture> o) {
-        std::lock_guard<std::mutex> guard(render_out_mutex_);
-        render_out_[addr] = o;
     }
 
     void ValueStore::set(const Address& addr, std::shared_ptr<Group> g) {
@@ -310,14 +305,6 @@ namespace vidrevolt {
             std::lock_guard<std::mutex> guard(aliases_mutex_);
             for (const auto& kv : aliases_) {
                 s << "    - " << kv.first.str() << ": " << kv.second.str() << std::endl;
-            }
-        }
-
-        s << "Render outputs:" << std::endl;
-        {
-            std::lock_guard<std::mutex> guard(render_out_mutex_);
-            for (const auto& kv : render_out_) {
-                s << "    - " << kv.first.str() << std::endl;
             }
         }
 

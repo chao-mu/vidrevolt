@@ -64,7 +64,9 @@ namespace vidrevolt {
         void Texture::populate(GLint internal_format, GLsizei width, GLsizei height,
                 GLenum format, GLenum type, const GLvoid* data) {
 
-            GLCall(glTexImage2D(GL_TEXTURE_2D, 0, internal_format, width, height, 0, format, type, data));
+            borrowBind([internal_format, width, height, format, type, data]() {
+                GLCall(glTexImage2D(GL_TEXTURE_2D, 0, internal_format, width, height, 0, format, type, data));
+            });
         }
 
         void Texture::borrowBind(std::function<void()> f) {
@@ -73,7 +75,7 @@ namespace vidrevolt {
             GLint prev_tex = 0;
 
             GLCall(glGetIntegerv(GL_ACTIVE_TEXTURE, &prev_active));
-            GLCall(glGetIntegerv(GL_TEXTURE_2D, &prev_tex));
+            GLCall(glGetIntegerv(GL_TEXTURE_BINDING_2D, &prev_tex));
 
             this->bind();
 

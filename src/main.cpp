@@ -35,6 +35,20 @@ void onError(int errc, const char* desc) {
     std::cerr << "Error (" << std::to_string(errc) << "): " << std::string(desc) << std::endl;
 }
 
+// OpenGL Debug Callback
+void onOpenGLDebug(
+        GLenum /*source*/,
+        GLenum /*type*/,
+        GLuint /*id*/,
+        GLenum /*severity*/,
+        GLsizei /*length*/,
+        const GLchar *msg,
+        const void * /*data*/) {
+
+    std::cout << "OpenGL Debug: " << msg << std::endl;
+}
+
+
 // GLFW window resizing callback
 void onWindowSize(GLFWwindow* /* window */, int width, int height) {
     // Resize the view port when a window resize is requested
@@ -52,6 +66,7 @@ int main(int argc, const char** argv) {
     TCLAP::ValueArg<double> fps_arg("", "fps", "FPS to aim for", false, 120, "float", cmd);
     TCLAP::SwitchArg debug_timer_arg("", "debug-timer", "debug time between frames", cmd);
     TCLAP::SwitchArg debug_store_arg("", "debug-store", "print out the value store", cmd);
+    TCLAP::SwitchArg debug_opengl("", "debug-opengl", "print out OpenGL debugging info", cmd);
     TCLAP::SwitchArg full_arg("", "full", "maximized, no titlebar", cmd);
 
     // Parse command line arguments
@@ -130,6 +145,14 @@ int main(int argc, const char** argv) {
     // Initialize GLEW
     glewExperimental = GL_TRUE;
     glewInit();
+
+    if (debug_opengl.getValue()) {
+        printf("OpenGL Debug: %s: \n", glGetString(GL_VERSION));
+
+        glEnable(GL_DEBUG_OUTPUT);
+        glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+        glDebugMessageCallback(onOpenGLDebug, NULL);
+    }
 
     // Bind vertex array object
     vidrevolt::gl::VertexArray vao;

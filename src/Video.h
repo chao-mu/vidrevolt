@@ -13,11 +13,13 @@
 #include <opencv2/opencv.hpp>
 
 // Ours
-#include "gl/Texture.h"
+#include "Media.h"
 
 namespace vidrevolt {
-    class Video : public gl::Texture {
+    class Video : public Media {
         public:
+            using Frame = std::pair<int, cv::Mat>;
+
             enum Playback {
                 Mirror,
                 Forward,
@@ -26,11 +28,14 @@ namespace vidrevolt {
 
             ~Video();
             // Video(int device, double fps=0, cv::Size size=cv::Size(0,0));
-            Video(const std::string& path, bool auto_reset, Playback pb=Forward);
+            Video(const Address& addr, const std::string& path, bool auto_reset, Playback pb=Forward);
 
             void start();
             void stop();
-            virtual void update() override;
+
+            virtual std::optional<cv::Mat> nextFrame() override;
+
+            virtual Resolution getResolution() override;
 
             virtual void outFocus() override;
 
@@ -45,7 +50,7 @@ namespace vidrevolt {
         private:
             void next();
             void seek(int pos);
-            std::pair<int, std::shared_ptr<cv::Mat>> readFrame();
+            Frame readFrame();
             void signalWork();
 
             // Constructor Parameters
@@ -68,11 +73,13 @@ namespace vidrevolt {
             std::atomic<bool> requested_reset_ = false;
 
             int cursor_;
-            std::vector<std::pair<int, std::shared_ptr<cv::Mat>>> buffer_;
+            std::vector<Frame> buffer_;
 
             bool work_ready_ = false;
             std::mutex work_ready_mutex_;
             std::condition_variable work_ready_cv_;
+
+            Resolution res_;
     };
 }
 

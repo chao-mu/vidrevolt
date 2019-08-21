@@ -5,18 +5,27 @@
 #include <string>
 
 // Ours
-#include "gl/Texture.h"
+#include "Media.h"
 
 namespace vidrevolt {
-    class Image : public gl::Texture {
+    class Image : public Media {
         public:
-            Image(const std::string& path);
-            void load();
+            Image(const Address& addr, const std::string& path);
             virtual std::string getPath() const override;
             static bool isImage(const std::string& path);
 
+            void load();
+
+            virtual std::optional<cv::Mat> nextFrame() override;
+
+            Resolution getResolution();
+
         private:
             std::string path_;
+            cv::Mat image_;
+            bool new_data_ = false;
+            Resolution res_;
+
     };
 }
 

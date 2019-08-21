@@ -9,25 +9,24 @@
 
 // Ours
 #include "GLUtil.h"
-#include "../Media.h"
 #include "../Resolution.h"
 
 namespace vidrevolt {
     namespace gl {
-        class Texture : public Media {
+        class Texture {
             public:
                 Texture();
                 ~Texture();
 
                 void save(const std::string& path);
-                void bind(unsigned int slot = 0) override;
-                void unbind() override;
+                void bind(unsigned int slot = 0);
+                void unbind();
                 void populate(GLint internal_format, GLsizei width, GLsizei height,
                         GLenum format, GLenum type, const GLvoid * data);
                 void populate(cv::Mat& frame);
                 void borrowBind(std::function<void()> f);
                 void setScaleFilter(GLint min_param, GLint mag_param);
-                virtual Resolution getResolution() override;
+                virtual Resolution getResolution();
 
                 GLuint getID() const;
 

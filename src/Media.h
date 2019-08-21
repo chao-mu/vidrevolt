@@ -4,28 +4,36 @@
 // STL
 #include <string>
 
+// OpenCV
+#include <opencv2/opencv.hpp>
+
 // Ours
 #include "Resolution.h"
+#include "Address.h"
 
 namespace vidrevolt {
     class Media {
         public:
-            virtual void update();
-            virtual void bind(unsigned int slot) = 0;
-            virtual void unbind() = 0;
+            Media(const Address& addr);
+
             virtual Resolution getResolution() = 0;
             virtual void inFocus();
             virtual void outFocus();
             virtual std::string getPath() const;
 
-
-            bool isInUse();
-            bool wasInUse();
+            bool isInUse() const;
+            bool wasInUse() const;
             void resetInUse();
+            void setInUse(bool t);
+
+            Address getAddress() const;
+
+            virtual std::optional<cv::Mat> nextFrame() = 0;
 
         private:
             bool in_use_ = false;
             bool last_in_use_ = false;
+            Address address_;
     };
 }
 #endif

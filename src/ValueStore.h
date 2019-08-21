@@ -14,6 +14,7 @@
 #include "Image.h"
 #include "Controller.h"
 #include "Trigger.h"
+#include "gl/Texture.h"
 
 namespace vidrevolt {
     class ValueStore {
@@ -36,6 +37,8 @@ namespace vidrevolt {
             void set(Address alias, Address target);
             void setGroupMember(const Address& addr, AddressOrValue aov);
 
+            void setIsMedia(Address addr, bool t);
+
             Address getAddressDeep(const Address& addr) const;
             Address resolveAlias(const Address& addr_in, int depth=50);
 
@@ -47,15 +50,15 @@ namespace vidrevolt {
             std::map<Address, std::shared_ptr<Group>> groups_;
             std::map<Address, std::shared_ptr<Image>> images_;
             std::map<Address, std::shared_ptr<Video>> videos_;
-            std::map<Address, std::shared_ptr<gl::Texture>> render_out_;
             std::map<Address, std::shared_ptr<Controller>> controllers_;
             std::map<Address, Address> aliases_;
+            std::map<Address, bool> is_media_;
 
+            mutable std::mutex is_media_mutex_;
             mutable std::mutex values_mutex_;
             mutable std::mutex groups_mutex_;
             mutable std::mutex images_mutex_;
             mutable std::mutex videos_mutex_;
-            mutable std::mutex render_out_mutex_;
             mutable std::mutex aliases_mutex_;
     };
 }

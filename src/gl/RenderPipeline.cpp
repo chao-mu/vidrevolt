@@ -9,7 +9,6 @@ namespace vidrevolt {
                 std::shared_ptr<ValueStore> store,
                 std::vector<std::shared_ptr<Module>> modules) : resolution_(resolution), store_(store), modules_(modules) {}
 
-
         void RenderPipeline::load() {
             for (const auto& mod : modules_) {
                 std::pair<std::shared_ptr<ShaderProgram>, module::UniformNeeds> kv =
@@ -18,19 +17,42 @@ namespace vidrevolt {
                 programs_.push_back(kv.first);
                 uniform_needs_.push_back(kv.second);
 
-                std::string out_name = mod->getOutput();
+                Address out_name = Address(mod->getOutput());
                 if (render_outs_.count(out_name) <= 0) {
                     auto render = std::make_shared<RenderOut>(
                             resolution_, GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1);
 
                     render->load();
                     render_outs_[out_name] = render;
-
-                    store_->set(Address(out_name), render->getSrcTex());
                 }
             }
 
             media_ = store_->getMediaAll();
+        }
+
+        std::shared_ptr<Texture> RenderPipeline::getReadableTexture(const Address& addr_in) {
+            Address addr = store_->getAddressDeep(addr_in);
+
+            std::shared_ptr<Media> media = store_->getMedia(addr);
+            if (media != nullptr) {
+                Address out = media->getAddress();
+                if (textures_.count(out) <= 0) {
+                    textures_[out] = std::make_shared<Texture>();
+                }
+
+                std::shared_ptr<Texture> tex = textures_.at(out);
+
+                std::optional<cv::Mat> frame_opt = media->nextFrame();
+                if (frame_opt.has_value()) {
+                    tex->populate(frame_opt.value());
+                }
+
+                return tex;
+            } else if (textures_.count(addr) > 0) {
+                return textures_.at(addr);
+            } else {
+                return nullptr;
+            }
         }
 
         std::shared_ptr<RenderOut> RenderPipeline::getLast() {
@@ -68,6 +90,10 @@ namespace vidrevolt {
                     const std::string& uni_name = kv.first;
                     AddressOrValue addr_or_val = kv.second;
 
+                    if (!program->getUniformLoc(uni_name).has_value()) {
+                        continue;
+                    }
+
                     std::optional<Value> val_opt;
                     std::optional<Address> addr_opt;
                     if (isValue(addr_or_val)) {
@@ -80,20 +106,20 @@ namespace vidrevolt {
                     if (val_opt.has_value()) {
                         Value val = val_opt.value();
                         program->setUniform(uni_name, val);
-                    } else if (addr_opt.has_value() && store_->isMedia(addr_opt.value())) {
-                        std::shared_ptr<Media> tex = store_->getMedia(addr_opt.value());
-                        program->setUniform(uni_name, [&tex, &slot](GLint& id) {
-                            tex->bind(slot);
-                            tex->update();
-                            glUniform1i(id, slot);
-                            slot++;
-                        });
+                    } else if (addr_opt.has_value()) {
+                        std::shared_ptr<Texture> tex = getReadableTexture(addr_opt.value());
+                        if (tex != nullptr) {
+                            program->setUniform(uni_name, [tex, &slot, this](GLint& id) {
+                                tex->bind(slot);
+                                glUniform1i(id, slot);
+                                slot++;
+                            });
+                        }
                     }
 
                     program->setUniform("firstPass", [this](GLint& id) {
                         glUniform1i(id, static_cast<int>(first_pass_));
                     });
-
 
                     program->setUniform("iTime", [](GLint& id) {
                         glUniform1f(id, static_cast<float>(glfwGetTime()));
@@ -122,7 +148,7 @@ namespace vidrevolt {
                 // Unbind and swap output/input textures
                 out->unbind(program);
 
-                store_->set(Address(mod->getOutput()), out->getSrcTex());
+                textures_[Address(mod->getOutput())] = out->getSrcTex();
             }
 
             for (const auto& kv : media_) {

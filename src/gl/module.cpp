@@ -175,7 +175,7 @@ namespace vidrevolt {
                             } else {
                                 frag_shader << "uniform " << type << " " << internal_name;
 
-                                if (!defined && def != "") {
+                                if (def != "") {
                                     frag_shader << " = " << def;
                                 }
 
@@ -246,6 +246,8 @@ namespace vidrevolt {
 
                     frag_shader << "#line " << line_no + 1 << "\n";
                 }
+
+                std::cout << frag_shader.str() << std::endl;
 
                 return std::make_pair(frag_shader.str(), uniforms);
             }

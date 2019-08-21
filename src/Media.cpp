@@ -1,19 +1,25 @@
 #include "Media.h"
 
 namespace vidrevolt {
-    void Media::update() {
-        in_use_ = true;
-    }
+    Media::Media(const Address& addr) : address_(addr) {}
 
     std::string Media::getPath() const {
         return "";
     }
 
-    bool Media::isInUse() {
+    Address Media::getAddress() const {
+        return address_;
+    }
+
+    void Media::setInUse(bool t) {
+        in_use_ = t;
+    }
+
+    bool Media::isInUse() const {
         return in_use_;
     }
 
-    bool Media::wasInUse() {
+    bool Media::wasInUse() const {
         return last_in_use_;
     }
 
