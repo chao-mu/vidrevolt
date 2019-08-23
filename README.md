@@ -63,6 +63,57 @@ vars:
 
 Each step defines what destination address the step will render to and the details of what is being rendered and how. 
 
+In the following example the output of the shader of the path shaders/pass\_1.glsl is written to address "o".
+
+```
+render:
+    - output: o
+      path: shaders/pass_1.glsl
+```
+
+The following demonstrates using the "inputs" field which specifies input values for a shader.
+
+```
+render:
+    - output: o
+      path: shaders/dumpster.glsl
+      inputs:
+        on_fire: true
+        flame_color: [1, 0.1, 0.03]
+        heat: 0.8
+```
+
+An individual input can be amplified, shifted, and raised to a power. This is useful for modifying values from controlers to limit a parameter to a desirable range for the situation.
+
+Next we do the same as in the above example, but we use a controller's control value with some math applied to it. Given a midi control of the address "midi.fader\_1", "heats" value will be pow(midi.fader\_1, 0.01) * 2 + 3.
+
+```
+render:
+    - output: o
+      path: shaders/dumpster.glsl
+      inputs:
+        on_fire: true
+        flame_color: [1, 0.1, 0.03]
+        heat:
+            input: midi.fader_1
+            pow: 0.01
+            amp: 2
+            shift: 3
+```
+
+We can also chain shaders by using the output to be the input of the next. Imagine shaders/pass\_2.glsl takes a vec3 input named img0.
+
+```
+render:
+   - output: o
+     path: shaders/pass_1.glsl
+     
+   - output: o
+     path: shaders/pass_2.glsl
+        inputs:
+            img0: o
+```
+
 ## Contributing
 
 Right now the biggest thing we need is people using it, finding pain points, and filing tickets on github for bugs and feature requests.
@@ -72,6 +123,3 @@ Hashtag your posts #vidrevolt
 ### Developer Tools
 
 * https://github.com/include-what-you-use/include-what-you-use (Unused Include Files)
-
-
-

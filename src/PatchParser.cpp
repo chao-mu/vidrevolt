@@ -41,6 +41,7 @@
 #define KEY_INPUT "input"
 #define KEY_AMP "amp"
 #define KEY_SHIFT "shift"
+#define KEY_POW "pow"
 #define KEY_SCALE_FILTER "sizeFilter"
 #define KEY_CONTROLLERS "controllers"
 #define CONTROLLER_TYPE_MIDI "midi"
@@ -384,6 +385,10 @@ namespace vidrevolt {
 
                         if (value[KEY_SHIFT]) {
                             param.shift = readAddressOrValue(value[KEY_SHIFT], true);
+                        }
+
+                        if (value[KEY_POW]) {
+                            param.pow = readAddressOrValue(value[KEY_POW], true);
                         }
                     } else {
                         param.value = readAddressOrValue(value, true);

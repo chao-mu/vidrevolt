@@ -153,6 +153,7 @@ namespace vidrevolt {
                             const std::string internal_name_amp = internal_name + "_amp";
                             const std::string internal_name_res = internal_name + "_res";
                             const std::string internal_name_tc = internal_name + "_tc";
+                            const std::string internal_name_pow = internal_name + "_pow";
 
                             bool defined = params.count(name) > 0;
                             std::optional<Address> addr_opt;
@@ -162,6 +163,7 @@ namespace vidrevolt {
                                 uniforms[internal_name] = p.value;
                                 uniforms[internal_name_amp] = p.amp;
                                 uniforms[internal_name_shift] = p.shift;
+                                uniforms[internal_name_pow] = p.pow;
 
                                 if (isAddress(p.value)) {
                                     addr_opt = std::get<Address>(p.value);
@@ -184,7 +186,8 @@ namespace vidrevolt {
 
                             frag_shader << "uniform float " <<  internal_name_shift << " = 0;\n";
                             frag_shader << "uniform float " <<  internal_name_amp << " = 1;\n";
-                            frag_shader << "uniform vec2 " << internal_name_res << ";\n";
+                            frag_shader << "uniform float " <<  internal_name_pow << " = 1;\n";
+                            frag_shader << "uniform vec2 " << internal_name_res << " = vec2(0);\n";
 
                             frag_shader << "#define " << name << "_res " << internal_name_res << "\n";
                             frag_shader << "#define " << name << "_tc ";
@@ -197,8 +200,15 @@ namespace vidrevolt {
                             frag_shader << "\n";
 
                             frag_shader << type << " input_" << name << "(in vec2 uv) {\n";
+                            frag_shader << "   return ";
+
+                            if (type != "bool") {
+                                frag_shader << "pow(";
+                            }
+
+                            std::string pow_arg = "";
                             if (is_texture && addr_opt.has_value()) {
-                                frag_shader << "   return " << "texture(" << internal_name << ", uv)";
+                                frag_shader << "texture(" << internal_name << ", uv)";
                                 std::string swiz = addr_opt.value().getSwiz();
 
                                 // Expand the swizzle
@@ -224,11 +234,12 @@ namespace vidrevolt {
                                     throw std::runtime_error("unsupported input type '" + type + "'");
                                 }
                             } else {
-                                frag_shader << "  return " << internal_name;
+                                frag_shader << internal_name;
                             }
 
                             if (type != "bool") {
-                                frag_shader << " * " << internal_name_amp << " + " << internal_name_shift;
+                                frag_shader << ", " <<  type << "(" << internal_name_pow << "))";
+                                frag_shader << "* " << internal_name_amp << " + " << internal_name_shift;
                             }
 
                             frag_shader << ";\n";

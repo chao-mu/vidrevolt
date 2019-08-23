@@ -18,6 +18,7 @@ namespace vidrevolt {
                     AddressOrValue value;
                     AddressOrValue amp;
                     AddressOrValue shift;
+                    AddressOrValue pow;
             };
 
             Module(const std::string& output, const std::string& path, const Resolution& res);
