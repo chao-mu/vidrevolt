@@ -19,6 +19,7 @@ namespace vidrevolt {
             void tap();
             float predictNextBeat() const;
             float predictLastBeat() const;
+            float predictTri() const;
 
             virtual void connect(const std::string& control_name, std::function<void(Value)> f) override;
             virtual std::vector<std::string> getControlNames() const override;
@@ -40,6 +41,7 @@ namespace vidrevolt {
 
             boost::signals2::signal<void(Value)> next_beat_sig_;
             boost::signals2::signal<void(Value)> last_beat_sig_;
+            boost::signals2::signal<void(Value)> tri_sig_;
     };
 }
 

@@ -8,6 +8,7 @@
 
 #define TAP_TEMPO_CTRL_NEXT_BEAT "next_beat"
 #define TAP_TEMPO_CTRL_LAST_BEAT "last_beat"
+#define TAP_TEMPO_CTRL_TRI "tri"
 
 namespace vidrevolt {
     void BPMSync::tap() {
@@ -47,6 +48,20 @@ namespace vidrevolt {
         return 1 - predictNextBeat();
     }
 
+    float BPMSync::predictTri() const {
+        double since_last_tap = sinceLastTap();
+
+        double whole;
+        double fract = modf(since_last_tap / avg_distance_, &whole);
+        float next = static_cast<float>(fract);
+
+        if (static_cast<unsigned long>(whole) % 2 == 0) {
+            return next;
+        } else {
+            return 1 - next;
+        }
+    }
+
     float BPMSync::predictNextBeat() const {
         double since_last_tap = sinceLastTap();
 
@@ -80,17 +95,20 @@ namespace vidrevolt {
             next_beat_sig_.connect(f);
         } else if (control_name == TAP_TEMPO_CTRL_LAST_BEAT) {
             last_beat_sig_.connect(f);
+        } else if (control_name == TAP_TEMPO_CTRL_TRI) {
+            tri_sig_.connect(f);
         } else {
             throw std::runtime_error("BPMSync controller does not have control " + control_name);
         }
     }
 
     std::vector<std::string> BPMSync::getControlNames() const {
-        return {TAP_TEMPO_CTRL_LAST_BEAT, TAP_TEMPO_CTRL_NEXT_BEAT};
+        return {TAP_TEMPO_CTRL_LAST_BEAT, TAP_TEMPO_CTRL_NEXT_BEAT, TAP_TEMPO_CTRL_TRI};
     }
 
     void BPMSync::tick() {
         next_beat_sig_(Value(predictNextBeat()));
         last_beat_sig_(Value(predictLastBeat()));
+        tri_sig_(Value(predictLastBeat()));
     }
 }
