@@ -17,6 +17,8 @@ namespace vidrevolt {
     }
     */
 
+    Video::Video(const std::string& path, Playback pb) : Video(Address(""), path, false, pb) {}
+
     Video::Video(const Address& addr, const std::string& path, bool auto_reset, Playback pb) :
         Media(addr), path_(path), buffer_size_(30), reverse_(pb == Reverse),
         auto_reset_(auto_reset), playback_(pb) {}
@@ -42,12 +44,20 @@ namespace vidrevolt {
     }
 
     std::optional<cv::Mat> Video::nextFrame() {
+        return nextFrame(false);
+    }
+
+    std::optional<cv::Mat> Video::nextFrame(bool force) {
         setInUse(true);
+
+        if (finished_) {
+            return {};
+        }
 
         std::chrono::high_resolution_clock::time_point now =
             std::chrono::high_resolution_clock::now();
 
-        if (last_update_.has_value()) {
+        if (!force && last_update_.has_value()) {
             std::chrono::duration<float> duration = now - last_update_.value();
 
             float frame_dur = 1 / static_cast<float>(fps_);
@@ -62,6 +72,8 @@ namespace vidrevolt {
 
         std::lock_guard guard(buffer_mutex_);
 
+        // TODO: Update this to throw instead of printing out a warning and handle that
+        // downstream.
         if (cursor_ < 0 || static_cast<size_t>(cursor_) >= buffer_.size()) {
             std::cerr << "WARNING: Video buffer empty! Try a video with a lower frame rate. Path:" <<
                 path_ << std::endl;
@@ -95,6 +107,10 @@ namespace vidrevolt {
 
         last_update_ = std::chrono::high_resolution_clock::now();
 
+        if (frame.first == last_frame_ && playback_ == Once) {
+            finished_ = true;
+        }
+
         return frame.second;
     }
 
@@ -103,12 +119,7 @@ namespace vidrevolt {
         cv::Mat frame;
         if (vid_->read(frame)) {
             cv::cvtColor(frame, frame, cv::COLOR_BGR2RGB);
-            // Flip if capture device
-            if (path_ == "") {
-                flip(frame, frame, -1);
-            } else {
-                flip(frame, frame, 0);
-            }
+            flip(frame, frame, 0);
         } else {
             last_frame_ = pos - 1;
 
@@ -226,6 +237,10 @@ namespace vidrevolt {
                 cursor_ -= diff;
             }
         }
+    }
+
+    double Video::getFPS() const {
+        return fps_;
     }
 
     void Video::start() {

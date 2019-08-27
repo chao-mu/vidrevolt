@@ -23,17 +23,20 @@ namespace vidrevolt {
             enum Playback {
                 Mirror,
                 Forward,
-                Reverse
+                Reverse,
+                Once
             };
 
             ~Video();
             // Video(int device, double fps=0, cv::Size size=cv::Size(0,0));
             Video(const Address& addr, const std::string& path, bool auto_reset, Playback pb=Forward);
+            Video(const std::string& path, Playback pb);
 
             void start();
             void stop();
 
             virtual std::optional<cv::Mat> nextFrame() override;
+            std::optional<cv::Mat> nextFrame(bool force);
 
             virtual Resolution getResolution() override;
 
@@ -47,6 +50,8 @@ namespace vidrevolt {
 
             virtual std::string getPath() const override;
 
+            double getFPS() const;
+
         private:
             void next();
             void seek(int pos);
@@ -58,7 +63,8 @@ namespace vidrevolt {
             size_t buffer_size_;
             std::atomic<bool> reverse_ = false;
             bool auto_reset_;
-            Playback playback_;
+            const Playback playback_;
+            bool finished_ = false;
 
             std::optional<std::chrono::high_resolution_clock::time_point> last_update_;
             std::mutex buffer_mutex_;

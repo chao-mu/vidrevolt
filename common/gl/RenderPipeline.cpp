@@ -117,28 +117,29 @@ namespace vidrevolt {
                         }
                     }
 
-                    program->setUniform("firstPass", [this](GLint& id) {
-                        glUniform1i(id, static_cast<int>(first_pass_));
-                    });
-
-                    program->setUniform("iTime", [](GLint& id) {
-                        glUniform1f(id, static_cast<float>(glfwGetTime()));
-                    });
-
-                    program->setUniform("iResolution", [this](GLint& id) {
-                        glUniform2f(
-                            id,
-                            static_cast<float>(resolution_.width),
-                            static_cast<float>(resolution_.height)
-                        );
-                    });
-
-                    program->setUniform("lastOut", [this, &slot](GLint& id) {
-                        getLastOutTex()->bind(slot);
-                        glUniform1i(id, slot);
-                        slot++;
-                    });
                 }
+
+                program->setUniform("firstPass", [this](GLint& id) {
+                    glUniform1i(id, static_cast<int>(first_pass_));
+                });
+
+                program->setUniform("iTime", [](GLint& id) {
+                    glUniform1f(id, static_cast<float>(glfwGetTime()));
+                });
+
+                program->setUniform("iResolution", [this](GLint& id) {
+                    glUniform2f(
+                        id,
+                        static_cast<float>(resolution_.width),
+                        static_cast<float>(resolution_.height)
+                    );
+                });
+
+                program->setUniform("lastOut", [this, &slot](GLint& id) {
+                    getLastOutTex()->bind(slot);
+                    glUniform1i(id, slot);
+                    slot++;
+                });
 
                 glViewport(0,0, resolution_.width, resolution_.height);
 
