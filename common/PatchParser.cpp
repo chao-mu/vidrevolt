@@ -58,8 +58,8 @@ namespace vidrevolt {
         const YAML::Node patch = YAML::LoadFile(path_);
 
         parseMedia(patch);
-        parseVars(patch);
         parseGroups(patch);
+        parseVars(patch);
         parseControllers(patch);
         parseModules(patch);
         parseCommands(patch);

@@ -53,6 +53,7 @@ namespace vidrevolt {
                     out vec2 texcoordBL;
                     out vec2 texcoordBR;
                     out vec2 uv;
+                    out vec2 max_uv;
 
                     uniform vec2 iResolution;
 
@@ -83,6 +84,7 @@ namespace vidrevolt {
                         vec2 uv_in = st - .5;
                         uv_in.x *= iResolution.x / iResolution.y;
                         uv = uv_in;
+                        max_uv = vec2(iResolution.x / iResolution.y, 1);
 
                         tc = st;
                         texcoord = st;

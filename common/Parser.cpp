@@ -41,6 +41,7 @@ namespace vidrevolt {
         std::vector<std::string> tokens;
         std::string token;
         std::istringstream iss(str);
+
         while (std::getline(iss, token, '.')) {
             tokens.push_back(token);
         }
@@ -50,9 +51,10 @@ namespace vidrevolt {
             if (tokens.size() > 1) {
                 std::regex nonswiz_re("[^xyzwrgb]");
                 if (!std::regex_search(tokens.back(), nonswiz_re)) {
-                    Address no_swiz_addr = Address(tokens).withoutBack();
+                    Address addr = Address(tokens);
+                    Address no_swiz_addr = addr.withoutBack();
 
-                    if (store_->getMedia(no_swiz_addr) != nullptr) {
+                    if (store_->getGroup(no_swiz_addr) == nullptr) {
                         swiz = tokens.back();
                         tokens.pop_back();
                     }
