@@ -52,10 +52,10 @@ namespace vidrevolt {
 
             void connectCommand(std::shared_ptr<cmd::Command> c);
 
-            std::shared_ptr<Image> loadImage(const std::string& name, const std::string& path, const YAML::Node& settings) const;
-            std::shared_ptr<Video> loadVideo(const std::string& name, const std::string& path, const YAML::Node& settings) const;
-            std::shared_ptr<midi::Device> loadMidiDevice(const std::string& name, const YAML::Node& settings) const;
-            std::shared_ptr<cmd::Command> loadCommand(int num, const std::string& name, Trigger trigger, std::vector<AddressOrValue> args);
+            void addImage(const std::string& name, const std::string& path, const YAML::Node& settings);
+            void addVideo(const std::string& name, const std::string& path, const YAML::Node& settings);
+            void addMidiDevice(const std::string& name, const YAML::Node& settings);
+            void addCommand(int num, const std::string& name, Trigger trigger, std::vector<AddressOrValue> args);
 
             const std::string path_;
             std::map<std::string, std::shared_ptr<Video>> videos_;

@@ -89,7 +89,7 @@ namespace vidrevolt {
         return commands_;
     }
 
-    std::shared_ptr<cmd::Command> PatchParser::loadCommand(int num, const std::string& name, Trigger trigger, std::vector<AddressOrValue> args) {
+    void PatchParser::addCommand(int num, const std::string& name, Trigger trigger, std::vector<AddressOrValue> args) {
         std::shared_ptr<cmd::Command> command;
         if (name == "reverse") {
             command = std::make_shared<cmd::Reverse>(name, trigger, args);
@@ -114,7 +114,7 @@ namespace vidrevolt {
 
         command->validate();
 
-        return command;
+        connectCommand(command);
     }
 
     void PatchParser::parseVars(const YAML::Node& patch) {
@@ -184,9 +184,7 @@ namespace vidrevolt {
                         }
                     }
 
-                    std::shared_ptr<cmd::Command> c = loadCommand(i, command_name, trigger, args);
-                    connectCommand(c);
-                    commands_.push_back(c);
+                    addCommand(i, command_name, trigger, args);
                 }
             } else {
                 Trigger trigger = requireTrigger(
@@ -202,9 +200,7 @@ namespace vidrevolt {
                     }
                 }
 
-                std::shared_ptr<cmd::Command> c = loadCommand(i, command_name, trigger, args);
-                connectCommand(c);
-                commands_.push_back(c);
+                addCommand(i, command_name, trigger, args);
             }
 
         }
@@ -270,18 +266,18 @@ namespace vidrevolt {
 
             const std::string type = settings[KEY_TYPE].as<std::string>();
             if (type == CONTROLLER_TYPE_MIDI) {
-                controllers_[name] = loadMidiDevice(name, settings);
+                addMidiDevice(name, settings);
             } else if (type == CONTROLLER_TYPE_KEYBOARD) {
                 controllers_[name] = std::make_shared<Keyboard>();
+                store_->set(Address(name), controllers_.at(name));
             } else if (type == CONTROLLER_TYPE_BPM_SYNC) {
                 auto sync = std::make_shared<BPMSync>();
                 controllers_[name] = sync;
                 bpm_syncs_[Address(name)] = sync;
+                store_->set(Address(name), controllers_.at(name));
             } else {
                 throw std::runtime_error("unsupported controller type " + type);
             }
-
-            store_->set(Address(name), controllers_.at(name));
         }
     }
 
@@ -318,11 +314,9 @@ namespace vidrevolt {
             }
 
             if (type == MEDIA_TYPE_IMAGE) {
-                images_[name] = loadImage(name, path, settings);
-                store_->set(addr, images_[name]);
+                addImage(name, path, settings);
             } else if (type == MEDIA_TYPE_VIDEO) {
-                videos_[name] = loadVideo(name, path, settings);
-                store_->set(addr, videos_[name]);
+                addVideo(name, path, settings);
             } else {
                 throw std::runtime_error("unsupported media type " + type);
             }
@@ -442,7 +436,7 @@ namespace vidrevolt {
         return res;
     }
 
-    std::shared_ptr<midi::Device> PatchParser::loadMidiDevice(const std::string& name, const YAML::Node& settings) const {
+    void PatchParser::addMidiDevice(const std::string& name, const YAML::Node& settings) {
         if (!settings[KEY_PATH]) {
             throw std::runtime_error("controller '" + name + "' is missing path");
         }
@@ -452,10 +446,12 @@ namespace vidrevolt {
         auto dev = std::make_shared<midi::Device>(path);
         dev->start();
 
-        return dev;
+        std::shared_ptr<Controller> ctrl = dev;
+
+        store_->set(Address(name), ctrl);
     }
 
-    std::shared_ptr<Video> PatchParser::loadVideo(const std::string& name, const std::string& path, const YAML::Node& settings) const {
+    void PatchParser::addVideo(const std::string& name, const std::string& path, const YAML::Node& settings) {
         bool auto_reset = false;
         if (settings.IsMap() && settings[KEY_RESET]) {
             auto_reset = settings[KEY_RESET].as<bool>();
@@ -475,14 +471,17 @@ namespace vidrevolt {
 
         vid->start();
 
-        return vid;
+        store_->set(Address(name), vid);
+
+        videos_[name] = vid;
     }
 
-    std::shared_ptr<Image> PatchParser::loadImage(const std::string& name, const std::string& path, const YAML::Node& /*settings*/) const {
+    void PatchParser::addImage(const std::string& name, const std::string& path, const YAML::Node& /*settings*/) {
         auto image = std::make_shared<vidrevolt::Image>(Address(name), path);
 
         image->load();
+        store_->set(Address(name), image);
 
-        return image;
+        images_[name] = image;
     }
 }

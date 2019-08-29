@@ -208,7 +208,7 @@ namespace vidrevolt {
         return nullptr;
     }
 
-    void ValueStore::set(Address alias, Address target) {
+    void ValueStore::set(const Address& alias, Address target) {
         std::lock_guard<std::mutex> guard(aliases_mutex_);
         aliases_[alias] = target;
     }

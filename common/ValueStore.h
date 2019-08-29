@@ -35,7 +35,7 @@ namespace vidrevolt {
             void set(const Address& addr, std::shared_ptr<Video> v);
             void set(const Address& addr, std::shared_ptr<Image> t);
             void set(const Address& addr, std::shared_ptr<Controller> c);
-            void set(Address alias, Address target);
+            void set(const Address& alias, Address target);
             void setGroupMember(const Address& addr, AddressOrValue aov);
 
             void setIsMedia(Address addr, bool t);
