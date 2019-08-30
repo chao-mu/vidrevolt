@@ -1,5 +1,5 @@
-#ifndef VIDREVOLT_GL_RENDERPIPELINE_H_
-#define VIDREVOLT_GL_RENDERPIPELINE_H_
+#ifndef VIDREVOLT_GL_PATCHRENDERER_H_
+#define VIDREVOLT_GL_PATCHRENDERER_H_
 
 // STL
 #include <memory>
@@ -13,18 +13,15 @@
 
 // Ours
 #include "../Media.h"
-#include "../ValueStore.h"
 #include "../Module.h"
 #include "../Resolution.h"
+#include "../Patch.h"
 
 namespace vidrevolt {
     namespace gl {
-        class RenderPipeline {
+        class PatchRenderer {
             public:
-                RenderPipeline(
-                        const Resolution& resolution,
-                        std::shared_ptr<ValueStore> store,
-                        std::vector<std::shared_ptr<Module>> steps);
+                PatchRenderer(std::shared_ptr<Patch> patch);
 
                 std::shared_ptr<Texture> getLastOutTex();
                 GLuint getFBO();
@@ -35,17 +32,15 @@ namespace vidrevolt {
 
             private:
                 std::shared_ptr<RenderOut> getLast();
-                std::shared_ptr<Texture> getReadableTexture(const Address& addr);
 
-                const Resolution resolution_;
-                std::shared_ptr<ValueStore> store_;
                 std::vector<std::shared_ptr<Module>> modules_;
 
-                std::map<Address, std::shared_ptr<Texture>> textures_;
-                std::map<Address, std::shared_ptr<Media>> media_;
-                std::map<Address, std::shared_ptr<RenderOut>> render_outs_;
+                std::map<std::string, std::shared_ptr<Texture>> textures_;
+                std::map<std::string, std::shared_ptr<RenderOut>> render_outs_;
                 std::vector<module::UniformNeeds> uniform_needs_;
                 std::vector<std::shared_ptr<ShaderProgram>> programs_;
+                std::shared_ptr<Patch> patch_;
+                const Resolution resolution_;
 
                 bool first_pass_ = true;
         };

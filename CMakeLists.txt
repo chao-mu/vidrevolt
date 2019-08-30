@@ -4,6 +4,8 @@ project (vidrevolt-global)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -Wextra -Werror -Wall -pedantic-errors -Wconversion")
 #set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
@@ -13,4 +15,4 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 add_subdirectory(common)
 add_subdirectory(vidrevolt)
-add_subdirectory(vidrevolt-pre)
+#add_subdirectory(vidrevolt-pre)

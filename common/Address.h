@@ -13,8 +13,12 @@ namespace vidrevolt {
             template<class ...Ts> Address(Ts... fields) : fields_{fields...} {}
             //template<class ...Ts> Address(Ts... fields, const std::string& last) : fields_{fields..., last} {}
 
+            size_t getDepth() const;
+
             Address withoutBack() const;
             Address withoutFront() const;
+
+            Address withHead(const std::string head) const;
 
             std::string getFront() const;
             std::string getBack() const;

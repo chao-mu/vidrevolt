@@ -8,7 +8,7 @@
 // Ours
 #include "ShaderProgram.h"
 #include "../AddressOrValue.h"
-#include "../ValueStore.h"
+#include "../Patch.h"
 #include "../Module.h"
 
 namespace vidrevolt {
@@ -21,11 +21,11 @@ namespace vidrevolt {
             std::pair<std::shared_ptr<ShaderProgram>, UniformNeeds> compile(
                    const std::string path,
                    std::map<std::string, Module::Param> params,
-                   std::shared_ptr<ValueStore> store);
+                   std::shared_ptr<Patch> patch);
 
-            std::pair<std::string, UniformNeeds> readVertShader(const std::map<std::string, Module::Param>& params, std::shared_ptr<ValueStore> store);
+            std::pair<std::string, UniformNeeds> readVertShader(const std::map<std::string, Module::Param>& params, std::shared_ptr<Patch> patch);
 
-            std::pair<std::string, UniformNeeds> readFragShader(const std::string path, std::map<std::string, Module::Param> params, std::shared_ptr<ValueStore> store);
+            std::pair<std::string, UniformNeeds> readFragShader(const std::string path, std::map<std::string, Module::Param> params, std::shared_ptr<Patch> patch);
         }
     }
 }

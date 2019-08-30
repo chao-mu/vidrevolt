@@ -31,7 +31,6 @@ namespace vidrevolt {
                 void start();
                 void update();
 
-                virtual void connect(const std::string& control_name, std::function<void(Value)> f) override;
                 virtual std::vector<std::string> getControlNames() const override;
 
             private:
@@ -47,6 +46,7 @@ namespace vidrevolt {
                 std::map<std::string, std::shared_ptr<Control>> controls_;
                 std::thread thread_;
                 std::atomic<bool> running_;
+                std::vector<std::string> control_names_;
         };
     }
 }

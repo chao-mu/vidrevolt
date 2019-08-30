@@ -2,17 +2,13 @@
 #define FRAG_CMD_Rotate_H_
 
 // Ours
+#include "Address.h"
 #include "Command.h"
-#include "../Video.h"
 
 namespace vidrevolt {
     namespace cmd {
-        class Rotate : public Command {
-            public:
-                using Command::Command;
-
-                virtual void run(std::shared_ptr<ValueStore> store) const override;
-                virtual void validate() const override;
+        struct Rotate : public Command {
+            Address target_group;
         };
     }
 }

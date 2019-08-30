@@ -1,4 +1,5 @@
-add_library(common Resolution.cpp BPMSync.cpp cmd/TapTempo.cpp gl/module.cpp gl/RenderOut.cpp ValueStore.cpp Keyboard.cpp PatchParser.cpp Parser.cpp AddressOrValue.cpp Video.cpp midi/Device.cpp midi/Message.cpp midi/Control.cpp Image.cpp Value.cpp Address.cpp MathUtil.cpp gl/Texture.cpp gl/GLUtil.cpp gl/ShaderProgram.cpp gl/RenderPipeline.cpp gl/IndexBuffer.cpp gl/VertexArray.cpp gl/VertexBuffer.cpp Group.cpp cmd/OverwriteGroup.cpp cmd/Command.cpp cmd/Rotate.cpp cmd/Reverse.cpp cmd/OverwriteVar.cpp Media.cpp Controller.cpp Module.cpp fileutil.cpp)
+# Generate with: cd common; find -name "*.cpp" | xargs
+add_library(common ./Keyboard.cpp ./BPMSync.cpp ./AddressOrValue.cpp ./Video.cpp ./midi/Device.cpp ./midi/Message.cpp ./midi/Control.cpp ./Image.cpp ./Value.cpp ./Address.cpp ./PatchBuilder.cpp ./MathUtil.cpp ./Patch.cpp ./gl/Texture.cpp ./gl/GLUtil.cpp ./gl/ShaderProgram.cpp ./gl/RenderOut.cpp ./gl/IndexBuffer.cpp ./gl/PatchRenderer.cpp ./gl/VertexArray.cpp ./gl/VertexBuffer.cpp ./gl/module.cpp ./KeyboardManager.cpp ./Group.cpp ./cmd/OverwriteGroup.cpp ./cmd/Command.cpp ./cmd/TapTempo.cpp ./cmd/Rotate.cpp ./cmd/Reverse.cpp ./cmd/OverwriteVar.cpp ./Media.cpp ./Resolution.cpp ./Controller.cpp ./Module.cpp ./fileutil.cpp) 
 
 target_include_directories(common PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 

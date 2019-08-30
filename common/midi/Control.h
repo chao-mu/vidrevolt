@@ -5,9 +5,6 @@
 #include <string>
 #include <functional>
 
-// Boost
-#include <boost/signals2.hpp>
-
 // Ours
 #include "../Value.h"
 
@@ -21,8 +18,6 @@ namespace vidrevolt {
 
         struct Control {
             bool isPressed();
-
-            boost::signals2::signal<void(Value)> change;
 
             std::string name = "";
             ControlType type = CONTROL_TYPE_UNKNOWN;

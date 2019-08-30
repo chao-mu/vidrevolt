@@ -15,12 +15,12 @@ namespace vidrevolt {
 }
 
 #endif
-" >> src/$name.h
+" >> common/$name.h
 
 echo "#include \"$name.h\"
 
 namespace vidrevolt {
 
 }
-" >> src/$name.cpp
+" >> common/$name.cpp
 

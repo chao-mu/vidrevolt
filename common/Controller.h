@@ -5,6 +5,11 @@
 #include <vector>
 #include <string>
 #include <functional>
+#include <map>
+#include <mutex>
+
+// Boost
+#include <boost/signals2.hpp>
 
 // Ours
 #include "Value.h"
@@ -14,10 +19,23 @@ namespace vidrevolt {
         public:
             virtual ~Controller() = default;
 
-            virtual void connect(const std::string& control_name, std::function<void(Value)> f) = 0;
             virtual std::vector<std::string> getControlNames() const = 0;
 
-            virtual void tick();
+            virtual void beforePoll();
+
+            void poll();
+            void connect(const std::string& control_name, std::function<void(Value)> f);
+            Value getValue(const std::string& control_name) const;
+
+        protected:
+            void addValue(const std::string& key, Value v);
+
+        private:
+            std::map<std::string, boost::signals2::signal<void(Value)>> signals_;
+            std::map<std::string, Value> values_;
+
+            std::mutex pending_values_mutex_;
+            std::vector<std::pair<std::string, Value>> pending_values_;
     };
 }
 

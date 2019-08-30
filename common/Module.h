@@ -3,12 +3,13 @@
 
 // STL
 #include <string>
+#include <map>
 
 // Ours
 #include "AddressOrValue.h"
 #include "Address.h"
 #include "Value.h"
-#include "ValueStore.h"
+#include "Resolution.h"
 
 namespace vidrevolt {
     class Module {
@@ -27,9 +28,9 @@ namespace vidrevolt {
 
             void setParam(const std::string& input, Param src);
 
-            const std::string& getOutput() const;
+            std::string getOutput() const;
 
-            const std::string& getPath() const;
+            std::string getPath() const;
 
             Resolution getResolution();
 

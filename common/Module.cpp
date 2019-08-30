@@ -26,11 +26,11 @@ namespace vidrevolt {
         params_[name] = p;
     }
 
-    const std::string& Module::getOutput() const {
+    std::string Module::getOutput() const {
         return output_;
     }
 
-    const std::string& Module::getPath() const {
+    std::string Module::getPath() const {
         return path_;
     }
 }

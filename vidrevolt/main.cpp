@@ -1,6 +1,6 @@
 // STL
 #include <cxxabi.h>
-#include <stdio.h>
+#include <cstdio>
 #include <chrono>
 #include <ctime>
 #include <iomanip>
@@ -24,18 +24,18 @@
 
 // Ours
 #include "Keyboard.h"
+#include "KeyboardManager.h"
 #include "MathUtil.h"
-#include "PatchParser.h"
+#include "PatchBuilder.h"
 #include "debug.h"
 #include "gl/GLUtil.h"
 #include "gl/IndexBuffer.h"
-#include "gl/RenderPipeline.h"
+#include "gl/PatchRenderer.h"
 #include "gl/Texture.h"
 #include "gl/VertexArray.h"
 #include "gl/VertexBuffer.h"
 #include "Resolution.h"
 #include "Value.h"
-#include "ValueStore.h"
 #include "Controller.h"
 
 // GLFW error callback
@@ -56,7 +56,6 @@ void onOpenGLDebug(
     std::cout << "OpenGL Debug: " << msg << std::endl;
 }
 
-
 // GLFW window resizing callback
 void onWindowSize(GLFWwindow* /* window */, int width, int height) {
     // Resize the view port when a window resize is requested
@@ -73,7 +72,6 @@ int main(int argc, const char** argv) {
     TCLAP::ValueArg<int> height_arg("", "height", "window height (width will be calculated automatically)", false, 720, "int", cmd);
     TCLAP::ValueArg<double> fps_arg("", "fps", "FPS to aim for", false, 120, "float", cmd);
     TCLAP::SwitchArg debug_timer_arg("", "debug-timer", "debug time between frames", cmd);
-    TCLAP::SwitchArg debug_store_arg("", "debug-store", "print out the value store", cmd);
     TCLAP::SwitchArg debug_opengl("", "debug-opengl", "print out OpenGL debugging info", cmd);
     TCLAP::SwitchArg full_arg("", "full", "maximized, no titlebar", cmd);
 
@@ -118,9 +116,11 @@ int main(int argc, const char** argv) {
     }
     */
 
-    vidrevolt::PatchParser parser(patch_arg.getValue());
-    const vidrevolt::Resolution resolution = parser.getResolution();
+    vidrevolt::PatchBuilder builder;
+    builder.build(patch_arg.getValue());
+    std::shared_ptr<vidrevolt::Patch> patch = builder.getPatch();
 
+    const vidrevolt::Resolution resolution = patch->getResolution();
 
     GLFWmonitor* monitor = nullptr;
     if (full_arg.getValue()) {
@@ -145,7 +145,7 @@ int main(int argc, const char** argv) {
     glfwSetWindowSizeCallback(window, onWindowSize);
 
     // Set key press callback
-    glfwSetKeyCallback(window, vidrevolt::Keyboard::onKey);
+    glfwSetKeyCallback(window, vidrevolt::KeyboardManager::onKey);
 
     // Make the context of the specified window current for our current thread
     glfwMakeContextCurrent(window);
@@ -188,42 +188,19 @@ int main(int argc, const char** argv) {
     GLCall(glEnableVertexAttribArray(0));
     GLCall(glBindBuffer(GL_ARRAY_BUFFER, 0));
 
-    // Load all the goodies
-    parser.parse();
-
-    std::vector<std::shared_ptr<vidrevolt::Module>> modules = parser.getModules();
-    if (modules.empty()) {
-        std::cerr << "No modules specified. Nothing to do." << std::endl;
-        return 1;
-    }
-
-    std::map<std::string, std::shared_ptr<vidrevolt::Controller>> controllers = parser.getControllers();
-
-    std::shared_ptr<vidrevolt::ValueStore> store = parser.getValueStore();
-    auto pipeline = std::make_shared<vidrevolt::gl::RenderPipeline>(resolution, store, modules);
-    pipeline->load();
+    auto renderer = std::make_shared<vidrevolt::gl::PatchRenderer>(patch);
+    renderer->load();
 
     if (!sound_path.empty()) {
         music.play();
     }
 
-    // Our run loop
-    DEBUG_TIME_DECLARE(render)
-    DEBUG_TIME_DECLARE(loop)
-    DEBUG_TIME_DECLARE(draw)
-
-    std::string store_str;
-    if (debug_store_arg.getValue()) {
-        store_str = store->str();
-        std::cout << store_str << std::endl;
-    }
-
     // Keyboard mappings
-    vidrevolt::Keyboard keyboard;
+    std::shared_ptr<vidrevolt::Keyboard> keyboard = vidrevolt::KeyboardManager::makeKeyboard();
 
     // Screenshot key
     std::string out_path = img_out_arg.getValue();
-    keyboard.connect("p", [&out_path, &pipeline](vidrevolt::Value v) {
+    keyboard->connect("p", [&out_path, &renderer](vidrevolt::Value v) {
         // On key release
         if (v.getBool()) {
             return;
@@ -240,13 +217,13 @@ int main(int argc, const char** argv) {
             dest = s.str();
         }
 
-        pipeline->getLastOutTex()->save(dest);
+        renderer->getLastOutTex()->save(dest);
 
         std::cout << "Screenshot saved at " << dest << std::endl;
     });
 
     // Exit key
-    keyboard.connect("escape", [&window](vidrevolt::Value v) {
+    keyboard->connect("escape", [&window](vidrevolt::Value v) {
         // On key release
         if (v.getBool()) {
             return;
@@ -255,6 +232,12 @@ int main(int argc, const char** argv) {
         GLCall(glfwSetWindowShouldClose(window, GLFW_TRUE));
     });
 
+    // Our run loop
+    DEBUG_TIME_DECLARE(render)
+    DEBUG_TIME_DECLARE(loop)
+    DEBUG_TIME_DECLARE(draw)
+    DEBUG_TIME_DECLARE(event_poll)
+
     while (!glfwWindowShouldClose(window)) {
         //std::chrono::time_point<std::chrono::high_resolution_clock> fps_timer_start =
         //    std::chrono::high_resolution_clock::now();
@@ -262,12 +245,15 @@ int main(int argc, const char** argv) {
         DEBUG_TIME_START(loop)
         GLCall(glfwPollEvents());
 
-        for (auto& kv : controllers) {
-            kv.second->tick();
+        DEBUG_TIME_START(event_poll)
+        for (const auto& kv : patch->getControllers()) {
+            kv.second->poll();
         }
+        keyboard->poll();
+        DEBUG_TIME_END(event_poll)
 
         DEBUG_TIME_START(render)
-        pipeline->render();
+        renderer->render();
         DEBUG_TIME_END(render)
 
         // Calculate blit settings
@@ -283,8 +269,8 @@ int main(int argc, const char** argv) {
         // Draw to the screen
         DEBUG_TIME_START(draw)
         glDrawBuffer(GL_BACK);
-        glBindFramebuffer(GL_READ_FRAMEBUFFER, pipeline->getFBO());
-        glReadBuffer(pipeline->getReadableBuf());
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, renderer->getFBO());
+        glReadBuffer(renderer->getReadableBuf());
         glViewport(0,0, win_width, win_height);
         glBlitFramebuffer(
             0,0, resolution.width, resolution.height,
@@ -309,15 +295,6 @@ int main(int argc, const char** argv) {
             //std::this_thread::sleep_for(std::chrono::duration<double, std::milli>(remainder));
         }
         */
-
-        if (debug_store_arg.getValue()) {
-            std::string ss = store->str();
-
-            if (ss != store_str) {
-                std::cout << store_str << std::endl;
-                store_str = ss;
-            }
-        }
 
         DEBUG_TIME_END(loop)
     }

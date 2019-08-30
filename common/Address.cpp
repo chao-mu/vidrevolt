@@ -6,6 +6,10 @@ namespace vidrevolt {
         fields_.push_back(tail);
     }
 
+    size_t Address::getDepth() const {
+        return fields_.size();
+    }
+
     std::string Address::str() const {
         std::string str;
 
@@ -38,6 +42,12 @@ namespace vidrevolt {
         }
 
         return Address(std::vector(fields_.cbegin() + 1, fields_.cend()));
+    }
+
+    Address Address::withHead(const std::string head) const {
+        std::vector<std::string> fields(fields_.cbegin(), fields_.cend());
+        fields.insert(fields.begin(), head);
+        return Address(fields);
     }
 
     std::string Address::getSwiz() const {

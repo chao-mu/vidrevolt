@@ -7,9 +7,6 @@
 #include <chrono>
 #include <atomic>
 
-// Boost
-#include <boost/signals2.hpp>
-
 // Ours
 #include "Controller.h"
 
@@ -21,10 +18,9 @@ namespace vidrevolt {
             float predictLastBeat() const;
             float predictTri() const;
 
-            virtual void connect(const std::string& control_name, std::function<void(Value)> f) override;
             virtual std::vector<std::string> getControlNames() const override;
 
-            virtual void tick() override;
+            virtual void beforePoll() override;
 
         private:
             void reset();
@@ -38,10 +34,6 @@ namespace vidrevolt {
 
             std::chrono::high_resolution_clock::time_point last_tap_;
             mutable std::mutex last_tap_mutex_;
-
-            boost::signals2::signal<void(Value)> next_beat_sig_;
-            boost::signals2::signal<void(Value)> last_beat_sig_;
-            boost::signals2::signal<void(Value)> tri_sig_;
     };
 }
 

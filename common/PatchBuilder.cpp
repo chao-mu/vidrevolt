@@ -1,22 +1,22 @@
-#include "PatchParser.h"
-
-// STL
-#include <stdexcept>
-#include <optional>
-
-// OpenCV
-#include <opencv2/opencv.hpp>
+#include "PatchBuilder.h"
 
 // Ours
 #include "Video.h"
 #include "Image.h"
+
 #include "cmd/OverwriteGroup.h"
 #include "cmd/OverwriteVar.h"
 #include "cmd/Reverse.h"
 #include "cmd/Rotate.h"
 #include "cmd/TapTempo.h"
+
 #include "fileutil.h"
 #include "Keyboard.h"
+#include "KeyboardManager.h"
+#include "Patch.h"
+#include "Trigger.h"
+#include "midi/Device.h"
+#include "BPMSync.h"
 
 #define KEY_RESET "reset"
 #define KEY_MEMBERS "members"
@@ -52,72 +52,80 @@
 #define KEY_VARS "vars"
 
 namespace vidrevolt {
-    PatchParser::PatchParser(const std::string& path) : Parser(), path_(path) {}
-
-    void PatchParser::parse() {
-        const YAML::Node patch = YAML::LoadFile(path_);
-
-        parseMedia(patch);
-        parseGroups(patch);
-        parseVars(patch);
-        parseControllers(patch);
-        parseModules(patch);
-        parseCommands(patch);
+    std::shared_ptr<Patch> PatchBuilder::getPatch() const {
+        return patch_;
     }
 
-    std::shared_ptr<ValueStore> PatchParser::getValueStore() {
-        return store_;
+    void PatchBuilder::build(const std::string& path) {
+        const YAML::Node patch = YAML::LoadFile(path);
+
+        buildResolution(patch);
+        buildMedia(patch);
+        buildGroups(patch);
+        buildVars(patch);
+        buildControllers(patch);
+        buildModules(patch);
+        buildCommands(patch);
     }
 
-    std::map<std::string, std::shared_ptr<Video>> PatchParser::getVideos() {
-        return videos_;
-    }
-
-    std::map<std::string, std::shared_ptr<Image>> PatchParser::getImages() {
-        return images_;
-    }
-
-    std::map<std::string, std::shared_ptr<Controller>> PatchParser::getControllers() {
-        return controllers_;
-    }
-
-    std::map<std::string, std::shared_ptr<Group>> PatchParser::getGroups() {
-        return groups_;
-    }
-
-    std::vector<std::shared_ptr<cmd::Command>> PatchParser::getCommands() {
-        return commands_;
-    }
-
-    void PatchParser::addCommand(int num, const std::string& name, Trigger trigger, std::vector<AddressOrValue> args) {
-        std::shared_ptr<cmd::Command> command;
+    void PatchBuilder::addCommand(int num, const std::string& name, Trigger trigger, std::vector<AddressOrValue> args) {
+        std::unique_ptr<cmd::Command> c;
+        std::string expects_str = "command #" + std::to_string(num) + " (" + name + ") expects ";
         if (name == "reverse") {
-            command = std::make_shared<cmd::Reverse>(name, trigger, args);
-        } else if (name == "overwrite-var") {
-            command = std::make_shared<cmd::OverwriteVar>(name, trigger, args);
-        } else if (name == "overwrite-group") {
-            command = std::make_shared<cmd::OverwriteGroup>(name, trigger, args);
-        } else if (name == "rotate") {
-            command = std::make_shared<cmd::Rotate>(name, trigger, args);
-        } else if (name == "tap-tempo") {
-            if (args.size() != 1 || !isAddress(args.at(0)) || bpm_syncs_.count(std::get<Address>(args.at(0))) <= 0) {
-                throw std::runtime_error("command #" + std::to_string(num) + " (" + name + ") expects 1 argument; a bpm-sync");
+            if (args.size() != 1 || !std::holds_alternative<Address>(args.at(0))) {
+                throw std::runtime_error(expects_str + " 1 argument; an address to a video");
             }
 
-            std::shared_ptr<BPMSync> sync = bpm_syncs_.at(std::get<Address>(args.at(0)));
-            command = std::make_shared<cmd::TapTempo>(name, trigger, args, sync);
+            auto rev = std::make_unique<cmd::Reverse>();
+            rev->target = std::get<Address>(args.at(0));;
+
+            c = std::move(rev);
+        } else if (name == "overwrite-var") {
+            if (args.size() != 2 || !std::holds_alternative<Address>(args.at(0))) {
+                throw std::runtime_error(expects_str + " 2 arguments; the address of a variable and the address or value to set it to");
+            }
+
+            auto over = std::make_unique<cmd::OverwriteVar>();
+            over->target = std::get<Address>(args.at(0));;
+            over->replacement = args.at(1);
+
+            c = std::move(over);
+        } else if (name == "overwrite-group") {
+            if (args.size() != 2 || !std::holds_alternative<Address>(args.at(0))) {
+                throw std::runtime_error(expects_str + " 2 arguments; the address of a group member and the address or value to set it to");
+            }
+
+            auto over = std::make_unique<cmd::OverwriteGroup>();
+            over->target = std::get<Address>(args.at(0));;
+            over->replacement = args.at(1);
+
+            c = std::move(over);
+        } else if (name == "rotate") {
+            if (args.size() != 1 || !std::holds_alternative<Address>(args.at(0))) {
+                throw std::runtime_error(expects_str + " 1 argument; an address to a group");
+            }
+
+            auto rot = std::make_unique<cmd::Reverse>();
+            rot->target = std::get<Address>(args.at(0));;
+
+            c = std::move(rot);
+        } else if (name == "tap-tempo") {
+            if (args.size() != 1 || !isAddress(args.at(0))) {
+                throw std::runtime_error(expects_str + "1 argument; a bpm-sync");
+            }
+            auto tap = std::make_unique<cmd::Reverse>();
+            tap->target = std::get<Address>(args.at(0));
+            c = std::move(tap);
         } else {
             throw std::runtime_error(
                     "command #" + std::to_string(num) + " has unrecognized command name '" +
                     name + "'");
         }
 
-        command->validate();
-
-        connectCommand(command);
+        patch_->addCommand(trigger, std::move(c));
     }
 
-    void PatchParser::parseVars(const YAML::Node& patch) {
+    void PatchBuilder::buildVars(const YAML::Node& patch) {
         if (!patch[KEY_VARS]) {
             return;
         }
@@ -129,34 +137,11 @@ namespace vidrevolt {
             Address addr = readAddress(addr_n, false);
             AddressOrValue aov = readAddressOrValue(value_n, true);
 
-            if (isAddress(aov)) {
-                store_->set(addr, std::get<Address>(aov));
-            } else if (isValue(aov)) {
-                store_->set(addr, std::get<Value>(aov));
-            }
+            patch_->setAOV(kv.first.as<std::string>(), readAddressOrValue(kv.second, true));
         }
     }
 
-    void PatchParser::connectCommand(std::shared_ptr<cmd::Command> c) {
-        Trigger trigger = c->getTrigger();
-        std::string dev = trigger.getFront();
-        std::string control = trigger.getBack();
-
-        if (controllers_.count(dev) == 0) {
-            throw std::runtime_error("Controller '" + dev + "' not found");
-        }
-
-        std::shared_ptr<ValueStore> store = store_;
-        // TODO: Why are we doing the lookup when we're given the value?
-        controllers_.at(dev)->connect(control, [c, store](Value /*v*/) {
-            std::optional<Value> v_opt = store->getValue(c->getTrigger());
-            if (v_opt.has_value() && v_opt.value().getBool()) {
-                c->run(store);
-            }
-        });
-    }
-
-    void PatchParser::parseCommands(const YAML::Node& patch) {
+    void PatchBuilder::buildCommands(const YAML::Node& patch) {
         if (!patch[KEY_COMMANDS]) {
             return;
         }
@@ -206,7 +191,7 @@ namespace vidrevolt {
         }
     }
 
-    void PatchParser::parseGroups(const YAML::Node& patch) {
+    void PatchBuilder::buildGroups(const YAML::Node& patch) {
         if (!patch[KEY_GROUPS]) {
             return;
         }
@@ -215,7 +200,7 @@ namespace vidrevolt {
             const std::string& name = kv.first.as<std::string>();
             const YAML::Node& settings = kv.second;
 
-            auto group = std::make_shared<Group>();
+            auto group = std::make_unique<Group>();
 
             if (kv.second.IsSequence()) {
                 for (const auto el : settings) {
@@ -246,12 +231,11 @@ namespace vidrevolt {
                 }
             }
 
-            groups_[kv.first.as<std::string>()] = group;
-            store_->set(Address(name), group);
+            patch_->setGroup(kv.first.as<std::string>(), std::move(group));
         }
     }
 
-    void PatchParser::parseControllers(const YAML::Node& patch) {
+    void PatchBuilder::buildControllers(const YAML::Node& patch) {
         if (!patch[KEY_CONTROLLERS]) {
             return;
         }
@@ -268,20 +252,16 @@ namespace vidrevolt {
             if (type == CONTROLLER_TYPE_MIDI) {
                 addMidiDevice(name, settings);
             } else if (type == CONTROLLER_TYPE_KEYBOARD) {
-                controllers_[name] = std::make_shared<Keyboard>();
-                store_->set(Address(name), controllers_.at(name));
+                patch_->setController(name, KeyboardManager::makeKeyboard());
             } else if (type == CONTROLLER_TYPE_BPM_SYNC) {
-                auto sync = std::make_shared<BPMSync>();
-                controllers_[name] = sync;
-                bpm_syncs_[Address(name)] = sync;
-                store_->set(Address(name), controllers_.at(name));
+                patch_->setController(name, std::make_unique<BPMSync>());
             } else {
                 throw std::runtime_error("unsupported controller type " + type);
             }
         }
     }
 
-    void PatchParser::parseMedia(const YAML::Node& patch) {
+    void PatchBuilder::buildMedia(const YAML::Node& patch) {
         if (!patch[KEY_MEDIAS]) {
             return;
         }
@@ -323,16 +303,16 @@ namespace vidrevolt {
         }
     }
 
-    std::string PatchParser::getBuiltinShader(const std::string& path) {
+    std::string PatchBuilder::getBuiltinShader(const std::string& path) {
         return fileutil::join("shaders", path);
     }
 
-    void PatchParser::parseModules(const YAML::Node& patch) {
+    void PatchBuilder::buildModules(const YAML::Node& patch) {
         if (!patch[KEY_RENDER]) {
             return;
         }
 
-        Resolution res = getResolution();
+        Resolution res = patch_->getResolution();
 
         for (const auto& settings : patch[KEY_RENDER]) {
             if (!settings[KEY_OUTPUT]) {
@@ -346,11 +326,11 @@ namespace vidrevolt {
                 Module::Param param;
                 param.value = addr;
 
-                auto mod = std::make_shared<Module>(output, getBuiltinShader("pass.glsl"), res);
+                auto mod = std::make_unique<Module>(output, getBuiltinShader("pass.glsl"), res);
 
                 mod->setParam("img0", param);
 
-                modules_.push_back(mod);
+                patch_->addModule(std::move(mod));
 
                 continue;
             }
@@ -361,7 +341,7 @@ namespace vidrevolt {
 
             const std::string path = settings[KEY_PATH].as<std::string>();
 
-            auto mod = std::make_shared<Module>(output, path, res);
+            auto mod = std::make_unique<Module>(output, path, res);
 
             if (settings[KEY_INPUTS]) {
                 for (const auto& input_kv : settings[KEY_INPUTS]) {
@@ -392,66 +372,44 @@ namespace vidrevolt {
                 }
             }
 
-            int repeat = 1;
-            if (settings[KEY_REPEAT]) {
-                repeat = settings[KEY_REPEAT].as<int>();
-            }
-
-            for (int i = 0; i < repeat; i++) {
-                modules_.push_back(mod);
-            }
-        }
-
-        for (const auto& mod : modules_) {
-            store_->setIsMedia(Address(mod->getOutput()), true);
+            patch_->addModule(std::move(mod));
         }
     }
 
-    std::vector<std::shared_ptr<Module>> PatchParser::getModules() {
-        return modules_;
-    }
-
-    Resolution PatchParser::getResolution() const {
-        const YAML::Node patch = YAML::LoadFile(path_);
+    void PatchBuilder::buildResolution(const YAML::Node& patch) {
         Resolution res;
 
         if (!patch[KEY_RESOLUTION]) {
             res.width = 1280;
             res.height = 960;
-            return res;
+        } else {
+            const YAML::Node& res_node = patch[KEY_RESOLUTION];
+
+            if (!res_node[KEY_WIDTH] || !res_node[KEY_HEIGHT]) {
+                throw std::runtime_error("resolution section missing width or height");
+            }
+
+            res.width = res_node[KEY_WIDTH].as<int>();
+            res.height = res_node[KEY_HEIGHT].as<int>();
         }
 
-        const YAML::Node& res_node = patch[KEY_RESOLUTION];
-
-        if (!res_node[KEY_WIDTH] || !res_node[KEY_HEIGHT]) {
-            throw std::runtime_error("resolution section missing width or height");
-        }
-
-        res.width = res_node[KEY_WIDTH].as<int>();
-        res.height = res_node[KEY_HEIGHT].as<int>();
-
-        store_->set(Address("resolution"),
-                Value({static_cast<float>(res.width), static_cast<float>(res.height)}));
-
-        return res;
+        patch_->setResolution(res);
     }
 
-    void PatchParser::addMidiDevice(const std::string& name, const YAML::Node& settings) {
+    void PatchBuilder::addMidiDevice(const std::string& name, const YAML::Node& settings) {
         if (!settings[KEY_PATH]) {
             throw std::runtime_error("controller '" + name + "' is missing path");
         }
 
         const std::string path = settings[KEY_PATH].as<std::string>();
 
-        auto dev = std::make_shared<midi::Device>(path);
+        auto dev = std::make_unique<midi::Device>(path);
         dev->start();
 
-        std::shared_ptr<Controller> ctrl = dev;
-
-        store_->set(Address(name), ctrl);
+        patch_->setController(name, std::move(dev));
     }
 
-    void PatchParser::addVideo(const std::string& name, const std::string& path, const YAML::Node& settings) {
+    void PatchBuilder::addVideo(const std::string& name, const std::string& path, const YAML::Node& settings) {
         bool auto_reset = false;
         if (settings.IsMap() && settings[KEY_RESET]) {
             auto_reset = settings[KEY_RESET].as<bool>();
@@ -467,21 +425,114 @@ namespace vidrevolt {
             }
         }
 
-        auto vid = std::make_shared<Video>(Address(name), path, auto_reset, pb);
+        auto vid = std::make_unique<Video>(Address(name), path, auto_reset, pb);
 
         vid->start();
 
-        store_->set(Address(name), vid);
-
-        videos_[name] = vid;
+        patch_->setVideo(name, std::move(vid));
     }
 
-    void PatchParser::addImage(const std::string& name, const std::string& path, const YAML::Node& /*settings*/) {
-        auto image = std::make_shared<vidrevolt::Image>(Address(name), path);
+    void PatchBuilder::addImage(const std::string& name, const std::string& path, const YAML::Node& /*settings*/) {
+        auto image = std::make_unique<vidrevolt::Image>(Address(name), path);
 
         image->load();
-        store_->set(Address(name), image);
+        patch_->setImage(name, std::move(image));
+    }
 
-        images_[name] = image;
+    AddressOrValue PatchBuilder::readAddressOrValue(const YAML::Node& node, bool parse_swiz) {
+        if (node.IsSequence()) {
+            std::vector<float> v = {};
+
+            for (const auto& el : node) {
+                v.push_back(el.as<float>());
+            }
+
+            return Value(v);
+        }
+
+        const std::string str = node.as<std::string>();
+
+        bool b;
+        float f;
+        if (YAML::convert<bool>::decode(node, b) && str != "n" && str != "y") {
+            return Value(b);
+        }
+
+        if (YAML::convert<float>::decode(node, f)) {
+            return Value(f);
+        }
+
+        return readAddress(node, parse_swiz);
+    }
+
+    Address PatchBuilder::readAddress(const YAML::Node& node, bool parse_swiz) {
+        std::string str = node.as<std::string>();
+        std::vector<std::string> tokens;
+        std::string token;
+        std::istringstream iss(str);
+
+        while (std::getline(iss, token, '.')) {
+            tokens.push_back(token);
+        }
+
+        std::string swiz;
+        if (parse_swiz) {
+            if (tokens.size() > 1) {
+                std::regex nonswiz_re("[^xyzwrgb]");
+                if (!std::regex_search(tokens.back(), nonswiz_re)) {
+                    Address addr = Address(tokens);
+                    Address no_swiz_addr = addr.withoutBack();
+
+                    if (!patch_->isGroup(no_swiz_addr)) {
+                        swiz = tokens.back();
+                        tokens.pop_back();
+                    }
+                }
+            }
+        }
+
+        Address addr(tokens);
+        addr.setSwiz(swiz);
+
+        return addr;
+    }
+
+    const YAML::Node PatchBuilder::requireNode(const YAML::Node& parent, const std::string& key, const std::string& err) {
+        if (!parent[key]) {
+            throw std::runtime_error(err);
+        }
+
+        return parent[key];
+    }
+
+
+    Address PatchBuilder::requireAddress(const YAML::Node& parent, const std::string& key, const std::string& err, bool parse_swiz) {
+        return readAddress(requireNode(parent, key, err), parse_swiz);
+    }
+
+    Trigger PatchBuilder::readTrigger(const YAML::Node& node) {
+        /*Trigger trig;
+        if (node.IsSequence()) {
+            for (const auto& addr_node : node) {
+                trig.push_back(readAddress(addr_node, false));
+            }
+        } else {
+            trig.push_back(readAddress(node, false));
+        }
+
+        return trig;
+        */
+        return readAddress(node, false);
+    }
+
+    Trigger PatchBuilder::requireTrigger(
+            const YAML::Node& parent,
+            const std::string& key,
+            const std::string& err) {
+        if (!parent[key]) {
+            throw std::runtime_error(err);
+        }
+
+        return readTrigger(parent[key]);
     }
 }

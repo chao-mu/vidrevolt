@@ -68,6 +68,7 @@ namespace vidrevolt {
                 control->name = name;
 
                 controls_[name] = control;
+                control_names_.push_back(name);
             }
         }
 
@@ -79,24 +80,7 @@ namespace vidrevolt {
         }
 
         std::vector<std::string> Device::getControlNames() const {
-            std::vector<std::string> names;
-            {
-                std::lock_guard<std::mutex> guard(controls_mutex_);
-                for (const auto& kv : controls_) {
-                    names.push_back(kv.first);
-                }
-            }
-
-            return names;
-        }
-
-        void Device::connect(const std::string& control_name, std::function<void(Value)> f) {
-            if (controls_.count(control_name) > 0) {
-                controls_.at(control_name)->change.connect(f);
-            } else {
-                throw std::runtime_error(
-                        "Unknown control name " + control_name + " for midi device " + path_);
-            }
+            return control_names_;
         }
 
         void Device::loop() {
@@ -115,9 +99,9 @@ namespace vidrevolt {
                     }
 
                     {
-                        std::lock_guard<std::mutex> guard(controls_mutex_);
                         for (auto& kv : controls_) {
                             auto control = kv.second;
+                            auto name = kv.first;
                             if (control->function == msg.getFunction() && control->type == type && msg.getChannel() == control->channel) {
                                 float value = msg.getValue();
                                 if (msg.getType() == MESSAGE_TYPE_NOTE_OFF) {
@@ -126,7 +110,7 @@ namespace vidrevolt {
 
                                 value = remap(value, control->low, control->high, 0, 1);
 
-                                control->change(Value(value));
+                                addValue(name, Value(value));
                             }
                         }
                     }

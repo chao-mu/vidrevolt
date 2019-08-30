@@ -17,14 +17,14 @@ namespace vidrevolt {
             std::pair<std::shared_ptr<ShaderProgram>, UniformNeeds> compile(
                    const std::string path,
                    std::map<std::string, Module::Param> params,
-                   std::shared_ptr<ValueStore> store) {
+                   std::shared_ptr<Patch> patch) {
 
                 UniformNeeds uniforms;
 
                 auto program = std::make_shared<gl::ShaderProgram>();
 
-                std::pair<std::string, gl::module::UniformNeeds> vert_shader = readVertShader(params, store);
-                std::pair<std::string, gl::module::UniformNeeds> frag_shader = readFragShader(path, params, store);
+                std::pair<std::string, gl::module::UniformNeeds> vert_shader = readVertShader(params, patch);
+                std::pair<std::string, gl::module::UniformNeeds> frag_shader = readFragShader(path, params, patch);
 
                 uniforms.insert(vert_shader.second.cbegin(), vert_shader.second.cend());
                 uniforms.insert(frag_shader.second.cbegin(), frag_shader.second.cend());
@@ -38,7 +38,7 @@ namespace vidrevolt {
             }
 
 
-            std::pair<std::string, UniformNeeds> readVertShader(const std::map<std::string, Module::Param>& params, std::shared_ptr<ValueStore> store) {
+            std::pair<std::string, UniformNeeds> readVertShader(const std::map<std::string, Module::Param>& params, std::shared_ptr<Patch> patch) {
                 std::string shader = R"V(
                     #version 410
 
@@ -62,7 +62,7 @@ namespace vidrevolt {
 
                 for (const auto& kv : params) {
                     if (!isAddress(kv.second.value) ||
-                            !store->isMedia(std::get<Address>(kv.second.value))) {
+                            !patch->isMedia(std::get<Address>(kv.second.value))) {
                         continue;
                     }
 
@@ -101,7 +101,7 @@ namespace vidrevolt {
                 )V";
 
                 for (const auto& kv : params) {
-                    if (!isAddress(kv.second.value) || !store->isMedia(std::get<Address>(kv.second.value))) {
+                    if (!isAddress(kv.second.value) || !patch->isMedia(std::get<Address>(kv.second.value))) {
                         continue;
                     }
 
@@ -120,7 +120,7 @@ namespace vidrevolt {
                 return std::make_pair(shader, UniformNeeds());
             }
 
-            std::pair<std::string, UniformNeeds> readFragShader(const std::string path, std::map<std::string, Module::Param> params, std::shared_ptr<ValueStore> store) {
+            std::pair<std::string, UniformNeeds> readFragShader(const std::string path, std::map<std::string, Module::Param> params, std::shared_ptr<Patch> patch) {
                 UniformNeeds uniforms;
 
                 std::ifstream ifs(path);
@@ -172,7 +172,7 @@ namespace vidrevolt {
                                 }
                             }
 
-                            bool is_texture = addr_opt.has_value() && store->isMedia(addr_opt.value());
+                            bool is_texture = addr_opt.has_value() && patch->isMedia(addr_opt.value());
                             if (is_texture) {
                                 frag_shader << "uniform sampler2D " << internal_name << ";\n";
                                 frag_shader << "in vec2 " << internal_name_tc << ";\n";
