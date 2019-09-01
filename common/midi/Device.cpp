@@ -11,7 +11,7 @@
 
 namespace vidrevolt {
     namespace midi {
-        Device::Device(const std::string& path) : path_(path), midi_in_(new RtMidiIn()), running_(false) {
+        Device::Device(const std::string& path) : path_(path), midi_in_(std::make_unique<RtMidiIn>()), running_(false) {
         }
 
         Device::~Device() {
@@ -59,15 +59,32 @@ namespace vidrevolt {
                 std::string name = mapping.first.as<std::string>();
                 YAML::Node props = mapping.second;
 
-                std::shared_ptr<Control> control = std::make_shared<Control>();
-                control->channel = (unsigned char) props["channel"].as<int>();
-                control->function = (unsigned char) props["function"].as<int>();
-                control->low = (unsigned char) props["low"].as<int>();
-                control->high = (unsigned char) props["high"].as<int>();
-                control->type = props["type"].as<std::string>() == "button" ? CONTROL_TYPE_BUTTON : CONTROL_TYPE_FADER;
-                control->name = name;
+                Control control;
+                std::vector<int> channels;
+                if (props["channel"].IsSequence()) {
+                    for (const auto& node : props["channel"]) {
+                        channels.push_back(node.as<int>());
+                    }
+                } else {
+                    channels.push_back(props["channel"].as<int>());
+                }
 
-                controls_[name] = control;
+                control.function = static_cast<unsigned char>(props["function"].as<int>());
+
+                control.low = static_cast<unsigned char>(
+                        props["low"] ? props["low"].as<int>() : 0);
+
+                control.high = static_cast<unsigned char>(
+                        props["high"] ? props["high"].as<int>() : 0);
+
+                control.type = props["type"].as<std::string>() == "button" ? CONTROL_TYPE_BUTTON : CONTROL_TYPE_FADER;
+                control.name = name;
+
+                for (const auto& chan : channels) {
+                    control.channel = static_cast<unsigned char>(chan);
+                    controls_.push_back(control);
+                }
+
                 control_names_.push_back(name);
             }
         }
@@ -99,16 +116,15 @@ namespace vidrevolt {
                     }
 
                     {
-                        for (auto& kv : controls_) {
-                            auto control = kv.second;
-                            auto name = kv.first;
-                            if (control->function == msg.getFunction() && control->type == type && msg.getChannel() == control->channel) {
+                        for (const auto& control : controls_) {
+                            std::string name = control.name;
+                            if (control.function == msg.getFunction() && control.type == type && msg.getChannel() == control.channel) {
                                 float value = msg.getValue();
                                 if (msg.getType() == MESSAGE_TYPE_NOTE_OFF) {
                                     value = 0;
                                 }
 
-                                value = remap(value, control->low, control->high, 0, 1);
+                                value = remap(value, control.low, control.high, 0, 1);
 
                                 addValue(name, Value(value));
                             }

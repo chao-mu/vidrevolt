@@ -42,8 +42,8 @@ namespace vidrevolt {
                 mutable std::mutex controls_mutex_;
                 std::string port_name_;
 
-                std::shared_ptr<RtMidiIn> midi_in_;
-                std::map<std::string, std::shared_ptr<Control>> controls_;
+                std::unique_ptr<RtMidiIn> midi_in_;
+                std::vector<Control> controls_;
                 std::thread thread_;
                 std::atomic<bool> running_;
                 std::vector<std::string> control_names_;
