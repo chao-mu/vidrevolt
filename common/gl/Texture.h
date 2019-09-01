@@ -18,7 +18,7 @@ namespace vidrevolt {
                 Texture();
                 ~Texture();
 
-                void save(const std::string& path);
+                cv::Mat read();
                 void bind(unsigned int slot = 0);
                 void unbind();
                 void populate(GLint internal_format, GLsizei width, GLsizei height,

@@ -8,6 +8,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <future>
 
 // Open GL
 #include <GL/glew.h>
@@ -37,6 +38,10 @@
 #include "Resolution.h"
 #include "Value.h"
 #include "Controller.h"
+
+#ifndef DOUBLE_BUF
+#define DOUBLE_BUF false
+#endif
 
 // GLFW error callback
 void onError(int errc, const char* desc) {
@@ -108,6 +113,9 @@ int main(int argc, const char** argv) {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
+    // Use single buffer rendering
+    glfwWindowHint( GLFW_DOUBLEBUFFER, GL_FALSE );
 
     /*
     if (full_arg.getValue()) {
@@ -200,7 +208,8 @@ int main(int argc, const char** argv) {
 
     // Screenshot key
     std::string out_path = img_out_arg.getValue();
-    keyboard->connect("p", [&out_path, &renderer](vidrevolt::Value v) {
+    std::vector<std::future<void>> shot_futures_;
+    keyboard->connect("p", [&shot_futures_, &out_path, &renderer](vidrevolt::Value v) {
         // On key release
         if (v.getBool()) {
             return;
@@ -217,9 +226,15 @@ int main(int argc, const char** argv) {
             dest = s.str();
         }
 
-        renderer->getLastOutTex()->save(dest);
+        cv::Mat image = renderer->getLastOutTex()->read();
 
-        std::cout << "Screenshot saved at " << dest << std::endl;
+        // Explicitly image by copy; if we pass by reference the internal refcount wont increment
+        shot_futures_.push_back(std::async([dest, image]() {
+            cv::cvtColor(image, image, cv::COLOR_BGR2RGB);
+            flip(image, image, 0);
+            cv::imwrite(dest, image);
+            std::cout << "Screenshot saved at " << dest << std::endl;
+        }));
     });
 
     // Exit key
@@ -237,6 +252,7 @@ int main(int argc, const char** argv) {
     DEBUG_TIME_DECLARE(loop)
     DEBUG_TIME_DECLARE(draw)
     DEBUG_TIME_DECLARE(event_poll)
+    DEBUG_TIME_DECLARE(flush)
 
     while (!glfwWindowShouldClose(window)) {
         //std::chrono::time_point<std::chrono::high_resolution_clock> fps_timer_start =
@@ -258,7 +274,7 @@ int main(int argc, const char** argv) {
 
         // Calculate blit settings
         int win_width, win_height;
-        glfwGetWindowSize(window, &win_width, &win_height);
+        GLCall(glfwGetWindowSize(window, &win_width, &win_height));
         DrawInfo draw_info = DrawInfo::scaleCenter(
             static_cast<float>(resolution.width),
             static_cast<float>(resolution.height),
@@ -268,20 +284,28 @@ int main(int argc, const char** argv) {
 
         // Draw to the screen
         DEBUG_TIME_START(draw)
-        glDrawBuffer(GL_BACK);
-        glBindFramebuffer(GL_READ_FRAMEBUFFER, renderer->getFBO());
-        glReadBuffer(renderer->getReadableBuf());
-        glViewport(0,0, win_width, win_height);
-        glBlitFramebuffer(
+        if (DOUBLE_BUF) {
+            GLCall(glDrawBuffer(GL_BACK));
+        }
+        GLCall(glBindFramebuffer(GL_READ_FRAMEBUFFER, renderer->getFBO()));
+        GLCall(glReadBuffer(renderer->getReadableBuf()));
+        GLCall(glViewport(0,0, win_width, win_height));
+        GLCall(glBlitFramebuffer(
             0,0, resolution.width, resolution.height,
             draw_info.x0, draw_info.y0, draw_info.x1, draw_info.y1,
             GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT,
             GL_NEAREST
-        );
-        DEBUG_TIME_END(draw)
+        ));
 
         // Show buffer
-        glfwSwapBuffers(window);
+        DEBUG_TIME_START(flush);
+        if (DOUBLE_BUF) {
+            glfwSwapBuffers(window);
+        } else {
+            GLCall(glFlush());
+        }
+        DEBUG_TIME_END(flush);
+        DEBUG_TIME_END(draw)
 
         /*
         std::chrono::duration<double, std::milli> time_elapsed(std::chrono::high_resolution_clock::now() - fps_timer_start);

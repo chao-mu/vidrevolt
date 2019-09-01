@@ -20,7 +20,7 @@ namespace vidrevolt {
         void RenderOut::load() {
             for (const auto& tex : textures_) {
                 tex->bind();
-                GLCall(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, resolution_.width, resolution_.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0));
+                GLCall(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, resolution_.width, resolution_.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0));
                 tex->unbind();
             }
 

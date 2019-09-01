@@ -33,8 +33,9 @@ namespace vidrevolt {
             return res_;
         }
 
-        void Texture::save(const std::string& path) {
-            borrowBind([path, this]() {
+        cv::Mat Texture::read() {
+            cv::Mat image;
+            borrowBind([&image, this]() {
                 GLint alignment;
                 GLCall(glGetIntegerv(GL_PACK_ALIGNMENT, &alignment));
 
@@ -46,13 +47,10 @@ namespace vidrevolt {
                 char* data = new char[static_cast<size_t>(width) * static_cast<size_t>(height) * 3];
                 GLCall(glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_UNSIGNED_BYTE, data));
 
-                cv::Mat image(height, width, CV_8UC3, data);
-
-                cv::cvtColor(image, image, cv::COLOR_BGR2RGB);
-                flip(image, image, 0);
-                cv::imwrite(path, image);
-
+                image = cv::Mat(height, width, CV_8UC3, data);
             });
+
+            return image;
         }
 
         void Texture::populate(cv::Mat& frame) {
