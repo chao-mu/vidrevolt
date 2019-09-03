@@ -14,14 +14,11 @@
 DEBUG_TIME_DECLARE(seek)
 DEBUG_TIME_DECLARE(read_rev)
 
-#define VIDREVOLT_VIDEO_MIDDLE 15
-#define VIDREVOLT_VIDEO_BUFFER_SIZE 30
-
 namespace vidrevolt {
     Video::Video(const std::string& path, Playback pb) : Video(path, false, pb) {}
 
     Video::Video(const std::string& path, bool auto_reset, Playback pb) :
-        path_(path), buffer_size_(VIDREVOLT_VIDEO_BUFFER_SIZE), reverse_(pb == Reverse),
+        path_(path), reverse_(pb == Reverse),
         auto_reset_(auto_reset), playback_(pb) {}
 
     Video::~Video() {
@@ -157,7 +154,7 @@ namespace vidrevolt {
             reverse_ = false;
 
             bool found = false;
-            for (size_t i=0; i < buffer_size_; i++) {
+            for (size_t i=0; i < VIDREVOLT_VIDEO_BUFFER_SIZE; i++) {
                 if (buffer_.at(i).first == 0) {
                     found = true;
                     cursor_ = static_cast<int>(i);
@@ -175,7 +172,7 @@ namespace vidrevolt {
 
             // Start from half the buffersize before the end of the video.
             seek(-middle);
-            for (size_t i=0; i < buffer_size_; i++) {
+            for (size_t i=0; i < VIDREVOLT_VIDEO_BUFFER_SIZE; i++) {
                 Frame frame = readFrame();
                 if (frame.first == 0) {
                     cursor_ = static_cast<int>(i);
@@ -197,7 +194,6 @@ namespace vidrevolt {
             front_pos = buffer_.front().first;
             back_pos = buffer_.back().first;
         }
-
 
         // Fill in order to make the current frame the center frame of the buffer.
         if (diff < 0) {
@@ -323,22 +319,5 @@ namespace vidrevolt {
         if (thread_.joinable()) {
             thread_.join();
         }
-    }
-
-    bool Video::isVideo(const std::string& path) {
-        const std::string exts[] = {
-            "3g2", "3gp", "aaf", "asf", "avchd", "avi", "drc", "flv", "m2v",
-            "m4p", "m4v", "mkv", "mng", "mov", "mp2", "mp4", "mpe", "mpeg", "mpg",
-            "mpv", "mxf", "nsv", "ogg", "ogv", "qt", "rm", "rmvb", "roq", "svi",
-            "vob", "webm", "wmv", "yuv"
-        };
-
-        for (const auto& ext : exts) {
-            if (fileutil::hasExtension(path, ext)) {
-                return true;
-            }
-        }
-
-        return false;
     }
 }

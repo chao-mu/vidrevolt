@@ -284,9 +284,9 @@ namespace vidrevolt {
             if (settings.IsMap() && settings[KEY_TYPE]) {
                 type = settings[KEY_TYPE].as<std::string>();
             } else {
-                if (Image::isImage(path)) {
+                if (fileutil::hasImageExt(path)) {
                     type = MEDIA_TYPE_IMAGE;
-                } else if (Video::isVideo(path)) {
+                } else if (fileutil::hasVideoExt(path)) {
                     type = MEDIA_TYPE_VIDEO;
                 } else {
                     throw std::runtime_error("could not detect type of media '" + name + "' from path");

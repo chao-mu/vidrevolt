@@ -12,7 +12,6 @@ namespace vidrevolt {
         public:
             Image(const std::string& path);
             virtual std::string getPath() const override;
-            static bool isImage(const std::string& path);
 
             void load();
 

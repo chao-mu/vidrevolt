@@ -15,6 +15,9 @@
 // Ours
 #include "Media.h"
 
+#define VIDREVOLT_VIDEO_MIDDLE 15
+#define VIDREVOLT_VIDEO_BUFFER_SIZE 30
+
 namespace vidrevolt {
     class Video : public Media {
         public:
@@ -45,8 +48,6 @@ namespace vidrevolt {
 
             void flipPlayback();
 
-            static bool isVideo(const std::string& path);
-
             virtual std::string getPath() const override;
 
             double getFPS() const;
@@ -59,7 +60,6 @@ namespace vidrevolt {
 
             // Constructor Parameters
             const std::string path_;
-            size_t buffer_size_;
             std::atomic<bool> reverse_ = false;
             bool auto_reset_;
             const Playback playback_;
