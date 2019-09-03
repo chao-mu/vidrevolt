@@ -3,7 +3,7 @@
 #include "fileutil.h"
 
 namespace vidrevolt {
-    Image::Image(const Address& addr, const std::string& path) : Media(addr), path_(path) {}
+    Image::Image(const std::string& path) : path_(path) {}
 
     void Image::load() {
         image_ = cv::imread(path_);

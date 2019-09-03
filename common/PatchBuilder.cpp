@@ -425,7 +425,7 @@ namespace vidrevolt {
             }
         }
 
-        auto vid = std::make_unique<Video>(Address(name), path, auto_reset, pb);
+        auto vid = std::make_unique<Video>(path, auto_reset, pb);
 
         vid->start();
 
@@ -433,7 +433,7 @@ namespace vidrevolt {
     }
 
     void PatchBuilder::addImage(const std::string& name, const std::string& path, const YAML::Node& /*settings*/) {
-        auto image = std::make_unique<vidrevolt::Image>(Address(name), path);
+        auto image = std::make_unique<vidrevolt::Image>(path);
 
         image->load();
         patch_->setImage(name, std::move(image));

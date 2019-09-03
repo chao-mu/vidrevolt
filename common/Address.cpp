@@ -1,5 +1,7 @@
 #include "Address.h"
 
+#define VIDREVOLT_ADDRESS_SEP "."
+
 namespace vidrevolt {
     Address::Address(const std::vector<std::string>& fields) : fields_(fields) {}
     Address::Address(const std::vector<std::string>& fields, const std::string& tail) : fields_(fields) {
@@ -22,7 +24,7 @@ namespace vidrevolt {
 
             str += sep;
             str += field;
-            sep = ".";
+            sep = VIDREVOLT_ADDRESS_SEP;
         }
 
         return str;
@@ -78,9 +80,10 @@ namespace vidrevolt {
         return fields_;
     }
 
-    Address Address::operator+(const std::string& str) const {
-        return Address(fields_, str);
+    Address Address::operator+(const Address& addr) const {
+        return Address(this->getFields(), addr.str());
     }
+
     // This can often be seen written as
     bool Address::operator<(const Address& b) const {
         return str() < b.str();

@@ -51,35 +51,31 @@ namespace vidrevolt {
         throw std::runtime_error("Expected '" + addr.str() + "' to point to a group member");
     }
 
-    void Patch::visitReferable(const Address& addr, std::function<void(Referable)> f) const {
-        visitReferable(addr, f, Address());
-    }
-
-    void Patch::visitReferable(const Address& addr, std::function<void(Referable)> f, const Address& tail) const {
+    void Patch::visitReferable(const Address& addr, std::function<void(const std::string&, Referable)> f, const Address& tail) const {
         if (addr.getDepth() == 1 && tail.getDepth() == 0) {
             std::string key = addr.str();
 
             if (videos_.count(key) > 0) {
-                f(videos_.at(key).get());
+                f(key, videos_.at(key).get());
             } else if (images_.count(key) > 0) {
-                f(images_.at(key).get());
+                f(key, images_.at(key).get());
             } else if (groups_.count(key) > 0) {
-                f(groups_.at(key).get());
+                f(key, groups_.at(key).get());
             } else if (aovs_.count(key) > 0) {
                 auto& aov = aovs_.at(key);
                 if (std::holds_alternative<Value>(aov)) {
-                    f(std::get<Value>(aov));
+                    f(key, std::get<Value>(aov));
                 } else if (std::holds_alternative<Address>(aov)) {
                     visitReferable(std::get<Address>(aov), f);
                 }
             } else if (module_resolutions_.count(key) > 0) {
-                 f(key);
+                 f(key, key);
             } else {
                 throw std::runtime_error("Invalid address " + addr.str());
             }
         } else if (tail.str() == "resolution") {
             Resolution res;
-            visitReferable(addr, [&res, addr, this](Referable r) {
+            visitReferable(addr, [&res, addr, this](const std::string&, Referable r) {
                 if (std::holds_alternative<Media*>(r)) {
                     res = std::get<Media*>(r)->getResolution();
                 } else if (std::holds_alternative<ModuleOutputLabel>(r)) {
@@ -89,7 +85,8 @@ namespace vidrevolt {
                 }
             });
 
-            f(Value({static_cast<float>(res.width), static_cast<float>(res.height)}));
+            f((addr + tail).str(),
+                Value({static_cast<float>(res.width), static_cast<float>(res.height)}));
         } else if (addr.getDepth() == 1 && tail.getDepth() == 1) {
             std::string head = addr.str();
             std::string back = tail.str();
@@ -103,17 +100,17 @@ namespace vidrevolt {
                 }
 
                 if (std::holds_alternative<Value>(*aov_opt)) {
-                    f(std::get<Value>(*aov_opt));
+                    f((addr + tail).str(), std::get<Value>(*aov_opt));
                 } else if (std::holds_alternative<Address>(*aov_opt)) {
                     visitReferable(std::get<Address>(*aov_opt), f);
                 }
             } else if (controllers_.count(head) > 0) {
-                f(controllers_.at(head)->getValue(back));
+                f((addr + tail).str(), controllers_.at(head)->getValue(back));
             } else {
                 throw std::runtime_error("Invalid address " + head + "." + back);
             }
         } else if (addr.getDepth() == 0) {
-            f(tail.str());
+            f((addr + tail).str(), tail.str());
         } else {
             std::string back = addr.getBack();
             visitReferable(addr.withoutBack(), f, tail.withHead(back));
@@ -187,7 +184,7 @@ namespace vidrevolt {
 
     bool Patch::isMedia(const Address& addr) const {
         bool is = false;
-        visitReferable(addr, [&is](Referable r) {
+        visitReferable(addr, [&is](const std::string& /*name*/, Referable r) {
             if (std::holds_alternative<Media*>(r) || std::holds_alternative<ModuleOutputLabel>(r)) {
                 is = true;
             }
@@ -198,7 +195,7 @@ namespace vidrevolt {
 
     bool Patch::isGroup(const Address& addr) const {
         bool is = false;
-        visitReferable(addr, [&is](Referable r) {
+        visitReferable(addr, [&is](const std::string& /*name*/, Referable r) {
             if (std::holds_alternative<Group*>(r)) {
                 is = true;
             }
@@ -237,7 +234,7 @@ namespace vidrevolt {
 
         auto reverse = dynamic_cast<cmd::Reverse*>(c);
         if (reverse != nullptr) {
-            visitReferable(reverse->target, [&reverse](Referable r) {
+            visitReferable(reverse->target, [&reverse](const std::string& /*name*/, Referable r) {
                 if (std::holds_alternative<Media*>(r)) {
                     auto vid = dynamic_cast<Video*>(std::get<Media*>(r));
                     if (vid != nullptr) {

@@ -38,7 +38,7 @@ namespace vidrevolt {
             bool isGroup(const Address& addr) const;
             bool isMedia(const Address& addr) const;
 
-            void visitReferable(const Address& addr, std::function<void(Referable)> f) const;
+            void visitReferable(const Address& addr, std::function<void(const std::string&, Referable)> f, const Address& tail=Address()) const;
             void visitGroupMember(const Address& addr, std::function<void(Group&, const std::string&)> f) const;
 
             void startRender();
@@ -49,8 +49,6 @@ namespace vidrevolt {
             void addCommand(const Trigger& t, std::unique_ptr<cmd::Command> c);
 
         private:
-            void visitReferable(const Address& addr, std::function<void(Referable)> f, const Address& tail) const;
-
             std::string getAddressDeep(const Address& addr);
 
             std::map<std::string, std::unique_ptr<Video>> videos_;

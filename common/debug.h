@@ -4,11 +4,11 @@
 #include <chrono>
 
 #define DEBUG_TIME_DECLARE(name) \
-     std::chrono::time_point<std::chrono::high_resolution_clock> start_##name; \
-     std::chrono::time_point<std::chrono::high_resolution_clock> end_##name; \
-     double count_##name = 0; \
-     double total_##name = 0; \
-     double max_##name = 0;
+     static std::chrono::time_point<std::chrono::high_resolution_clock> start_##name; \
+     static std::chrono::time_point<std::chrono::high_resolution_clock> end_##name; \
+     static double count_##name = 0; \
+     static double total_##name = 0; \
+     static double max_##name = 0;
 
 #define DEBUG_TIME_START(name) \
     if (debug_time) { \

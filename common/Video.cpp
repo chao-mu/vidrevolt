@@ -6,21 +6,22 @@
 // Ours
 #include "fileutil.h"
 
-// #include "debug.h"
-// #define debug_time true
+#include "debug.h"
+#define debug_time false
 
 #define WORK_THRESHOLD 3
 
+DEBUG_TIME_DECLARE(seek)
+DEBUG_TIME_DECLARE(read_rev)
+
+#define VIDREVOLT_VIDEO_MIDDLE 15
+#define VIDREVOLT_VIDEO_BUFFER_SIZE 30
+
 namespace vidrevolt {
-    /*
-    Video::Video(int device, double fps, cv::Size size) : device_(device), size_(size), fps_(fps), buffer_size_(1) {
-    }
-    */
+    Video::Video(const std::string& path, Playback pb) : Video(path, false, pb) {}
 
-    Video::Video(const std::string& path, Playback pb) : Video(Address(""), path, false, pb) {}
-
-    Video::Video(const Address& addr, const std::string& path, bool auto_reset, Playback pb) :
-        Media(addr), path_(path), buffer_size_(30), reverse_(pb == Reverse),
+    Video::Video(const std::string& path, bool auto_reset, Playback pb) :
+        path_(path), buffer_size_(VIDREVOLT_VIDEO_BUFFER_SIZE), reverse_(pb == Reverse),
         auto_reset_(auto_reset), playback_(pb) {}
 
     Video::~Video() {
@@ -75,7 +76,7 @@ namespace vidrevolt {
         // TODO: Update this to throw instead of printing out a warning and handle that
         // downstream.
         if (cursor_ < 0 || static_cast<size_t>(cursor_) >= buffer_.size()) {
-            std::cerr << "WARNING: Video buffer empty! Try a video with a lower frame rate. Path:" <<
+            std::cerr << "WARNING: Video buffer exceeded! Try a video with a lower frame rate. Path:" <<
                 path_ << std::endl;
 
             return {};
@@ -94,13 +95,13 @@ namespace vidrevolt {
         if (reverse_) {
             cursor_--;
 
-            if (static_cast<float>(buffer_size_) * 0.5  - cursor_ > WORK_THRESHOLD) {
+            if (VIDREVOLT_VIDEO_MIDDLE  - cursor_ > WORK_THRESHOLD) {
                 signalWork();
             }
         } else {
             cursor_++;
 
-            if (cursor_ - static_cast<float>(buffer_size_) * 0.5 > WORK_THRESHOLD) {
+            if (cursor_ - VIDREVOLT_VIDEO_MIDDLE > WORK_THRESHOLD) {
                 signalWork();
             }
         }
@@ -132,6 +133,7 @@ namespace vidrevolt {
     }
 
     void Video::seek(int pos) {
+        DEBUG_TIME_START(seek)
         if (pos < 0) {
             pos += total_frames_;
         }
@@ -139,11 +141,12 @@ namespace vidrevolt {
         pos = pos % total_frames_;
 
         vid_->set(cv::CAP_PROP_POS_FRAMES, pos);
+        DEBUG_TIME_END(seek)
     }
 
     void Video::next() {
         // At the end of the day, this is where we want the read cursor to end up.
-        int middle = static_cast<int>(static_cast<double>(buffer_size_) * 0.5);
+        int middle = VIDREVOLT_VIDEO_MIDDLE;
 
         // If we have a reset request, set the cursor to the start of the video
         // if it exists in our buffer.
@@ -204,10 +207,12 @@ namespace vidrevolt {
             // Jump back by the amount we need to read to catch up.
             seek(front_pos - diff);
 
+            DEBUG_TIME_START(read_rev)
             std::vector<Frame> tmp_buf;
             for (int i=0; i < diff; i++) {
                 tmp_buf.push_back(readFrame());
             }
+            DEBUG_TIME_END(read_rev)
 
             {
                 std::lock_guard guard(buffer_mutex_);
@@ -253,41 +258,6 @@ namespace vidrevolt {
         if (!vid_->isOpened()) {
             throw std::runtime_error("Unable to open video with path " + path_);
         }
-
-        /*
-        if (path_ != "") {
-            vid_ = std::make_unique<cv::VideoCapture>(path_);
-
-            if (!vid_->isOpened()) {
-                throw std::runtime_error("Unable to open video with path " + path_);
-            }
-        } else {
-            vid_ = std::make_unique<cv::VideoCapture>(device_, cv::CAP_V4L2);
-
-            if (!vid_->isOpened()) {
-                throw std::runtime_error("Unable to open capture device " + std::to_string(device_));
-            }
-        }
-
-        if (size_.width != 0) {
-            if (!vid_->set(cv::CAP_PROP_FRAME_WIDTH, size_.width)) {
-                throw std::runtime_error("Unable to set frame width");
-            }
-
-            if (!vid_->set(cv::CAP_PROP_FRAME_HEIGHT, size_.height)) {
-                throw std::runtime_error("Unable to set frame height");
-            }
-        }
-
-        if (fps_ != 0) {
-            if (!vid_->set(cv::CAP_PROP_FPS, fps_)) {
-                throw std::runtime_error("Unable to set frame rate");
-            }
-        } else {
-            fps_ = vid_->get(cv::CAP_PROP_FPS);
-        }
-        */
-
 
         // This is a guess, apparently it can be wrong
         total_frames_ = static_cast<int>(vid_->get(cv::CAP_PROP_FRAME_COUNT));

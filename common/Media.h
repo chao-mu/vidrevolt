@@ -9,13 +9,10 @@
 
 // Ours
 #include "Resolution.h"
-#include "Address.h"
 
 namespace vidrevolt {
     class Media {
         public:
-            Media(const Address& addr);
-
             virtual ~Media() = default;
 
             virtual Resolution getResolution() = 0;
@@ -28,14 +25,11 @@ namespace vidrevolt {
             void resetInUse();
             void setInUse(bool t);
 
-            Address getAddress() const;
-
             virtual std::optional<cv::Mat> nextFrame() = 0;
 
         private:
             bool in_use_ = false;
             bool last_in_use_ = false;
-            Address address_;
     };
 }
 #endif

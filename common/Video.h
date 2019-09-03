@@ -28,8 +28,7 @@ namespace vidrevolt {
             };
 
             ~Video();
-            // Video(int device, double fps=0, cv::Size size=cv::Size(0,0));
-            Video(const Address& addr, const std::string& path, bool auto_reset, Playback pb=Forward);
+            Video(const std::string& path, bool auto_reset, Playback pb=Forward);
             Video(const std::string& path, Playback pb);
 
             void start();

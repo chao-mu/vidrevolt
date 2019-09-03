@@ -10,7 +10,7 @@
 namespace vidrevolt {
     class Image : public Media {
         public:
-            Image(const Address& addr, const std::string& path);
+            Image(const std::string& path);
             virtual std::string getPath() const override;
             static bool isImage(const std::string& path);
 

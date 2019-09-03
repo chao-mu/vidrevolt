@@ -1,14 +1,8 @@
 #include "Media.h"
 
 namespace vidrevolt {
-    Media::Media(const Address& addr) : address_(addr) {}
-
     std::string Media::getPath() const {
         return "";
-    }
-
-    Address Media::getAddress() const {
-        return address_;
     }
 
     void Media::setInUse(bool t) {

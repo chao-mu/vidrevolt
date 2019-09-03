@@ -27,7 +27,7 @@ namespace vidrevolt {
             std::string getSwiz() const;
 
             bool operator <(const Address& b) const;
-            Address operator +(const std::string& str) const;
+            Address operator +(const Address& addr) const;
 
             std::string str() const;
 
