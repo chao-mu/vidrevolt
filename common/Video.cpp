@@ -13,6 +13,8 @@
 
 DEBUG_TIME_DECLARE(seek)
 DEBUG_TIME_DECLARE(read_rev)
+DEBUG_TIME_DECLARE(read_single)
+DEBUG_TIME_DECLARE(frame_processing)
 
 namespace vidrevolt {
     Video::Video(const std::string& path, Playback pb) : Video(path, false, pb) {}
@@ -113,11 +115,15 @@ namespace vidrevolt {
     }
 
     Video::Frame Video::readFrame() {
+        DEBUG_TIME_START(read_single)
         int pos = static_cast<int>(vid_->get(cv::CAP_PROP_POS_FRAMES));
         cv::Mat frame;
         if (vid_->read(frame)) {
+            // TODO: Don't modify the matrix, simply load the opengl texture differently
+            DEBUG_TIME_START(frame_processing)
             cv::cvtColor(frame, frame, cv::COLOR_BGR2RGB);
             flip(frame, frame, 0);
+            DEBUG_TIME_END(frame_processing)
         } else {
             last_frame_ = pos - 1;
 
@@ -125,6 +131,8 @@ namespace vidrevolt {
 
             return readFrame();
         }
+
+        DEBUG_TIME_END(read_single)
 
         return std::make_pair(pos, frame);
     }
