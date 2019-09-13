@@ -29,6 +29,7 @@ namespace vidrevolt {
 
                 void load();
                 void render();
+                void reload();
 
             private:
                 std::shared_ptr<RenderOut> getLast();

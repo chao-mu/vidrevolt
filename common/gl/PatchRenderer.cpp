@@ -25,6 +25,13 @@ namespace vidrevolt {
             }
         }
 
+        void PatchRenderer::reload() {
+            render_outs_.clear();
+            programs_.clear();
+            uniform_needs_.clear();
+            load();
+        }
+
         std::shared_ptr<RenderOut> PatchRenderer::getLast() {
             return render_outs_.at(patch_->getModules().back()->getOutput());
         }

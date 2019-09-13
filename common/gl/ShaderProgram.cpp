@@ -3,9 +3,8 @@
 // OpenGL
 #include <GLFW/glfw3.h>
 
-// ours
+// Ours
 #include "../fileutil.h"
-#include "../MathUtil.h"
 
 namespace vidrevolt {
     namespace gl {

@@ -14,6 +14,9 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
+// OpenCV
+#include "opencv2/opencv.hpp"
+
 // TCLAP
 #include <tclap/ArgException.h>
 #include <tclap/CmdLine.h>
@@ -26,7 +29,7 @@
 // Ours
 #include "Keyboard.h"
 #include "KeyboardManager.h"
-#include "MathUtil.h"
+#include "mathutil.h"
 #include "PatchBuilder.h"
 #include "debug.h"
 #include "gl/GLUtil.h"
@@ -38,10 +41,13 @@
 #include "Resolution.h"
 #include "Value.h"
 #include "Controller.h"
+#include "VideoWriter.h"
 
 #ifndef DOUBLE_BUF
-#define DOUBLE_BUF false
+#define DOUBLE_BUF true
 #endif
+
+#define RECORDING_FPS 30
 
 // GLFW error callback
 void onError(int errc, const char* desc) {
@@ -72,10 +78,10 @@ int main(int argc, const char** argv) {
 
     TCLAP::ValueArg<std::string> vert_arg("", "vert", "path to vertex shader", false, "vert.glsl", "string", cmd);
     TCLAP::ValueArg<std::string> patch_arg("i", "patch", "path to yaml patch", false, "patch.yml", "string", cmd);
-    TCLAP::ValueArg<std::string> img_out_arg("o", "image-out", "output image path", false, "", "string", cmd);
+    TCLAP::ValueArg<std::string> img_out_arg("", "image-out", "output image path", false, "", "string", cmd);
+    TCLAP::ValueArg<std::string> vid_out_arg("o", "vid-out", "output to video path", false, "", "string", cmd);
     TCLAP::ValueArg<std::string> sound_arg("s", "sound-path", "path to sound file", false, "", "string", cmd);
     TCLAP::ValueArg<int> height_arg("", "height", "window height (width will be calculated automatically)", false, 720, "int", cmd);
-    TCLAP::ValueArg<double> fps_arg("", "fps", "FPS to aim for", false, 120, "float", cmd);
     TCLAP::SwitchArg debug_timer_arg("", "debug-timer", "debug time between frames", cmd);
     TCLAP::SwitchArg debug_opengl("", "debug-opengl", "print out OpenGL debugging info", cmd);
     TCLAP::SwitchArg full_arg("", "full", "maximized, no titlebar", cmd);
@@ -115,14 +121,9 @@ int main(int argc, const char** argv) {
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     // Use single buffer rendering
-    glfwWindowHint( GLFW_DOUBLEBUFFER, GL_FALSE );
-
-    /*
-    if (full_arg.getValue()) {
-        glfwWindowHint(GLFW_DECORATED, false);
-        glfwWindowHint(GLFW_MAXIMIZED, true);
+    if (!DOUBLE_BUF) {
+        glfwWindowHint( GLFW_DOUBLEBUFFER, GL_FALSE );
     }
-    */
 
     vidrevolt::PatchBuilder builder;
     builder.build(patch_arg.getValue());
@@ -237,6 +238,23 @@ int main(int argc, const char** argv) {
         }));
     });
 
+    keyboard->connect("r", [&renderer, patch](vidrevolt::Value v) {
+        if (v.getBool()) {
+            return;
+        }
+
+        auto replacement = std::make_shared<vidrevolt::gl::PatchRenderer>(patch);
+        try {
+            replacement->load();
+        } catch (std::runtime_error& err) {
+            std::cerr << err.what() << std::endl;
+            return;
+        }
+
+        renderer = replacement;
+        std::cout << "Reloaded!" << std::endl;
+    });
+
     // Exit key
     keyboard->connect("escape", [&window](vidrevolt::Value v) {
         // On key release
@@ -247,6 +265,15 @@ int main(int argc, const char** argv) {
         GLCall(glfwSetWindowShouldClose(window, GLFW_TRUE));
     });
 
+    std::unique_ptr<vidrevolt::VideoWriter> writer;
+    if (vid_out_arg.getValue() != "" ) {
+        std::string path = vid_out_arg.getValue();
+
+        writer = std::make_unique<vidrevolt::VideoWriter>(path, RECORDING_FPS, resolution);
+        writer->start();
+    }
+
+
     // Our run loop
     DEBUG_TIME_DECLARE(render)
     DEBUG_TIME_DECLARE(loop)
@@ -254,10 +281,8 @@ int main(int argc, const char** argv) {
     DEBUG_TIME_DECLARE(event_poll)
     DEBUG_TIME_DECLARE(flush)
 
+    std::optional<std::chrono::time_point<std::chrono::high_resolution_clock>> last_write;
     while (!glfwWindowShouldClose(window)) {
-        //std::chrono::time_point<std::chrono::high_resolution_clock> fps_timer_start =
-        //    std::chrono::high_resolution_clock::now();
-
         DEBUG_TIME_START(loop)
         GLCall(glfwPollEvents());
 
@@ -275,7 +300,7 @@ int main(int argc, const char** argv) {
         // Calculate blit settings
         int win_width, win_height;
         GLCall(glfwGetWindowSize(window, &win_width, &win_height));
-        DrawInfo draw_info = DrawInfo::scaleCenter(
+        auto draw_info = vidrevolt::mathutil::DrawInfo::scaleCenter(
             static_cast<float>(resolution.width),
             static_cast<float>(resolution.height),
             static_cast<float>(win_width),
@@ -307,20 +332,26 @@ int main(int argc, const char** argv) {
         DEBUG_TIME_END(flush);
         DEBUG_TIME_END(draw)
 
-        /*
-        std::chrono::duration<double, std::milli> time_elapsed(std::chrono::high_resolution_clock::now() - fps_timer_start);
+        if (writer != nullptr) {
+            bool should_write = true;
+            if (last_write) {
+                std::chrono::duration<double, std::milli> time_elapsed(
+                        std::chrono::high_resolution_clock::now() - last_write.value());
+                should_write = (1000 / RECORDING_FPS) - time_elapsed.count() <= 0;
+            }
 
-        DEBUG_TIME_END(loop)
-
-        double remainder = (1000 / fps_arg.getValue()) - time_elapsed.count();
-        if (remainder < 0) {
-            //std::cout << "FPS remainder: " << remainder << std::endl;
-        } else {
-            //std::this_thread::sleep_for(std::chrono::duration<double, std::milli>(remainder));
+            if (should_write) {
+                cv::Mat frame = renderer->getLastOutTex()->read();
+                writer->write(frame);
+                last_write = std::chrono::high_resolution_clock::now();
+            }
         }
-        */
 
         DEBUG_TIME_END(loop)
+    }
+
+    if (writer != nullptr) {
+        writer->close();
     }
 
     return 0;

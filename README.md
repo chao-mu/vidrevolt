@@ -1,6 +1,11 @@
 # vidrevolt
 Text driven performance tool for VJs and Visual Artists
 
+## Current Users                                                     
+
+VJ and visual artist Danimal (Hackpoetic) - https://www.instagram.com/hackpoetic                   
+
+
 ## Building
 
 Dependencies include
