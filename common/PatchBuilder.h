@@ -39,6 +39,7 @@ namespace vidrevolt {
             void addImage(const std::string& name, const std::string& path, const YAML::Node& settings);
             void addVideo(const std::string& name, const std::string& path, const YAML::Node& settings);
             void addMidiDevice(const std::string& name, const YAML::Node& settings);
+            void addOSCServer(const std::string& name, const YAML::Node& settings);
             void addCommand(int num, const std::string& name, Trigger trigger, std::vector<AddressOrValue> args);
 
             std::string getBuiltinShader(const std::string& path);

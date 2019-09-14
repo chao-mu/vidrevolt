@@ -31,8 +31,6 @@ namespace vidrevolt {
                 void start();
                 void update();
 
-                virtual std::vector<std::string> getControlNames() const override;
-
             private:
                 void loadSettings();
                 bool connect();
@@ -49,7 +47,6 @@ namespace vidrevolt {
                 std::vector<Control> controls_;
                 std::thread thread_;
                 std::atomic<bool> running_ = false;
-                std::vector<std::string> control_names_;
                 std::atomic<bool> connected_ = false;
         };
     }

@@ -4,7 +4,7 @@
 
 namespace vidrevolt {
     Keyboard::Keyboard() {
-        control_names_ = {
+        for (const auto& ctrl :  {
             "space", "apostrophe", "comma", "minus", "period", "slash", "0", "1", "2", "3", "4",
             "5", "6", "7", "8", "9", "semicolon", "equal", "a", "b", "c", "d", "e", "f", "g", "h",
             "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y",
@@ -18,14 +18,12 @@ namespace vidrevolt {
             "kp_subtract", "kp_add", "kp_enter", "kp_equal", "left_shift", "left_control",
             "left_alt", "left_super", "right_shift", "right_control", "right_alt", "right_super",
             "menu"
-        };
+        }) {
+            addControlName(ctrl);
+        }
     }
 
     void Keyboard::onKey(const std::string& name, bool press) {
         addValue(name, Value(press));
-    }
-
-    std::vector<std::string> Keyboard::getControlNames() const {
-        return control_names_;
     }
 }

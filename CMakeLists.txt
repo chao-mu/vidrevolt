@@ -15,4 +15,8 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 add_subdirectory(common)
 add_subdirectory(vidrevolt)
+#add_subdirectory(oscexp)
+#add_subdirectory(textexp)
 #add_subdirectory(vidrevolt-pre)
+#add_subdirectory(videxp)
+#add_subdirectory(videxp2)

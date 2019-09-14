@@ -13,12 +13,12 @@
 namespace vidrevolt {
     class BPMSync : public Controller {
         public:
+            BPMSync();
+
             void tap();
             float predictNextBeat() const;
             float predictLastBeat() const;
             float predictTri() const;
-
-            virtual std::vector<std::string> getControlNames() const override;
 
             virtual void beforePoll() override;
 

@@ -25,6 +25,14 @@ namespace vidrevolt {
             return stream.str();
         }
 
+
+        void per_line(const std::string& path, std::function<void(std::string)> f) {
+            std::ifstream controls_file(path);
+            for (std::string line; getline(controls_file, line);) {
+                f(line);
+            }
+        }
+
         std::string slurp(const std::string& relative_to, const std::string& path) {
             return slurp(
                 (boost::filesystem::path(relative_to).parent_path() / path).c_str()

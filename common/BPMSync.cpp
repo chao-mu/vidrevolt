@@ -11,6 +11,11 @@
 #define TAP_TEMPO_CTRL_TRI "tri"
 
 namespace vidrevolt {
+    BPMSync::BPMSync() {
+        for (const auto& ctrl :  {TAP_TEMPO_CTRL_LAST_BEAT, TAP_TEMPO_CTRL_NEXT_BEAT, TAP_TEMPO_CTRL_TRI}) {
+            addControlName(ctrl);
+        }
+    }
 
     void BPMSync::tap() {
         std::chrono::high_resolution_clock::time_point now =
@@ -92,10 +97,6 @@ namespace vidrevolt {
 
         // Have it appears we are no longer tapping to the same rythm
         return since_last_tap - avg_distance_ > TAP_TEMPO_TIMEOUT_MS;
-    }
-
-    std::vector<std::string> BPMSync::getControlNames() const {
-        return {TAP_TEMPO_CTRL_LAST_BEAT, TAP_TEMPO_CTRL_NEXT_BEAT, TAP_TEMPO_CTRL_TRI};
     }
 
     void BPMSync::beforePoll() {

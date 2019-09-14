@@ -17,7 +17,9 @@
 #include "Trigger.h"
 #include "midi/Device.h"
 #include "BPMSync.h"
+#include "OscServer.h"
 
+#define KEY_PORT "port"
 #define KEY_RESET "reset"
 #define KEY_MEMBERS "members"
 #define KEY_ARGS "args"
@@ -45,6 +47,7 @@
 #define KEY_SCALE_FILTER "sizeFilter"
 #define KEY_CONTROLLERS "controllers"
 #define CONTROLLER_TYPE_MIDI "midi"
+#define CONTROLLER_TYPE_OSC "osc"
 #define CONTROLLER_TYPE_KEYBOARD "keyboard"
 #define CONTROLLER_TYPE_BPM_SYNC "bpm-sync"
 #define MEDIA_TYPE_IMAGE "image"
@@ -251,6 +254,8 @@ namespace vidrevolt {
             const std::string type = settings[KEY_TYPE].as<std::string>();
             if (type == CONTROLLER_TYPE_MIDI) {
                 addMidiDevice(name, settings);
+            } else if (type == CONTROLLER_TYPE_OSC) {
+                addOSCServer(name, settings);
             } else if (type == CONTROLLER_TYPE_KEYBOARD) {
                 patch_->setController(name, KeyboardManager::makeKeyboard());
             } else if (type == CONTROLLER_TYPE_BPM_SYNC) {
@@ -395,6 +400,26 @@ namespace vidrevolt {
 
         patch_->setResolution(res);
     }
+
+    void PatchBuilder::addOSCServer(const std::string& name, const YAML::Node& settings) {
+        if (!settings[KEY_PORT]) {
+            throw std::runtime_error("controller '" + name + "' is missing port");
+        }
+
+        int port = settings[KEY_PORT].as<int>();
+
+        if (!settings[KEY_PATH]) {
+            throw std::runtime_error("controller '" + name + "' is missing path");
+        }
+
+        const std::string path = settings[KEY_PATH].as<std::string>();
+
+        auto osc = std::make_unique<OscServer>(port, path);
+        osc->start();
+
+        patch_->setController(name, std::move(osc));
+    }
+
 
     void PatchBuilder::addMidiDevice(const std::string& name, const YAML::Node& settings) {
         if (!settings[KEY_PATH]) {

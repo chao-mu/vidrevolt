@@ -25,6 +25,10 @@ namespace vidrevolt {
         }
     }
 
+    void Controller::addControlName(const std::string& control_name) {
+        control_names_.push_back(control_name);
+    }
+
     void Controller::addValue(const std::string& control_name, Value v) {
         std::lock_guard<std::mutex> lck(pending_values_mutex_);
         pending_values_.push_back(std::make_pair(control_name, v));
@@ -39,6 +43,10 @@ namespace vidrevolt {
     }
 
     void Controller::beforePoll() {
+    }
+
+    std::vector<std::string> Controller::getControlNames() const {
+        return control_names_;
     }
 }
 

@@ -19,7 +19,7 @@ namespace vidrevolt {
         public:
             virtual ~Controller() = default;
 
-            virtual std::vector<std::string> getControlNames() const = 0;
+            std::vector<std::string> getControlNames() const;
 
             virtual void beforePoll();
 
@@ -29,8 +29,10 @@ namespace vidrevolt {
 
         protected:
             void addValue(const std::string& key, Value v);
+            void addControlName(const std::string& key);
 
         private:
+            std::vector<std::string> control_names_;
             std::map<std::string, boost::signals2::signal<void(Value)>> signals_;
             std::map<std::string, Value> values_;
 

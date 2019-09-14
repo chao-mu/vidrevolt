@@ -97,7 +97,7 @@ namespace vidrevolt {
                     controls_.push_back(control);
                 }
 
-                control_names_.push_back(name);
+                addControlName(name);
             }
         }
 
@@ -106,10 +106,6 @@ namespace vidrevolt {
                 running_ = false;
                 thread_.join();
             }
-        }
-
-        std::vector<std::string> Device::getControlNames() const {
-            return control_names_;
         }
 
         void Device::loop() {
