@@ -5,37 +5,49 @@
 
 // Ours
 #include "Message.h"
-#include "../MathUtil.h"
+#include "../mathutil.h"
 
 #define SLEEP_FOR_MS 5
 
 namespace vidrevolt {
     namespace midi {
-        Device::Device(const std::string& path) : path_(path), midi_in_(std::make_unique<RtMidiIn>()), running_(false) {
+        Device::Device(const std::string& path) : path_(path) {
         }
 
         Device::~Device() {
             stop();
         }
 
-        void Device::start() {
-            if (running_.load()) {
-                return;
-            }
+        void Device::onError(RtMidiError::Type /*type*/, const std::string &msg, void* /*self*/) {
+            std::cout << "Midi error: " << msg;
+        }
 
-            load();
+        bool Device::connect() {
             unsigned int port_count = midi_in_->getPortCount();
-            bool found = false;
             for (unsigned int i = 0; i < port_count; i++) {
                 std::string name = midi_in_->getPortName(i);
                 if (std::regex_search(name, name_re_)) {
                     midi_in_->openPort(i);
-                    found = true;
-                    break;
+                    connected_ = true;
+                    port_name_ = name;
+                    return true;
                 }
             }
 
-            if (!found) {
+            return false;
+        }
+
+        void Device::start() {
+            if (running_.load()) {
+                throw std::runtime_error("midi::Device already started");
+            }
+
+            midi_in_ = std::make_unique<RtMidiIn>();
+            midi_in_->setErrorCallback(Device::onError, this);
+
+            loadSettings();
+
+            if (!connect()) {
                 throw std::runtime_error("Requested midi device not found. Config loaded from " + path_);
             }
 
@@ -43,7 +55,7 @@ namespace vidrevolt {
             thread_ = std::thread(&Device::loop, this);
         }
 
-        void Device::load() {
+        void Device::loadSettings() {
             YAML::Node settings = YAML::LoadFile(path_);
             if (!settings["regex"]) {
                 throw std::runtime_error("Expected field 'regex' to be found in " + path_);
@@ -124,7 +136,7 @@ namespace vidrevolt {
                                     value = 0;
                                 }
 
-                                value = remap(value, control.low, control.high, 0, 1);
+                                value = mathutil::remap(value, control.low, control.high, 0, 1);
 
                                 addValue(name, Value(value));
                             }
