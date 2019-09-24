@@ -72,16 +72,12 @@ namespace vidrevolt {
 
         std::lock_guard guard(buffer_mutex_);
 
-        // TODO: Update this to throw instead of printing out a warning and handle that
-        // downstream.
-        if (cursor_ < 0 || static_cast<size_t>(cursor_) >= buffer_.size()) {
-            std::cerr << "WARNING: Video buffer exceeded! Try a video with a lower frame rate. Path:" <<
-                path_ << std::endl;
-
+        std::optional<Frame> frame_opt = currentFrame();
+        if (!frame_opt) {
             return {};
         }
 
-        Frame frame = buffer_.at(static_cast<size_t>(cursor_));
+        Frame frame = frame_opt.value();
 
         if (playback_ == Mirror) {
             if (frame.first >= last_frame_.load()) {
@@ -114,6 +110,17 @@ namespace vidrevolt {
         return frame.second;
     }
 
+    std::optional<Video::Frame> Video::currentFrame() {
+        if (cursor_ < 0 || static_cast<size_t>(cursor_) >= buffer_.size()) {
+            std::cerr << "WARNING: Video buffer exceeded! Try a a lower resolution video or increase key frames. Path:" <<
+                path_ << std::endl;
+
+            return {};
+        } else {
+            return buffer_.at(static_cast<size_t>(cursor_));
+        }
+    }
+
     Video::Frame Video::readFrame() {
         DEBUG_TIME_START(read_single)
         int pos = static_cast<int>(vid_->get(cv::CAP_PROP_POS_FRAMES));
@@ -125,8 +132,6 @@ namespace vidrevolt {
             flip(frame, frame, 0);
             DEBUG_TIME_END(frame_processing)
         } else {
-            last_frame_ = pos - 1;
-
             vid_->set(cv::CAP_PROP_POS_FRAMES, 0);
 
             return readFrame();
@@ -147,6 +152,10 @@ namespace vidrevolt {
 
         vid_->set(cv::CAP_PROP_POS_FRAMES, pos);
         DEBUG_TIME_END(seek)
+    }
+
+    double Video::getRemainingMS() {
+        return length_ms - vid_->get(cv::CAP_PROP_POS_MSEC);
     }
 
     void Video::next() {
@@ -262,6 +271,14 @@ namespace vidrevolt {
         if (!vid_->isOpened()) {
             throw std::runtime_error("Unable to open video with path " + path_);
         }
+
+        // Explore metadata
+        // Go to end of file
+        vid_->set(cv::CAP_PROP_POS_AVI_RATIO, 1);
+        total_frames_ = static_cast<int>(vid_->get(cv::CAP_PROP_POS_FRAMES));
+        last_frame_ = total_frames_ - 1;
+        length_ms = vid_->get(cv::CAP_PROP_POS_MSEC);
+        vid_->set(cv::CAP_PROP_POS_AVI_RATIO, 0);
 
         // This is a guess, apparently it can be wrong
         total_frames_ = static_cast<int>(vid_->get(cv::CAP_PROP_FRAME_COUNT));

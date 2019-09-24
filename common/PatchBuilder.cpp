@@ -17,7 +17,7 @@
 #include "Trigger.h"
 #include "midi/Device.h"
 #include "BPMSync.h"
-#include "OscServer.h"
+#include "osc/Server.h"
 
 #define KEY_PORT "port"
 #define KEY_RESET "reset"
@@ -414,7 +414,7 @@ namespace vidrevolt {
 
         const std::string path = settings[KEY_PATH].as<std::string>();
 
-        auto osc = std::make_unique<OscServer>(port, path);
+        auto osc = std::make_unique<osc::Server>(port, path);
         osc->start();
 
         patch_->setController(name, std::move(osc));

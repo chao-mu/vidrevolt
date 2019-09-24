@@ -29,6 +29,10 @@ namespace vidrevolt {
         control_names_.push_back(control_name);
     }
 
+    void Controller::setControlNames(std::vector<std::string> control_names) {
+        control_names_ = control_names;
+    }
+
     void Controller::addValue(const std::string& control_name, Value v) {
         std::lock_guard<std::mutex> lck(pending_values_mutex_);
         pending_values_.push_back(std::make_pair(control_name, v));

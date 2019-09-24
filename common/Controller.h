@@ -30,6 +30,7 @@ namespace vidrevolt {
         protected:
             void addValue(const std::string& key, Value v);
             void addControlName(const std::string& key);
+            void setControlNames(std::vector<std::string> control_names);
 
         private:
             std::vector<std::string> control_names_;

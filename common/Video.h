@@ -50,13 +50,19 @@ namespace vidrevolt {
 
             virtual std::string getPath() const override;
 
+            std::optional<Frame> currentFrame();
+
             double getFPS() const;
+
+            double getRemainingMS();
 
         private:
             void next();
             void seek(int pos);
             Frame readFrame();
             void signalWork();
+
+            double length_ms = 0;
 
             // Constructor Parameters
             const std::string path_;
