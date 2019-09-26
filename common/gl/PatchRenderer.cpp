@@ -122,15 +122,7 @@ namespace vidrevolt {
                 });
 
                 double time = glfwGetTime();
-                double time_delta = time - last_time_;
-                last_time_ = time;
-
-                program->setUniform("iTimeDelta", [time_delta](GLint& id) {
-                    glUniform1f(id, static_cast<float>(time_delta));
-                });
-
-
-                program->setUniform("iTime", [time](GLint& id) {
+                program->setUniform("iTime", [&time](GLint& id) {
                     glUniform1f(id, static_cast<float>(time));
                 });
 

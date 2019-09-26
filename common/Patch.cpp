@@ -59,6 +59,8 @@ namespace vidrevolt {
                 f(key, videos_.at(key).get());
             } else if (images_.count(key) > 0) {
                 f(key, images_.at(key).get());
+            } else if (controllers_.count(key) > 0) {
+                f(key, controllers_.at(key).get());
             } else if (groups_.count(key) > 0) {
                 f(key, groups_.at(key).get());
             } else if (aovs_.count(key) > 0) {
@@ -125,6 +127,62 @@ namespace vidrevolt {
         for (const auto& kv : videos_) {
             f(kv.second.get());
         }
+
+        for (const auto& kv : images_) {
+            f(kv.second.get());
+        }
+
+        // Calculate time delta (fractions of seconds)
+        if (!last_time_) {
+            last_time_ = std::chrono::high_resolution_clock::now();
+        }
+
+        auto time = std::chrono::high_resolution_clock::now();
+        float time_delta = std::chrono::duration<float>(time - last_time_.value()).count();
+        last_time_ = time;
+        setAOV("time_delta", Value(time_delta));
+
+        // Set function arguments for our lua controller functions
+        for (const auto& kv : lua_controllers_) {
+            std::shared_ptr<LuaController> lua = kv.second;
+
+            // Set arguments for each function of this controller
+            for (const auto& kv : lua->getControls()) {
+                const auto& control_name = kv.first;
+                const std::vector<AddressOrValue> params = kv.second.params;
+
+                // Convert our parameter list into resolved arguments.
+                std::vector<Value> args;
+                for (const auto& param : params) {
+                    if (std::holds_alternative<Value>(param)) {
+                        args.push_back(std::get<Value>(param));
+                        continue;
+                    }
+
+
+                    auto addr = std::get<Address>(param);
+
+                    bool found = false;
+                    visitReferable(addr, [&found, &args](const std::string& /*name*/, Referable r) {
+                        if (std::holds_alternative<Value>(r)) {
+                            args.push_back(std::get<Value>(r));
+                            found = true;
+                        }
+                    });
+
+                    if (!found) {
+                        throw std::runtime_error(addr.str() + " is not a Value address");
+                    }
+                }
+
+                // Set the arguments
+                lua->setControlArgs(control_name, args);
+            }
+        }
+
+        for (const auto& kv : controllers_) {
+            kv.second->poll();
+        }
     }
 
     void Patch::endRender() {
@@ -138,6 +196,10 @@ namespace vidrevolt {
 
          for (const auto& kv : videos_) {
             f(kv.second.get());
+         }
+
+         for (const auto& kv : images_) {
+             f(kv.second.get());
          }
     }
 
@@ -173,6 +235,11 @@ namespace vidrevolt {
         controllers_[key] = controller;
     }
 
+    void Patch::setLuaController(const std::string& key, std::shared_ptr<LuaController> lua) {
+        setController(key, lua);
+        lua_controllers_[key] = lua;
+    }
+
     void Patch::setGroup(const std::string& key, std::unique_ptr<Group> group) {
         groups_[key] = std::move(group);
     }
@@ -193,12 +260,10 @@ namespace vidrevolt {
         return is;
     }
 
-    bool Patch::isGroup(const Address& addr) const {
+    bool Patch::isSwizzable(const Address& addr) const {
         bool is = false;
         visitReferable(addr, [&is](const std::string& /*name*/, Referable r) {
-            if (std::holds_alternative<Group*>(r)) {
-                is = true;
-            }
+            is = std::holds_alternative<Media*>(r) || std::holds_alternative<ModuleOutputLabel>(r) || std::holds_alternative<Value>(r);
         });
 
         return is;

@@ -4,6 +4,7 @@
 // STL
 #include <vector>
 #include <string>
+#include <array>
 
 namespace vidrevolt {
     class Value {
@@ -14,15 +15,15 @@ namespace vidrevolt {
             Value(int v);
             Value(std::vector<float> v);
 
-            bool getBool();
-            float getFloat();
-            int getInt();
-            std::vector<float> getVec4();
+            bool getBool() const;
+            float getFloat() const;
+            int getInt() const;
+            std::array<float, 4> getVec4() const;
 
             std::string str() const;
 
         private:
-            std::vector<float> value_;
+            std::array<float, 4> value_;
     };
 }
 

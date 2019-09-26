@@ -41,6 +41,7 @@ namespace vidrevolt {
             void addMidiDevice(const std::string& name, const YAML::Node& settings);
             void addOSCServer(const std::string& name, const YAML::Node& settings);
             void addCommand(int num, const std::string& name, Trigger trigger, std::vector<AddressOrValue> args);
+            void addLuaController(const std::string& name, const YAML::Node& settings);
 
             std::string getBuiltinShader(const std::string& path);
 
@@ -49,4 +50,3 @@ namespace vidrevolt {
 }
 
 #endif
-

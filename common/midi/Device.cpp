@@ -19,7 +19,7 @@ namespace vidrevolt {
         }
 
         void Device::onError(RtMidiError::Type /*type*/, const std::string &msg, void* /*self*/) {
-            std::cout << "Midi error: " << msg;
+            std::cerr << "Midi error: " << msg << std::endl;
         }
 
         bool Device::connect() {

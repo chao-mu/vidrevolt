@@ -56,7 +56,7 @@ namespace vidrevolt {
                     break;
                 }
                 case GL_FLOAT_VEC2: {
-                    std::vector<float> v = val.getVec4();
+                    auto v = val.getVec4();
                     setUniform(name, [&v](GLint& id) {
                         glUniform2f(id, v[0], v[1]);
                     });
@@ -64,7 +64,7 @@ namespace vidrevolt {
                     break;
                 }
                 case GL_FLOAT_VEC3: {
-                    std::vector<float> v = val.getVec4();
+                    auto v = val.getVec4();
                     setUniform(name, [&v](GLint& id) {
                         glUniform3f(id, v[0], v[1], v[2]);
                     });
@@ -72,7 +72,7 @@ namespace vidrevolt {
                     break;
                 }
                 case GL_FLOAT_VEC4: {
-                    std::vector<float> v = val.getVec4();
+                    auto v = val.getVec4();
                     setUniform(name, [&v](GLint& id) {
                         glUniform4f(id, v[0], v[1], v[2], v[3]);
                     });

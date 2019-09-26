@@ -47,6 +47,7 @@
 #define KEY_SCALE_FILTER "sizeFilter"
 #define KEY_CONTROLLERS "controllers"
 #define CONTROLLER_TYPE_MIDI "midi"
+#define CONTROLLER_TYPE_LUA "lua"
 #define CONTROLLER_TYPE_OSC "osc"
 #define CONTROLLER_TYPE_KEYBOARD "keyboard"
 #define CONTROLLER_TYPE_BPM_SYNC "bpm-sync"
@@ -258,6 +259,8 @@ namespace vidrevolt {
                 addOSCServer(name, settings);
             } else if (type == CONTROLLER_TYPE_KEYBOARD) {
                 patch_->setController(name, KeyboardManager::makeKeyboard());
+            } else if (type == CONTROLLER_TYPE_LUA) {
+                addLuaController(name, settings);
             } else if (type == CONTROLLER_TYPE_BPM_SYNC) {
                 patch_->setController(name, std::make_unique<BPMSync>());
             } else {
@@ -421,6 +424,36 @@ namespace vidrevolt {
     }
 
 
+    void PatchBuilder::addLuaController(const std::string& name, const YAML::Node& settings) {
+        if (!settings[KEY_PATH]) {
+            throw std::runtime_error("controller '" + name + "' is missing path");
+        }
+
+        const std::string path = settings[KEY_PATH].as<std::string>();
+
+        bool shared = false;
+        if (settings["shared"]) {
+            shared = settings["shared"].as<bool>();
+        }
+
+        auto lua = std::make_shared<LuaController>(path, shared);
+
+        for (const auto& kv : settings["controls"]) {
+            std::string control_name = kv.first.as<std::string>();
+            const YAML::Node& control_settings = kv.second;
+            std::string func_name = control_settings["function"].as<std::string>();
+
+            std::vector<AddressOrValue> args;
+            for (const auto& arg : control_settings["args"]) {
+                args.push_back(readAddressOrValue(arg, true));
+            }
+
+            lua->addControl({control_name, func_name, args});
+        }
+
+        patch_->setLuaController(name, lua);
+    }
+
     void PatchBuilder::addMidiDevice(const std::string& name, const YAML::Node& settings) {
         if (!settings[KEY_PATH]) {
             throw std::runtime_error("controller '" + name + "' is missing path");
@@ -507,8 +540,7 @@ namespace vidrevolt {
                 if (!std::regex_search(tokens.back(), nonswiz_re)) {
                     Address addr = Address(tokens);
                     Address no_swiz_addr = addr.withoutBack();
-
-                    if (!patch_->isGroup(no_swiz_addr)) {
+                    if (patch_->isSwizzable(no_swiz_addr)) {
                         swiz = tokens.back();
                         tokens.pop_back();
                     }

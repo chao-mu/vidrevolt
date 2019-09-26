@@ -44,7 +44,6 @@ namespace vidrevolt {
                 const Resolution resolution_;
 
                 bool first_pass_ = true;
-                double last_time_ = 0;
         };
     }
 }

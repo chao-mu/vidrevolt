@@ -2,6 +2,7 @@
 
 // STL
 #include <sstream>
+#include <algorithm>
 
 namespace vidrevolt {
     Value::Value() : Value(0.0f) {}
@@ -18,22 +19,22 @@ namespace vidrevolt {
             v.push_back(v.back());
         }
 
-        value_ = v;
+        std::copy_n(v.begin(), 4, value_.begin());
     }
 
-    bool Value::getBool() {
+    bool Value::getBool() const {
         return value_[0]  > 0.5 ? true : false;
     }
 
-    int Value::getInt() {
+    int Value::getInt() const {
         return static_cast<int>(getFloat());
     }
 
-    float Value::getFloat() {
+    float Value::getFloat() const {
         return value_[0];
     }
 
-    std::vector<float> Value::getVec4() {
+    std::array<float, 4> Value::getVec4() const {
         return value_;
     }
 

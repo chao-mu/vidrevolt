@@ -14,6 +14,7 @@
 #include "Referable.h"
 #include "Trigger.h"
 #include "cmd/Command.h"
+#include "LuaController.h"
 
 namespace vidrevolt {
     class Patch {
@@ -27,6 +28,7 @@ namespace vidrevolt {
             void setVideo(const std::string& key, std::unique_ptr<Video> vid);
             void setImage(const std::string& key, std::unique_ptr<Image> image);
             void setController(const std::string& key, std::shared_ptr<Controller> controller);
+            void setLuaController(const std::string& key, std::shared_ptr<LuaController> lua);
             void setGroup(const std::string& key, std::unique_ptr<Group> groups);
             void setResolution(const Resolution& res);
             void setAOV(const std::string& key, const AddressOrValue& aov);
@@ -35,7 +37,7 @@ namespace vidrevolt {
 
             void addModule(std::unique_ptr<Module> mod);
 
-            bool isGroup(const Address& addr) const;
+            bool isSwizzable(const Address& addr) const;
             bool isMedia(const Address& addr) const;
 
             void visitReferable(const Address& addr, std::function<void(const std::string&, Referable)> f, const Address& tail=Address()) const;
@@ -51,9 +53,12 @@ namespace vidrevolt {
         private:
             std::string getAddressDeep(const Address& addr);
 
+            std::optional<std::chrono::time_point<std::chrono::high_resolution_clock>> last_time_;
+
             std::map<std::string, std::unique_ptr<Video>> videos_;
             std::map<std::string, std::unique_ptr<Image>> images_;
             std::map<std::string, std::shared_ptr<Controller>> controllers_;
+            std::map<std::string, std::shared_ptr<LuaController>> lua_controllers_;
             std::vector<std::unique_ptr<Module>> modules_;
             std::map<std::string, std::unique_ptr<Group>> groups_;
             std::map<std::string, AddressOrValue> aovs_;

@@ -278,7 +278,6 @@ int main(int argc, const char** argv) {
     DEBUG_TIME_DECLARE(render)
     DEBUG_TIME_DECLARE(loop)
     DEBUG_TIME_DECLARE(draw)
-    DEBUG_TIME_DECLARE(event_poll)
     DEBUG_TIME_DECLARE(flush)
 
     std::optional<std::chrono::time_point<std::chrono::high_resolution_clock>> last_write;
@@ -286,12 +285,7 @@ int main(int argc, const char** argv) {
         DEBUG_TIME_START(loop)
         GLCall(glfwPollEvents());
 
-        DEBUG_TIME_START(event_poll)
-        for (const auto& kv : patch->getControllers()) {
-            kv.second->poll();
-        }
         keyboard->poll();
-        DEBUG_TIME_END(event_poll)
 
         DEBUG_TIME_START(render)
         renderer->render();

@@ -6,7 +6,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -Wextra -Werror -Wall -pedantic-errors -Wconversion")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -Wextra -Werror -Wall -pedantic-errors -Wconversion -g")
 #set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
 add_compile_options("-Wextra" "-Werror" "-Wall" "-pedantic-errors" "-Wconversion")
