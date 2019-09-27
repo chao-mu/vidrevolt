@@ -87,7 +87,7 @@ namespace vidrevolt {
                         props["low"] ? props["low"].as<int>() : 0);
 
                 control.high = static_cast<unsigned char>(
-                        props["high"] ? props["high"].as<int>() : 0);
+                        props["high"] ? props["high"].as<int>() : 127);
 
                 control.type = props["type"].as<std::string>() == "button" ? CONTROL_TYPE_BUTTON : CONTROL_TYPE_FADER;
                 control.name = name;
