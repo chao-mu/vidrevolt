@@ -441,11 +441,23 @@ namespace vidrevolt {
         for (const auto& kv : settings["controls"]) {
             std::string control_name = kv.first.as<std::string>();
             const YAML::Node& control_settings = kv.second;
-            std::string func_name = control_settings["function"].as<std::string>();
 
+            std::string func_name;
             std::vector<AddressOrValue> args;
-            for (const auto& arg : control_settings["args"]) {
-                args.push_back(readAddressOrValue(arg, true));
+            if (control_settings.IsSequence()) {
+                int i = 0;
+                for (const auto& arg : control_settings) {
+                    if (i++ == 0) {
+                        func_name = arg.as<std::string>();
+                    } else {
+                        args.push_back(readAddressOrValue(arg, true));
+                    }
+                }
+            } else {
+                func_name = control_settings["function"].as<std::string>();
+                for (const auto& arg : control_settings["args"]) {
+                    args.push_back(readAddressOrValue(arg, true));
+                }
             }
 
             lua->addControl({control_name, func_name, args});
