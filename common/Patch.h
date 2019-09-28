@@ -14,7 +14,7 @@
 #include "Referable.h"
 #include "Trigger.h"
 #include "cmd/Command.h"
-#include "LuaController.h"
+#include "lua/Controller.h"
 
 namespace vidrevolt {
     class Patch {
@@ -28,7 +28,7 @@ namespace vidrevolt {
             void setVideo(const std::string& key, std::unique_ptr<Video> vid);
             void setImage(const std::string& key, std::unique_ptr<Image> image);
             void setController(const std::string& key, std::shared_ptr<Controller> controller);
-            void setLuaController(const std::string& key, std::shared_ptr<LuaController> lua);
+            void setLuaController(const std::string& key, std::shared_ptr<lua::Controller> lua);
             void setGroup(const std::string& key, std::unique_ptr<Group> groups);
             void setResolution(const Resolution& res);
             void setAOV(const std::string& key, const AddressOrValue& aov);
@@ -58,7 +58,7 @@ namespace vidrevolt {
             std::map<std::string, std::unique_ptr<Video>> videos_;
             std::map<std::string, std::unique_ptr<Image>> images_;
             std::map<std::string, std::shared_ptr<Controller>> controllers_;
-            std::map<std::string, std::shared_ptr<LuaController>> lua_controllers_;
+            std::map<std::string, std::shared_ptr<lua::Controller>> lua_controllers_;
             std::vector<std::unique_ptr<RenderStep>> modules_;
             std::map<std::string, std::unique_ptr<Group>> groups_;
             std::map<std::string, AddressOrValue> aovs_;

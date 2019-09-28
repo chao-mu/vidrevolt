@@ -144,7 +144,7 @@ namespace vidrevolt {
 
         // Set function arguments for our lua controller functions
         for (const auto& kv : lua_controllers_) {
-            std::shared_ptr<LuaController> lua = kv.second;
+            std::shared_ptr<lua::Controller> lua = kv.second;
 
             // Set arguments for each function of this controller
             for (const auto& kv : lua->getControls()) {
@@ -235,7 +235,7 @@ namespace vidrevolt {
         controllers_[key] = controller;
     }
 
-    void Patch::setLuaController(const std::string& key, std::shared_ptr<LuaController> lua) {
+    void Patch::setLuaController(const std::string& key, std::shared_ptr<lua::Controller> lua) {
         setController(key, lua);
         lua_controllers_[key] = lua;
     }

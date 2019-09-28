@@ -436,7 +436,7 @@ namespace vidrevolt {
             shared = settings["shared"].as<bool>();
         }
 
-        auto lua = std::make_shared<LuaController>(path, shared);
+        auto lua = std::make_shared<lua::Controller>(path, shared);
 
         for (const auto& kv : settings["controls"]) {
             std::string control_name = kv.first.as<std::string>();
