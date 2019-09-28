@@ -15,6 +15,7 @@ def main():
     classname = args.classname
 
     namespace = target_dir.replace("common/", "vidrevolt/", 1).split("/")
+    namespace = [s for s in namespace if s != ""]
 
     cpp_path = "{}/{}.cpp".format(target_dir, classname)
     h_path = "{}/{}.h".format(target_dir, classname)
