@@ -24,7 +24,7 @@ namespace vidrevolt {
             void buildMedia(const YAML::Node& patch);
             void buildCommands(const YAML::Node& patch);
             void buildControllers(const YAML::Node& patch);
-            void buildModules(const YAML::Node& patch);
+            void buildRenderSteps(const YAML::Node& patch);
             void buildGroups(const YAML::Node& patch);
             void buildVars(const YAML::Node& patch);
             void buildResolution(const YAML::Node& patch);

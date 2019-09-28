@@ -7,7 +7,7 @@
 // Ours
 #include "Video.h"
 #include "Image.h"
-#include "Module.h"
+#include "RenderStep.h"
 #include "Group.h"
 #include "Controller.h"
 #include "Keyboard.h"
@@ -21,7 +21,7 @@ namespace vidrevolt {
         public:
             const std::map<std::string, std::unique_ptr<Video>>& getVideos() const;
             const std::map<std::string, std::unique_ptr<Image>>& getImages() const;
-            const std::vector<std::unique_ptr<Module>>& getModules() const;
+            const std::vector<std::unique_ptr<RenderStep>>& getRenderSteps() const;
             const std::map<std::string, std::shared_ptr<Controller>>& getControllers() const;
             const std::map<std::string, std::unique_ptr<Group>>& getGroups() const;
 
@@ -35,7 +35,7 @@ namespace vidrevolt {
 
             Resolution getResolution();
 
-            void addModule(std::unique_ptr<Module> mod);
+            void addRenderStep(std::unique_ptr<RenderStep> mod);
 
             bool isSwizzable(const Address& addr) const;
             bool isMedia(const Address& addr) const;
@@ -59,7 +59,7 @@ namespace vidrevolt {
             std::map<std::string, std::unique_ptr<Image>> images_;
             std::map<std::string, std::shared_ptr<Controller>> controllers_;
             std::map<std::string, std::shared_ptr<LuaController>> lua_controllers_;
-            std::vector<std::unique_ptr<Module>> modules_;
+            std::vector<std::unique_ptr<RenderStep>> modules_;
             std::map<std::string, std::unique_ptr<Group>> groups_;
             std::map<std::string, AddressOrValue> aovs_;
             std::map<std::string, Resolution> module_resolutions_;

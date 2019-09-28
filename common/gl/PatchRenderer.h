@@ -13,7 +13,7 @@
 
 // Ours
 #include "../Media.h"
-#include "../Module.h"
+#include "../RenderStep.h"
 #include "../Resolution.h"
 #include "../Patch.h"
 
@@ -34,7 +34,7 @@ namespace vidrevolt {
             private:
                 std::shared_ptr<RenderOut> getLast();
 
-                std::vector<std::shared_ptr<Module>> modules_;
+                std::vector<std::shared_ptr<RenderStep>> modules_;
 
                 std::map<std::string, std::shared_ptr<Texture>> textures_;
                 std::map<std::string, std::shared_ptr<RenderOut>> render_outs_;

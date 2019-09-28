@@ -7,7 +7,7 @@ namespace vidrevolt {
         PatchRenderer::PatchRenderer(std::shared_ptr<Patch> patch) : patch_(patch), resolution_(patch->getResolution()) {}
 
         void PatchRenderer::load() {
-            for (const auto& mod : patch_->getModules()) {
+            for (const auto& mod : patch_->getRenderSteps()) {
                 std::pair<std::shared_ptr<ShaderProgram>, module::UniformNeeds> kv =
                     module::compile(mod->getPath(), mod->getParams(), patch_);
 
@@ -33,7 +33,7 @@ namespace vidrevolt {
         }
 
         std::shared_ptr<RenderOut> PatchRenderer::getLast() {
-            return render_outs_.at(patch_->getModules().back()->getOutput());
+            return render_outs_.at(patch_->getRenderSteps().back()->getOutput());
         }
 
         std::shared_ptr<Texture> PatchRenderer::getLastOutTex() {
@@ -51,7 +51,7 @@ namespace vidrevolt {
         void PatchRenderer::render() {
             patch_->startRender();
 
-            const std::vector<std::unique_ptr<Module>>& modules = patch_->getModules();
+            const std::vector<std::unique_ptr<RenderStep>>& modules = patch_->getRenderSteps();
             for (size_t i = 0; i < modules.size(); i++) {
                 const auto& mod = modules.at(i);
                 const auto& uniforms = uniform_needs_.at(i);
@@ -97,7 +97,7 @@ namespace vidrevolt {
                                 if (frame_opt.has_value()) {
                                     tex->populate(frame_opt.value());
                                 }
-                            } else if (std::holds_alternative<ModuleOutputLabel>(r)) {
+                            } else if (std::holds_alternative<RenderStep::Label>(r)) {
                                 std::string key = std::get<std::string>(r);
                                 if (textures_.count(key) > 0) {
                                     tex = textures_.at(key);

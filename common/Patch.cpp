@@ -80,8 +80,8 @@ namespace vidrevolt {
             visitReferable(addr, [&res, addr, this](const std::string&, Referable r) {
                 if (std::holds_alternative<Media*>(r)) {
                     res = std::get<Media*>(r)->getResolution();
-                } else if (std::holds_alternative<ModuleOutputLabel>(r)) {
-                    res = module_resolutions_.at(std::get<ModuleOutputLabel>(r));
+                } else if (std::holds_alternative<RenderStep::Label>(r)) {
+                    res = module_resolutions_.at(std::get<RenderStep::Label>(r));
                 } else {
                     throw std::runtime_error("Expected address '" + addr.str() + "' to refer to media");
                 }
@@ -203,7 +203,7 @@ namespace vidrevolt {
          }
     }
 
-    const std::vector<std::unique_ptr<Module>>& Patch::getModules() const {
+    const std::vector<std::unique_ptr<RenderStep>>& Patch::getRenderSteps() const {
         return modules_;
     }
 
@@ -244,7 +244,7 @@ namespace vidrevolt {
         groups_[key] = std::move(group);
     }
 
-    void Patch::addModule(std::unique_ptr<Module> mod) {
+    void Patch::addRenderStep(std::unique_ptr<RenderStep> mod) {
         module_resolutions_[mod->getOutput()] = mod->getResolution();
         modules_.push_back(std::move(mod));
     }
@@ -252,7 +252,7 @@ namespace vidrevolt {
     bool Patch::isMedia(const Address& addr) const {
         bool is = false;
         visitReferable(addr, [&is](const std::string& /*name*/, Referable r) {
-            if (std::holds_alternative<Media*>(r) || std::holds_alternative<ModuleOutputLabel>(r)) {
+            if (std::holds_alternative<Media*>(r) || std::holds_alternative<RenderStep::Label>(r)) {
                 is = true;
             }
         });
@@ -263,7 +263,7 @@ namespace vidrevolt {
     bool Patch::isSwizzable(const Address& addr) const {
         bool is = false;
         visitReferable(addr, [&is](const std::string& /*name*/, Referable r) {
-            is = std::holds_alternative<Media*>(r) || std::holds_alternative<ModuleOutputLabel>(r) || std::holds_alternative<Value>(r);
+            is = std::holds_alternative<Media*>(r) || std::holds_alternative<RenderStep::Label>(r) || std::holds_alternative<Value>(r);
         });
 
         return is;

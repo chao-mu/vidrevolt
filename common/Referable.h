@@ -7,8 +7,8 @@
 #include "Value.h"
 #include "Group.h"
 #include "Controller.h"
+#include "RenderStep.h"
 
 namespace vidrevolt {
-    using ModuleOutputLabel = std::string;
-    using Referable = std::variant<Media*, Value, Group*, Controller*, ModuleOutputLabel>;
+    using Referable = std::variant<Media*, Value, Group*, Controller*, RenderStep::Label>;
 }

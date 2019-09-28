@@ -68,7 +68,7 @@ namespace vidrevolt {
         buildGroups(patch);
         buildVars(patch);
         buildControllers(patch);
-        buildModules(patch);
+        buildRenderSteps(patch);
         buildCommands(patch);
     }
 
@@ -315,7 +315,7 @@ namespace vidrevolt {
         return fileutil::join("shaders", path);
     }
 
-    void PatchBuilder::buildModules(const YAML::Node& patch) {
+    void PatchBuilder::buildRenderSteps(const YAML::Node& patch) {
         if (!patch[KEY_RENDER]) {
             return;
         }
@@ -331,14 +331,14 @@ namespace vidrevolt {
 
             if (settings[KEY_INPUT]) {
                 Address addr = readAddress(settings[KEY_INPUT], true);
-                Module::Param param;
+                RenderStep::Param param;
                 param.value = addr;
 
-                auto mod = std::make_unique<Module>(output, getBuiltinShader("pass.glsl"), res);
+                auto step = std::make_unique<RenderStep>(output, getBuiltinShader("pass.glsl"), res);
 
-                mod->setParam("img0", param);
+                step->setParam("img0", param);
 
-                patch_->addModule(std::move(mod));
+                patch_->addRenderStep(std::move(step));
 
                 continue;
             }
@@ -349,14 +349,14 @@ namespace vidrevolt {
 
             const std::string path = settings[KEY_PATH].as<std::string>();
 
-            auto mod = std::make_unique<Module>(output, path, res);
+            auto step = std::make_unique<RenderStep>(output, path, res);
 
             if (settings[KEY_INPUTS]) {
                 for (const auto& input_kv : settings[KEY_INPUTS]) {
                     const std::string key = input_kv.first.as<std::string>();
                     const YAML::Node& value = input_kv.second;
 
-                    Module::Param param;
+                    RenderStep::Param param;
 
                     if (value.Type() == YAML::NodeType::Map) {
                         param.value = readAddressOrValue(value[KEY_INPUT], true);
@@ -376,11 +376,11 @@ namespace vidrevolt {
                         param.value = readAddressOrValue(value, true);
                     }
 
-                    mod->setParam(key, param);
+                    step->setParam(key, param);
                 }
             }
 
-            patch_->addModule(std::move(mod));
+            patch_->addRenderStep(std::move(step));
         }
     }
 

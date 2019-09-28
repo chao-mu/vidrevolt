@@ -1,5 +1,5 @@
-#ifndef VIDREVOLT_MODULE_H_
-#define VIDREVOLT_MODULE_H_
+#ifndef VIDREVOLT_RENDERSTEP_H_
+#define VIDREVOLT_RENDERSTEP_H_
 
 // STL
 #include <string>
@@ -12,7 +12,7 @@
 #include "Resolution.h"
 
 namespace vidrevolt {
-    class Module {
+    class RenderStep {
         public:
             struct Param {
                 AddressOrValue value;
@@ -21,9 +21,11 @@ namespace vidrevolt {
                 AddressOrValue pow;
             };
 
-            Module(const std::string& output, const std::string& path, const Resolution& res);
+            using Label = std::string;
 
-            std::map<std::string, Module::Param> getParams();
+            RenderStep(const std::string& output, const std::string& path, const Resolution& res);
+
+            std::map<std::string, RenderStep::Param> getParams();
 
             void setParam(const std::string& input, Param src);
 
