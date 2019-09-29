@@ -3,56 +3,9 @@
 // STL
 #include <iostream>
 
-// Ours
-#include "../fileutil.h"
-
 namespace vidrevolt {
     namespace lua {
-        Controller::Controller(const std::string& path, bool shared) : shared_(shared), path_(path) {}
-
-        Controller::~Controller() {
-            if (shared_) {
-                if (L_ != nullptr) {
-                    lua_close(L_);
-                }
-            } else {
-                for (const auto& kv : control_states_) {
-                    if (kv.second != nullptr) {
-                        lua_close(kv.second);
-                    }
-                }
-            }
-        }
-
-        lua_State* Controller::getLua(const std::string& control_name) {
-            lua_State* L = nullptr;
-            if (shared_) {
-                L = L_;
-            } else {
-                L = control_states_[control_name];
-            }
-
-            if (L == nullptr) {
-                L = luaL_newstate();
-            } else {
-                return L;
-            }
-
-            // Execute lua code
-            std::string code = vidrevolt::fileutil::slurp(path_);
-            int ret = luaL_dostring(L, code.c_str());
-            if (ret != LUA_OK) {
-                throw std::runtime_error("Failed to evaluate " + path_ + ": " + lua_tostring(L, -1));
-            }
-
-            if (shared_) {
-                L_ = L;
-            } else {
-                control_states_[control_name] = L;
-            }
-
-            return L;
-        }
+        Controller::Controller(const std::string& path, bool shared) : HasLuaState(path, shared) {}
 
         void Controller::addControl(const Controller::Control& ctrl) {
             lua_State* L = getLua(ctrl.control_name);
@@ -60,7 +13,7 @@ namespace vidrevolt {
             std::string func_name = ctrl.func_name;
             lua_getglobal(L, func_name.c_str());
             if (!lua_isfunction(L, -1)) {
-                throw std::runtime_error("Lua function not defined in " + path_ + " : " + func_name);
+                throw std::runtime_error("Lua function not defined in " + getPath() + " : " + func_name);
             }
 
             controls_[ctrl.control_name] = ctrl;
@@ -78,10 +31,7 @@ namespace vidrevolt {
                 std::string func = controls_.at(control_name).func_name;
 
                 lua_State* L = getLua(control_name);
-                lua_getglobal(L, func.c_str());
-                if (!lua_isfunction(L, -1)) {
-                    throw std::runtime_error("Lua function not defined in " + path_ + " : " + func);
-                }
+                pushFunction(L, func);
 
                 // Store each value of the
                 int argc = 0;
