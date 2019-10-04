@@ -8,15 +8,9 @@ namespace vidrevolt {
         HasLuaState::HasLuaState(const std::string& path, bool shared) : path_(path), shared_(shared)  {}
 
         HasLuaState::~HasLuaState() {
-            if (shared_) {
-                if (L_ != nullptr) {
-                    lua_close(L_);
-                }
-            } else {
-                for (const auto& kv : control_states_) {
-                    if (kv.second != nullptr) {
-                        lua_close(kv.second);
-                    }
+            for (const auto& kv : lua_states_) {
+                if (kv.second != nullptr) {
+                    lua_close(kv.second);
                 }
             }
         }
@@ -24,23 +18,26 @@ namespace vidrevolt {
         void HasLuaState::pushFunction(lua_State* L, const std::string& func_name) {
             lua_getglobal(L, func_name.c_str());
             if (!lua_isfunction(L, -1)) {
-                throw std::runtime_error("Lua function not defined in " + getPath() + " : " + func_name);
+                throw std::runtime_error(func_name + " not defined in " + getPath());
             }
         }
 
-        lua_State* HasLuaState::getLua(const std::string& key) {
-            lua_State* L = nullptr;
-            if (shared_) {
-                L = L_;
-            } else {
-                L = control_states_[key];
-            }
+        std::string HasLuaState::getPath() {
+            return path_;
+        }
 
-            if (L == nullptr) {
-                L = luaL_newstate();
-            } else {
+        lua_State* HasLuaState::getLua(const std::string& key_in) {
+            lua_State* L = nullptr;
+            std::string key = shared_ ? "" : key_in;
+
+            // Return if already initialized
+            L = lua_states_[key];
+            if (L != nullptr) {
                 return L;
             }
+
+            L = luaL_newstate();
+            *static_cast<HasLuaState**>(lua_getextraspace(L)) = this;
 
             // Execute lua code
             std::string code = vidrevolt::fileutil::slurp(path_);
@@ -49,17 +46,10 @@ namespace vidrevolt {
                 throw std::runtime_error("Failed to evaluate " + path_ + ": " + lua_tostring(L, -1));
             }
 
-            if (shared_) {
-                L_ = L;
-            } else {
-                control_states_[key] = L;
-            }
+            // Store
+            lua_states_[key] = L;
 
             return L;
-        }
-
-        std::string HasLuaState::getPath() {
-            return path_;
         }
     }
 }

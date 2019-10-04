@@ -33,8 +33,8 @@ namespace vidrevolt {
 
             private:
                 void loadSettings();
-                bool connect();
                 void loop();
+                bool connectDevice();
 
                 static void onError(RtMidiError::Type type, const std::string &msg, void* self);
 

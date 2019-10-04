@@ -12,6 +12,14 @@ namespace vidrevolt {
         signals_[control_name].connect(f);
     }
 
+    std::map<std::string, Value> Controller::getValues() const {
+        return values_;
+    }
+
+    void Controller::connect(std::function<void(const std::string& name, Value)> f) {
+        generic_signal_.connect(f);
+    }
+
     void Controller::poll() {
         beforePoll();
 
@@ -20,6 +28,7 @@ namespace vidrevolt {
             for (const auto& kv : pending_values_) {
                 values_[kv.first] = kv.second;
                 signals_[kv.first](kv.second);
+                generic_signal_(kv.first, kv.second);
             }
             pending_values_.clear();
         }
@@ -27,10 +36,14 @@ namespace vidrevolt {
 
     void Controller::addControlName(const std::string& control_name) {
         control_names_.push_back(control_name);
+        values_[control_name] = Value(0);
     }
 
     void Controller::setControlNames(std::vector<std::string> control_names) {
         control_names_ = control_names;
+        for (const auto& name : control_names) {
+            values_[name] = Value(0);
+        }
     }
 
     void Controller::addValue(const std::string& control_name, Value v) {
@@ -53,4 +66,3 @@ namespace vidrevolt {
         return control_names_;
     }
 }
-

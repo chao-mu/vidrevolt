@@ -1,14 +1,163 @@
 #include "Patch.h"
 
-// TODO: Rename Address to Reference. Everything simplifies with that reframing
-
+// Ours
 #include "cmd/OverwriteGroup.h"
 #include "cmd/OverwriteVar.h"
 #include "cmd/Reverse.h"
 #include "cmd/Rotate.h"
 #include "cmd/TapTempo.h"
+#include "midi/Device.h"
+
+
 
 namespace vidrevolt {
+    sol::table toTable(sol::state& lua, Value v) {
+        auto vec = v.getVec4();
+        auto tab = lua.create_table(4);
+        for (size_t i = 0; i < vec.size(); i++) {
+            tab[i] = vec[i];
+        }
+
+        return tab;
+    }
+    Patch::Patch(const std::string& path) : path_(path) {}
+
+    AddressOrValue Patch::toAOV(sol::object obj) {
+        if (obj.is<float>()) {
+            return Value(obj.as<float>());
+        } else if (obj.is<std::vector<float>>()) {
+            return Value(obj.as<std::vector<float>>());
+        }  else if (obj.is<std::string>()) {
+            std::string id = obj.as<std::string>();
+            if (videos_.count(id) || images_.count(id)) {
+                return Address(obj.as<std::string>());
+            } else {
+                throw std::runtime_error("Unrecognized address specified");
+            }
+        } else {
+            throw std::runtime_error("Unsupported lua value type");
+        }
+    }
+
+
+    void Patch::load() {
+        lua_.open_libraries(sol::lib::base, sol::lib::package);
+
+        // Our custom functions
+        lua_.set_function("Video", &Patch::luafunc_Video, this);
+        lua_.set_function("Midi", &Patch::luafunc_Midi, this);
+        lua_.set_function("Step", &Patch::luafunc_Step, this);
+        lua_.set_function("getControlValues", &Patch::luafunc_getControlValues, this);
+
+        lua_.script_file(path_);
+
+        resolution_.width = lua_.get_or("width", 1920);
+        resolution_.height = lua_.get_or("height", 1920);
+
+        populateRenderSteps();
+    }
+
+    Patch::ObjID Patch::luafunc_Video(const std::string& path, sol::table args) {
+        Video::Playback pb = Video::Forward;
+        bool auto_reset = false;
+
+        if (args) {
+            for (const auto& arg : args) {
+                auto arg_s = arg.second.as<std::string>();
+                if (arg_s == "reverse") {
+                    pb = Video::Reverse;
+                } else if (arg_s == "forward") {
+                    pb = Video::Forward;
+                } else if (arg_s == "mirror") {
+                    pb = Video::Mirror;
+                } else if (arg_s == "reset") {
+                    auto_reset = true;
+                } else {
+                    throw std::runtime_error("Unexpected Video argument " + arg_s);
+                }
+            }
+        }
+
+        ObjID id = path;
+        videos_[id] = std::make_unique<Video>(path, auto_reset, pb);
+        videos_[id]->start();
+
+        return id;
+    }
+
+    sol::table Patch::luafunc_getControlValues(const ObjID& controller_id) {
+        if (controllers_.count(controller_id) == 0) {
+            throw std::runtime_error("Control values requested for non-existent controller");
+        }
+        sol::table ret = lua_.create_table_with();
+
+        std::vector<std::string> keys;
+        for (const auto& kv : controllers_.at(controller_id)->getValues()) {
+            ret[kv.first] = toTable(lua_, kv.second);
+        }
+
+        return ret;
+    }
+
+
+    Patch::ObjID Patch::luafunc_Midi(const std::string& path) {
+        ObjID id = path;
+        auto dev = std::make_shared<midi::Device>(path);
+        dev->start();
+
+        dev->connect([id, this](const std::string& control, Value v) {
+            auto listener = lua_.get<sol::function>("onControl");
+            if (lua_["onControl"]) {
+                listener(id, control, toTable(lua_, v));
+            }
+        });
+
+        controllers_[id] = dev;
+
+        return id;
+    }
+
+    Patch::ObjID Patch::luafunc_Step(const std::string& label, const std::string& path, sol::table inputs){
+        ObjID id = label;
+
+        auto step = std::make_unique<RenderStep>(id, path, getResolution());
+        if (inputs) {
+            for (const auto& input_kv : inputs) {
+                const std::string key = input_kv.first.as<std::string>();
+                sol::object value = input_kv.second;
+
+                RenderStep::Param param;
+                if (value.is<sol::table>()) {
+                    auto tab = value.as<sol::table>();
+
+                    if (tab["input"]) {
+                        param.value = toAOV(tab.get<sol::object>("input"));
+                    }
+
+                    if (tab["amp"]) {
+                        param.amp = toAOV(tab.get<sol::object>("amp"));
+                    }
+
+                    if (tab["shift"]) {
+                        param.shift = toAOV(tab.get<sol::object>("shift"));
+                    }
+
+                    if (tab["pow"]) {
+                        param.pow = toAOV(tab.get<sol::object>("pow"));
+                    }
+                } else {
+                    param.value = toAOV(value);
+                }
+
+                step->setParam(key, param);
+            }
+        }
+
+        addRenderStep(std::move(step));
+
+        return id;
+    }
+
 
     void Patch::addCommand(const Trigger& trigger, std::unique_ptr<cmd::Command> c) {
         commands_.push_back(std::move(c));
@@ -70,7 +219,7 @@ namespace vidrevolt {
                 } else if (std::holds_alternative<Address>(aov)) {
                     visitReferable(std::get<Address>(aov), f);
                 }
-            } else if (module_resolutions_.count(key) > 0) {
+            } else if (render_step_resolutions_.count(key) > 0) {
                  f(key, key);
             } else {
                 throw std::runtime_error("Invalid address " + addr.str());
@@ -81,7 +230,7 @@ namespace vidrevolt {
                 if (std::holds_alternative<Media*>(r)) {
                     res = std::get<Media*>(r)->getResolution();
                 } else if (std::holds_alternative<RenderStep::Label>(r)) {
-                    res = module_resolutions_.at(std::get<RenderStep::Label>(r));
+                    res = render_step_resolutions_.at(std::get<RenderStep::Label>(r));
                 } else {
                     throw std::runtime_error("Expected address '" + addr.str() + "' to refer to media");
                 }
@@ -183,6 +332,19 @@ namespace vidrevolt {
         for (const auto& kv : controllers_) {
             kv.second->poll();
         }
+
+        populateRenderSteps();
+    }
+
+    void Patch::populateRenderSteps() {
+        // Populate our render steps
+        render_steps_.clear();
+        sol::function renderFunc = lua_["render"];
+        if (!renderFunc) {
+            throw std::runtime_error("Expected a function 'render'");
+        }
+
+        renderFunc();
     }
 
     void Patch::endRender() {
@@ -204,7 +366,7 @@ namespace vidrevolt {
     }
 
     const std::vector<std::unique_ptr<RenderStep>>& Patch::getRenderSteps() const {
-        return modules_;
+        return render_steps_;
     }
 
     const std::map<std::string, std::unique_ptr<Video>>& Patch::getVideos() const {
@@ -244,9 +406,9 @@ namespace vidrevolt {
         groups_[key] = std::move(group);
     }
 
-    void Patch::addRenderStep(std::unique_ptr<RenderStep> mod) {
-        module_resolutions_[mod->getOutput()] = mod->getResolution();
-        modules_.push_back(std::move(mod));
+    void Patch::addRenderStep(std::unique_ptr<RenderStep> step) {
+        render_step_resolutions_[step->getOutput()] = step->getResolution();
+        render_steps_.push_back(std::move(step));
     }
 
     bool Patch::isMedia(const Address& addr) const {

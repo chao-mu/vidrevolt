@@ -7,12 +7,16 @@ namespace vidrevolt {
         PatchRenderer::PatchRenderer(std::shared_ptr<Patch> patch) : patch_(patch), resolution_(patch->getResolution()) {}
 
         void PatchRenderer::load() {
-            for (const auto& mod : patch_->getRenderSteps()) {
-                std::pair<std::shared_ptr<ShaderProgram>, module::UniformNeeds> kv =
+            auto& steps = patch_->getRenderSteps();
+            if (steps.size() == 0) {
+                throw std::runtime_error("No render steps to render!");
+            }
+
+            for (const auto& mod : steps) {
+                std::shared_ptr<ShaderProgram> prog =
                     module::compile(mod->getPath(), mod->getParams(), patch_);
 
-                programs_.push_back(kv.first);
-                uniform_needs_.push_back(kv.second);
+                programs_.push_back(prog);
 
                 std::string out_name = mod->getOutput();
                 if (render_outs_.count(out_name) <= 0) {
@@ -28,7 +32,6 @@ namespace vidrevolt {
         void PatchRenderer::reload() {
             render_outs_.clear();
             programs_.clear();
-            uniform_needs_.clear();
             load();
         }
 
@@ -54,7 +57,7 @@ namespace vidrevolt {
             const std::vector<std::unique_ptr<RenderStep>>& modules = patch_->getRenderSteps();
             for (size_t i = 0; i < modules.size(); i++) {
                 const auto& mod = modules.at(i);
-                const auto& uniforms = uniform_needs_.at(i);
+                const auto& uniforms = module::getNeeds(mod->getParams());
                 const auto& program = programs_.at(i);
 
                 std::shared_ptr<RenderOut> out = render_outs_.at(mod->getOutput());
@@ -70,8 +73,6 @@ namespace vidrevolt {
                         continue;
                     }
 
-                    std::optional<Value> val_opt;
-                    std::optional<Address> addr_opt;
                     if (isValue(addr_or_val)) {
                         program->setUniform(uni_name, std::get<Value>(addr_or_val));
                     } else if (isAddress(addr_or_val)) {

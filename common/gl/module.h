@@ -16,16 +16,23 @@ namespace vidrevolt {
         namespace module {
             using UniformNeeds = std::map<std::string, AddressOrValue>;
 
-            std::string toInternalName(const std::string& name);
+            std::string toInternalName(const std::string& input_name, const std::string& field);
 
-            std::pair<std::shared_ptr<ShaderProgram>, UniformNeeds> compile(
+            std::shared_ptr<ShaderProgram> compile(
                    const std::string path,
                    std::map<std::string, RenderStep::Param> params,
                    std::shared_ptr<Patch> patch);
 
-            std::pair<std::string, UniformNeeds> readVertShader(const std::map<std::string, RenderStep::Param>& params, std::shared_ptr<Patch> patch);
+            std::string readVertShader(
+                    const std::map<std::string, RenderStep::Param>& params,
+                    std::shared_ptr<Patch> patch);
 
-            std::pair<std::string, UniformNeeds> readFragShader(const std::string path, std::map<std::string, RenderStep::Param> params, std::shared_ptr<Patch> patch);
+            std::string readFragShader(
+                    const std::string path,
+                    std::map<std::string, RenderStep::Param> params,
+                    std::shared_ptr<Patch> patch);
+
+            UniformNeeds getNeeds(std::map<std::string, RenderStep::Param> params);
         }
     }
 }

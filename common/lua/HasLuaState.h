@@ -17,13 +17,12 @@ namespace vidrevolt {
             protected:
                 HasLuaState(const std::string& path, bool shared);
 
-                lua_State* getLua(const std::string& key);
+                lua_State* getLua(const std::string& key="");
                 std::string getPath();
                 void pushFunction(lua_State* L, const std::string& func_name);
 
             private:
-                std::map<std::string, lua_State*> control_states_;
-                lua_State* L_ = nullptr;
+                std::map<std::string, lua_State*> lua_states_;
                 std::string path_;
                 bool shared_ = false;
         };

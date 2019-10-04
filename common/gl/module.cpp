@@ -10,35 +10,51 @@
 namespace vidrevolt {
     namespace gl {
         namespace module {
-            std::string toInternalName(const std::string& name) {
-                return "vr_input_" + name;
+            std::string toInternalName(const std::string& input_name, const std::string& field) {
+                return "vr_input_" + input_name + "_" + field;
             }
 
-            std::pair<std::shared_ptr<ShaderProgram>, UniformNeeds> compile(
+            UniformNeeds getNeeds(std::map<std::string, RenderStep::Param> params) {
+                UniformNeeds uniforms;
+
+                for (const auto& kv : params) {
+                    const std::string& name = kv.first;
+                    const RenderStep::Param& param = kv.second;
+
+                    uniforms[toInternalName(name, "value")] = param.value;
+                    uniforms[toInternalName(name, "shift")] = param.shift;
+                    uniforms[toInternalName(name, "amp")] = param.amp;
+                    uniforms[toInternalName(name, "pow")] = param.pow;
+
+                    if (std::holds_alternative<Address>(param.value)) {
+                        uniforms[toInternalName(name, "res")] =
+                            std::get<Address>(param.value) + "resolution";
+                    }
+                }
+
+                return uniforms;
+            }
+
+            std::shared_ptr<ShaderProgram> compile(
                    const std::string path,
                    std::map<std::string, RenderStep::Param> params,
                    std::shared_ptr<Patch> patch) {
 
-                UniformNeeds uniforms;
-
                 auto program = std::make_shared<gl::ShaderProgram>();
 
-                std::pair<std::string, gl::module::UniformNeeds> vert_shader = readVertShader(params, patch);
-                std::pair<std::string, gl::module::UniformNeeds> frag_shader = readFragShader(path, params, patch);
+                std::string vert_shader = readVertShader(params, patch);
+                std::string frag_shader = readFragShader(path, params, patch);
 
-                uniforms.insert(vert_shader.second.cbegin(), vert_shader.second.cend());
-                uniforms.insert(frag_shader.second.cbegin(), frag_shader.second.cend());
-
-                program->loadShaderStr(GL_VERTEX_SHADER, vert_shader.first, "internal-vert.glsl");
-                program->loadShaderStr(GL_FRAGMENT_SHADER, frag_shader.first, path);
+                program->loadShaderStr(GL_VERTEX_SHADER, vert_shader, "internal-vert.glsl");
+                program->loadShaderStr(GL_FRAGMENT_SHADER, frag_shader, path);
 
                 program->compile();
 
-                return std::make_pair(program, uniforms);
+                return program;
             }
 
 
-            std::pair<std::string, UniformNeeds> readVertShader(const std::map<std::string, RenderStep::Param>& params, std::shared_ptr<Patch> patch) {
+            std::string readVertShader(const std::map<std::string, RenderStep::Param>& params, std::shared_ptr<Patch> patch) {
                 std::string shader = R"V(
                     #version 410
 
@@ -67,10 +83,9 @@ namespace vidrevolt {
                     }
 
                     const std::string& name = kv.first;
-                    const std::string internal_name = toInternalName(name);
 
-                    shader += "uniform vec2 " + internal_name + "_res;\n";
-                    shader += "out vec2 " + internal_name + "_tc;\n";
+                    shader += "uniform vec2 " + toInternalName(name, "res") + ";\n";
+                    shader += "out vec2 " + toInternalName(name, "tc") + ";\n";
                 }
 
                 shader += R"V(
@@ -106,9 +121,8 @@ namespace vidrevolt {
                     }
 
                     const std::string& name = kv.first;
-                    const std::string internal_name = toInternalName(name);
-                    const std::string res_name = internal_name + "_res";
-                    const std::string tc_name = internal_name + "_tc";
+                    const std::string res_name = toInternalName(name, "res");
+                    const std::string tc_name = toInternalName(name, "tc");
 
                     shader += tc_name + " = uv_in;\n";
                     shader += tc_name + ".x /= " + res_name + ".x / " + res_name + ".y;\n";
@@ -117,12 +131,10 @@ namespace vidrevolt {
 
                 shader += "}";
 
-                return std::make_pair(shader, UniformNeeds());
+                return shader;
             }
 
-            std::pair<std::string, UniformNeeds> readFragShader(const std::string path, std::map<std::string, RenderStep::Param> params, std::shared_ptr<Patch> patch) {
-                UniformNeeds uniforms;
-
+            std::string readFragShader(const std::string path, std::map<std::string, RenderStep::Param> params, std::shared_ptr<Patch> patch) {
                 std::ifstream ifs(path);
                 if (ifs.fail()) {
                     std::ostringstream err;
@@ -150,22 +162,17 @@ namespace vidrevolt {
                             const std::string name = match[2];
                             const std::string def = match[3];
 
-                            const std::string internal_name = toInternalName(name);
-                            const std::string internal_name_shift = internal_name + "_shift";
-                            const std::string internal_name_amp = internal_name + "_amp";
-                            const std::string internal_name_res = internal_name + "_res";
-                            const std::string internal_name_tc = internal_name + "_tc";
-                            const std::string internal_name_pow = internal_name + "_pow";
+                            const std::string internal_name_value = toInternalName(name, "value");
+                            const std::string internal_name_shift = toInternalName(name, "shift");
+                            const std::string internal_name_amp = toInternalName(name, "amp");
+                            const std::string internal_name_res = toInternalName(name, "res");
+                            const std::string internal_name_tc = toInternalName(name, "tc");
+                            const std::string internal_name_pow = toInternalName(name, "pow");
 
                             bool defined = params.count(name) > 0;
                             std::optional<Address> addr_opt;
                             if (defined) {
                                 RenderStep::Param& p = params.at(name);
-
-                                uniforms[internal_name] = p.value;
-                                uniforms[internal_name_amp] = p.amp;
-                                uniforms[internal_name_shift] = p.shift;
-                                uniforms[internal_name_pow] = p.pow;
 
                                 if (isAddress(p.value)) {
                                     addr_opt = std::get<Address>(p.value);
@@ -174,10 +181,10 @@ namespace vidrevolt {
 
                             bool is_texture = addr_opt.has_value() && patch->isMedia(addr_opt.value());
                             if (is_texture) {
-                                frag_shader << "uniform sampler2D " << internal_name << ";\n";
+                                frag_shader << "uniform sampler2D " << internal_name_value << ";\n";
                                 frag_shader << "in vec2 " << internal_name_tc << ";\n";
                             } else {
-                                frag_shader << "uniform " << type << " " << internal_name;
+                                frag_shader << "uniform " << type << " " << internal_name_value;
 
                                 if (def != "") {
                                     frag_shader << " = " << def;
@@ -195,7 +202,6 @@ namespace vidrevolt {
                             frag_shader << "#define " << name << "_tc ";
                             if (is_texture && addr_opt.has_value()) {
                                 frag_shader << internal_name_tc;
-                                uniforms[internal_name_res] = addr_opt.value() + "resolution";
                             } else {
                                 frag_shader << "vec2(0)";
                             }
@@ -210,7 +216,7 @@ namespace vidrevolt {
 
                             std::string pow_arg = "";
                             if (is_texture && addr_opt.has_value()) {
-                                frag_shader << "texture(" << internal_name << ", uv)";
+                                frag_shader << "texture(" << internal_name_value << ", uv)";
                                 std::string swiz = addr_opt.value().getSwiz();
 
                                 // Expand the swizzle
@@ -236,7 +242,7 @@ namespace vidrevolt {
                                     throw std::runtime_error("unsupported input type '" + type + "'");
                                 }
                             } else {
-                                frag_shader << internal_name;
+                                frag_shader << internal_name_value;
                             }
 
                             if (type != "bool") {
@@ -260,7 +266,7 @@ namespace vidrevolt {
                     frag_shader << "#line " << line_no + 1 << "\n";
                 }
 
-                return std::make_pair(frag_shader.str(), uniforms);
+                return frag_shader.str();
             }
         }
     }

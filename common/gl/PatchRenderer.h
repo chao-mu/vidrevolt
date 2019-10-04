@@ -38,7 +38,6 @@ namespace vidrevolt {
 
                 std::map<std::string, std::shared_ptr<Texture>> textures_;
                 std::map<std::string, std::shared_ptr<RenderOut>> render_outs_;
-                std::vector<module::UniformNeeds> uniform_needs_;
                 std::vector<std::shared_ptr<ShaderProgram>> programs_;
                 std::shared_ptr<Patch> patch_;
                 const Resolution resolution_;

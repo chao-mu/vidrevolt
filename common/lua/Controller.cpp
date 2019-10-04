@@ -8,14 +8,6 @@ namespace vidrevolt {
         Controller::Controller(const std::string& path, bool shared) : HasLuaState(path, shared) {}
 
         void Controller::addControl(const Controller::Control& ctrl) {
-            lua_State* L = getLua(ctrl.control_name);
-
-            std::string func_name = ctrl.func_name;
-            lua_getglobal(L, func_name.c_str());
-            if (!lua_isfunction(L, -1)) {
-                throw std::runtime_error("Lua function not defined in " + getPath() + " : " + func_name);
-            }
-
             controls_[ctrl.control_name] = ctrl;
             addControlName(ctrl.control_name);
         }

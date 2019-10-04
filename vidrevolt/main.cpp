@@ -30,7 +30,7 @@
 #include "Keyboard.h"
 #include "KeyboardManager.h"
 #include "mathutil.h"
-#include "PatchBuilder.h"
+#include "Patch.h"
 #include "debug.h"
 #include "gl/GLUtil.h"
 #include "gl/IndexBuffer.h"
@@ -125,9 +125,8 @@ int main(int argc, const char** argv) {
         glfwWindowHint( GLFW_DOUBLEBUFFER, GL_FALSE );
     }
 
-    vidrevolt::PatchBuilder builder;
-    builder.build(patch_arg.getValue());
-    std::shared_ptr<vidrevolt::Patch> patch = builder.getPatch();
+    auto patch = std::make_shared<vidrevolt::Patch>(patch_arg.getValue());
+    patch->load();
 
     const vidrevolt::Resolution resolution = patch->getResolution();
 

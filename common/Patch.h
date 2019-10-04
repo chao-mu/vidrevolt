@@ -4,6 +4,9 @@
 // STL
 #include <memory>
 
+// Sol (Lua)
+#include <sol/sol.hpp>
+
 // Ours
 #include "Video.h"
 #include "Image.h"
@@ -19,6 +22,12 @@
 namespace vidrevolt {
     class Patch {
         public:
+            using ObjID = std::string;
+
+            Patch(const std::string& path);
+
+            void load();
+
             const std::map<std::string, std::unique_ptr<Video>>& getVideos() const;
             const std::map<std::string, std::unique_ptr<Image>>& getImages() const;
             const std::vector<std::unique_ptr<RenderStep>>& getRenderSteps() const;
@@ -51,6 +60,14 @@ namespace vidrevolt {
             void addCommand(const Trigger& t, std::unique_ptr<cmd::Command> c);
 
         private:
+            void populateRenderSteps();
+            AddressOrValue toAOV(sol::object obj);
+
+            ObjID luafunc_Video(const std::string& path, sol::table args);
+            sol::table luafunc_getControlValues(const ObjID& controller_id);
+            ObjID luafunc_Midi(const std::string& path);
+            ObjID luafunc_Step(const std::string& label, const std::string& path, sol::table inputs);
+
             std::string getAddressDeep(const Address& addr);
 
             std::optional<std::chrono::time_point<std::chrono::high_resolution_clock>> last_time_;
@@ -59,14 +76,16 @@ namespace vidrevolt {
             std::map<std::string, std::unique_ptr<Image>> images_;
             std::map<std::string, std::shared_ptr<Controller>> controllers_;
             std::map<std::string, std::shared_ptr<lua::Controller>> lua_controllers_;
-            std::vector<std::unique_ptr<RenderStep>> modules_;
+            std::vector<std::unique_ptr<RenderStep>> render_steps_;
             std::map<std::string, std::unique_ptr<Group>> groups_;
             std::map<std::string, AddressOrValue> aovs_;
-            std::map<std::string, Resolution> module_resolutions_;
+            std::map<std::string, Resolution> render_step_resolutions_;
             std::vector<std::unique_ptr<cmd::Command>> commands_;
             Resolution resolution_;
+            sol::state lua_;
+
+            const std::string path_;
     };
 }
 
 #endif
-

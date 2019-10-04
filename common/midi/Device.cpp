@@ -22,7 +22,7 @@ namespace vidrevolt {
             std::cerr << "Midi error: " << msg << std::endl;
         }
 
-        bool Device::connect() {
+        bool Device::connectDevice() {
             unsigned int port_count = midi_in_->getPortCount();
             for (unsigned int i = 0; i < port_count; i++) {
                 std::string name = midi_in_->getPortName(i);
@@ -47,7 +47,7 @@ namespace vidrevolt {
 
             loadSettings();
 
-            if (!connect()) {
+            if (!connectDevice()) {
                 throw std::runtime_error("Requested midi device not found. Config loaded from " + path_);
             }
 
