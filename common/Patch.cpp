@@ -1,14 +1,9 @@
 #include "Patch.h"
 
 // Ours
-#include "cmd/OverwriteGroup.h"
-#include "cmd/OverwriteVar.h"
-#include "cmd/Reverse.h"
-#include "cmd/Rotate.h"
-#include "cmd/TapTempo.h"
 #include "midi/Device.h"
-
-
+#include "KeyboardManager.h"
+#include "osc/Server.h"
 
 namespace vidrevolt {
     sol::table toTable(sol::state& lua, Value v) {
@@ -23,16 +18,6 @@ namespace vidrevolt {
 
     Patch::Patch(const std::string& path) : path_(path) {}
 
-    bool Patch::hasRenderStep(const std::string& label) {
-        for (const auto& step : render_steps_) {
-            if (step->getOutput() == label) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
     AddressOrValue Patch::toAOV(sol::object obj) {
         if (obj.is<float>()) {
             return Value(obj.as<float>());
@@ -40,7 +25,7 @@ namespace vidrevolt {
             return Value(obj.as<std::vector<float>>());
         }  else if (obj.is<std::string>()) {
             std::string id = obj.as<std::string>();
-            if (videos_.count(id) || images_.count(id) || hasRenderStep(id)) {
+            if (isMedia(id)) {
                 return Address(obj.as<std::string>());
             } else {
                 throw std::runtime_error("Unrecognized address specified");
@@ -50,15 +35,83 @@ namespace vidrevolt {
         }
     }
 
+    void Patch::luafunc_flipPlayback(const std::string& id) {
+        if (!videos_.count(id)) {
+            throw std::runtime_error("Attempt to tap non-existent video");
+        }
+
+        videos_.at(id)->flipPlayback();
+    }
+
+    Patch::ObjID Patch::luafunc_Image(const std::string& path) {
+        ObjID id = next_id(path);
+        auto image = std::make_unique<vidrevolt::Image>(path);
+
+        image->load();
+        setImage(id, std::move(image));
+
+        return id;
+    }
+
+    Patch::ObjID Patch::next_id(const std::string& comment) {
+        obj_id_cursor_++;
+        return "ObjID:" + std::to_string(obj_id_cursor_) + ":" + comment;
+    }
+
+    Patch::ObjID Patch::luafunc_Keyboard() {
+        ObjID id = next_id("keyboard");
+
+        setController(id, KeyboardManager::makeKeyboard());
+
+        return id;
+    }
+
+    Patch::ObjID Patch::luafunc_BPM() {
+        ObjID id = next_id("bpm_sync");
+
+        setBPMSync(id, std::make_shared<BPMSync>());
+
+        return id;
+    }
+
+    void Patch::setBPMSync(const std::string& key, std::shared_ptr<BPMSync> sync) {
+        setController(key, sync);
+        bpm_syncs_[key] = sync;
+    }
+
+    Patch::ObjID Patch::luafunc_OSC(const std::string& path, int port) {
+        ObjID id = next_id(path);
+
+        auto osc = std::make_shared<osc::Server>(port, path);
+        osc->start();
+
+        setController(id, std::move(osc));
+
+        return id;
+    }
+
+    void Patch::luafunc_tap(const std::string& sync_id) {
+        if (!bpm_syncs_.count(sync_id)) {
+            throw std::runtime_error("Attempt to tap non-existent BPM sync");
+        }
+
+        bpm_syncs_.at(sync_id)->tap();
+    }
 
     void Patch::load() {
         lua_.open_libraries(sol::lib::base, sol::lib::package);
 
         // Our custom functions
         lua_.set_function("Video", &Patch::luafunc_Video, this);
+        lua_.set_function("Image", &Patch::luafunc_Image, this);
+        lua_.set_function("OSC", &Patch::luafunc_OSC, this);
+        lua_.set_function("BPM", &Patch::luafunc_BPM, this);
+        lua_.set_function("Keyboard", &Patch::luafunc_Keyboard, this);
         lua_.set_function("Midi", &Patch::luafunc_Midi, this);
         lua_.set_function("rend", &Patch::luafunc_rend, this);
         lua_.set_function("getControlValues", &Patch::luafunc_getControlValues, this);
+        lua_.set_function("tap", &Patch::luafunc_tap, this);
+        lua_.set_function("flipPlayback", &Patch::luafunc_flipPlayback, this);
 
         lua_.script_file(path_);
 
@@ -89,9 +142,10 @@ namespace vidrevolt {
             }
         }
 
-        ObjID id = path;
-        videos_[id] = std::make_unique<Video>(path, auto_reset, pb);
-        videos_[id]->start();
+        ObjID id = next_id(path);
+        auto vid =  std::make_unique<Video>(path, auto_reset, pb);
+        vid->start();
+        setVideo(id, std::move(vid));
 
         return id;
     }
@@ -112,7 +166,7 @@ namespace vidrevolt {
 
 
     Patch::ObjID Patch::luafunc_Midi(const std::string& path) {
-        ObjID id = path;
+        ObjID id = next_id(path);
         auto dev = std::make_shared<midi::Device>(path);
         dev->start();
 
@@ -123,15 +177,13 @@ namespace vidrevolt {
             }
         });
 
-        controllers_[id] = dev;
+        setController(id, dev);
 
         return id;
     }
 
-    Patch::ObjID Patch::luafunc_rend(const std::string& label, const std::string& path, sol::table inputs){
-        ObjID id = label;
-
-        auto step = std::make_unique<RenderStep>(id, path, getResolution());
+    void Patch::luafunc_rend(const std::string& label, const std::string& path, sol::table inputs){
+        auto step = std::make_unique<RenderStep>(label, path, getResolution());
         if (inputs) {
             for (const auto& input_kv : inputs) {
                 const std::string key = input_kv.first.as<std::string>();
@@ -165,51 +217,8 @@ namespace vidrevolt {
         }
 
         addRenderStep(std::move(step));
-
-        return id;
     }
 
-
-    void Patch::addCommand(const Trigger& trigger, std::unique_ptr<cmd::Command> c) {
-        commands_.push_back(std::move(c));
-        auto cptr = commands_.back().get();
-
-        std::string dev = trigger.getFront();
-        std::string ctrl = trigger.getBack();
-        if (controllers_.count(dev) <= 0) {
-            throw std::runtime_error("Non-existent controller referenced in trigger " + trigger.str());
-        }
-
-        controllers_.at(dev)->connect(ctrl, [cptr, this](Value v) {
-            if (v.getBool()) {
-                interpretCommand(cptr);
-            }
-        });
-    }
-
-    void Patch::visitGroupMember(const Address& addr, std::function<void(Group&, const std::string&)> f) const {
-        if (addr.getDepth() == 1) {
-            std::string key = addr.str();
-            if (aovs_.count(key) > 0) {
-                AddressOrValue aov = aovs_.at(key);
-                if (std::holds_alternative<Address>(aov)) {
-                    visitGroupMember(std::get<Address>(aov), f);
-                    return;
-                }
-            }
-        } else if (addr.getDepth() == 2) {
-            std::string front = addr.getFront();
-            std::string back = addr.getBack();
-
-            if (groups_.count(front) > 0) {
-                auto& group = groups_.at(front);
-                f(*group.get(), back);
-                return;
-            }
-        }
-
-        throw std::runtime_error("Expected '" + addr.str() + "' to point to a group member");
-    }
 
     void Patch::visitReferable(const Address& addr, std::function<void(const std::string&, Referable)> f, const Address& tail) const {
         if (addr.getDepth() == 1 && tail.getDepth() == 0) {
@@ -221,8 +230,6 @@ namespace vidrevolt {
                 f(key, images_.at(key).get());
             } else if (controllers_.count(key) > 0) {
                 f(key, controllers_.at(key).get());
-            } else if (groups_.count(key) > 0) {
-                f(key, groups_.at(key).get());
             } else if (aovs_.count(key) > 0) {
                 auto& aov = aovs_.at(key);
                 if (std::holds_alternative<Value>(aov)) {
@@ -253,20 +260,7 @@ namespace vidrevolt {
             std::string head = addr.str();
             std::string back = tail.str();
 
-            if (groups_.count(head) > 0) {
-                auto& group = groups_.at(head);
-
-                auto aov_opt = group->get(back);
-                if (!aov_opt) {
-                    throw std::runtime_error("Group '" + head + "' did not have member '" + back + "'");
-                }
-
-                if (std::holds_alternative<Value>(*aov_opt)) {
-                    f((addr + tail).str(), std::get<Value>(*aov_opt));
-                } else if (std::holds_alternative<Address>(*aov_opt)) {
-                    visitReferable(std::get<Address>(*aov_opt), f);
-                }
-            } else if (controllers_.count(head) > 0) {
+            if (controllers_.count(head) > 0) {
                 f((addr + tail).str(), controllers_.at(head)->getValue(back));
             } else {
                 throw std::runtime_error("Invalid address " + head + "." + back);
@@ -384,16 +378,8 @@ namespace vidrevolt {
         return videos_;
     }
 
-    const std::map<std::string, std::unique_ptr<Image>>& Patch::getImages() const {
-        return images_;
-    }
-
     const std::map<std::string, std::shared_ptr<Controller>>& Patch::getControllers() const {
         return controllers_;
-    }
-
-    const std::map<std::string, std::unique_ptr<Group>>& Patch::getGroups() const {
-        return groups_;
     }
 
     void Patch::setVideo(const std::string& key, std::unique_ptr<Video> vid) {
@@ -413,89 +399,29 @@ namespace vidrevolt {
         lua_controllers_[key] = lua;
     }
 
-    void Patch::setGroup(const std::string& key, std::unique_ptr<Group> group) {
-        groups_[key] = std::move(group);
-    }
-
     void Patch::addRenderStep(std::unique_ptr<RenderStep> step) {
         render_step_resolutions_[step->getOutput()] = step->getResolution();
         render_steps_.push_back(std::move(step));
     }
 
     bool Patch::isMedia(const Address& addr) const {
-        bool is = false;
-        visitReferable(addr, [&is](const std::string& /*name*/, Referable r) {
-            if (std::holds_alternative<Media*>(r) || std::holds_alternative<RenderStep::Label>(r)) {
-                is = true;
+        std::string id = addr.str();
+
+        if (videos_.count(id) || images_.count(id)) {
+            return true;
+        }
+
+        for (const auto& step : render_steps_) {
+            if (step->getOutput() == id) {
+                return true;
             }
-        });
+        }
 
-        return is;
-    }
-
-    bool Patch::isSwizzable(const Address& addr) const {
-        bool is = false;
-        visitReferable(addr, [&is](const std::string& /*name*/, Referable r) {
-            is = std::holds_alternative<Media*>(r) || std::holds_alternative<RenderStep::Label>(r) || std::holds_alternative<Value>(r);
-        });
-
-        return is;
-    }
-
-    void Patch::setResolution(const Resolution& res) {
-        resolution_ = res;
+        return false;
     }
 
     void Patch::setAOV(const std::string& key, const AddressOrValue& aov) {
         aovs_[key] = aov;
-    }
-
-    void Patch::interpretCommand(cmd::Command* c) {
-        auto overwrite_group = dynamic_cast<cmd::OverwriteGroup*>(c);
-        if (overwrite_group != nullptr) {
-            visitGroupMember(overwrite_group->target, [&overwrite_group](Group& g, const std::string& s) {
-                g.overwrite(s, overwrite_group->replacement);
-            });
-            return;
-        }
-
-        auto overwrite_var = dynamic_cast<cmd::OverwriteVar*>(c);
-        if (overwrite_var != nullptr) {
-            std::string key = overwrite_var->target.str();
-            if (aovs_.count(key) <= 0) {
-                throw std::runtime_error("overwrite-var command attempted to overwrite an undeclared variable");
-            }
-
-            aovs_[key] = overwrite_var->replacement;
-            return;
-        }
-
-        auto reverse = dynamic_cast<cmd::Reverse*>(c);
-        if (reverse != nullptr) {
-            visitReferable(reverse->target, [&reverse](const std::string& /*name*/, Referable r) {
-                if (std::holds_alternative<Media*>(r)) {
-                    auto vid = dynamic_cast<Video*>(std::get<Media*>(r));
-                    if (vid != nullptr) {
-                        vid->flipPlayback();
-                    }
-                } else {
-                    throw std::runtime_error("Attempted to reverse non-video '" + reverse->target.str() + "'");
-                }
-            });
-            return;
-        }
-
-        auto rotate = dynamic_cast<cmd::Rotate*>(c);
-        if (rotate != nullptr) {
-            std::cerr << "TODO: Implement rotate" << std::endl;
-            return;
-        }
-
-        auto tap_tempo = dynamic_cast<cmd::TapTempo*>(c);
-        if (tap_tempo != nullptr) {
-            std::cerr << "TODO: Implement TapTempo" << std::endl;
-            return;
-        }
     }
 
     Resolution Patch::getResolution() {
