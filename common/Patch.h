@@ -59,6 +59,8 @@ namespace vidrevolt {
 
             void addCommand(const Trigger& t, std::unique_ptr<cmd::Command> c);
 
+            bool hasRenderStep(const std::string& label);
+
         private:
             void populateRenderSteps();
             AddressOrValue toAOV(sol::object obj);
@@ -66,7 +68,7 @@ namespace vidrevolt {
             ObjID luafunc_Video(const std::string& path, sol::table args);
             sol::table luafunc_getControlValues(const ObjID& controller_id);
             ObjID luafunc_Midi(const std::string& path);
-            ObjID luafunc_Step(const std::string& label, const std::string& path, sol::table inputs);
+            ObjID luafunc_rend(const std::string& label, const std::string& path, sol::table inputs);
 
             std::string getAddressDeep(const Address& addr);
 

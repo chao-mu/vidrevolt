@@ -20,7 +20,18 @@ namespace vidrevolt {
 
         return tab;
     }
+
     Patch::Patch(const std::string& path) : path_(path) {}
+
+    bool Patch::hasRenderStep(const std::string& label) {
+        for (const auto& step : render_steps_) {
+            if (step->getOutput() == label) {
+                return true;
+            }
+        }
+
+        return false;
+    }
 
     AddressOrValue Patch::toAOV(sol::object obj) {
         if (obj.is<float>()) {
@@ -29,7 +40,7 @@ namespace vidrevolt {
             return Value(obj.as<std::vector<float>>());
         }  else if (obj.is<std::string>()) {
             std::string id = obj.as<std::string>();
-            if (videos_.count(id) || images_.count(id)) {
+            if (videos_.count(id) || images_.count(id) || hasRenderStep(id)) {
                 return Address(obj.as<std::string>());
             } else {
                 throw std::runtime_error("Unrecognized address specified");
@@ -46,7 +57,7 @@ namespace vidrevolt {
         // Our custom functions
         lua_.set_function("Video", &Patch::luafunc_Video, this);
         lua_.set_function("Midi", &Patch::luafunc_Midi, this);
-        lua_.set_function("Step", &Patch::luafunc_Step, this);
+        lua_.set_function("rend", &Patch::luafunc_rend, this);
         lua_.set_function("getControlValues", &Patch::luafunc_getControlValues, this);
 
         lua_.script_file(path_);
@@ -117,7 +128,7 @@ namespace vidrevolt {
         return id;
     }
 
-    Patch::ObjID Patch::luafunc_Step(const std::string& label, const std::string& path, sol::table inputs){
+    Patch::ObjID Patch::luafunc_rend(const std::string& label, const std::string& path, sol::table inputs){
         ObjID id = label;
 
         auto step = std::make_unique<RenderStep>(id, path, getResolution());
