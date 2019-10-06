@@ -21,8 +21,16 @@ namespace vidrevolt {
     AddressOrValue Patch::toAOV(sol::object obj) {
         if (obj.is<float>()) {
             return Value(obj.as<float>());
-        } else if (obj.is<std::vector<float>>()) {
-            return Value(obj.as<std::vector<float>>());
+        } else if (obj.is<sol::table>()) {
+            //std::cout << "WOO!!!" << std::endl;
+            auto obj_arr = obj.as<std::vector<sol::object>>();
+            if (obj_arr.size() == 2 && obj_arr[1].is<std::string>()) {
+                Address addr(obj_arr[0].as<std::string>());
+                addr.setSwiz(obj_arr[1].as<std::string>());
+                return addr;
+            } else {
+                return Value(obj.as<std::vector<float>>());
+            }
         }  else if (obj.is<std::string>()) {
             std::string id = obj.as<std::string>();
             if (isMedia(id)) {
@@ -30,9 +38,9 @@ namespace vidrevolt {
             } else {
                 throw std::runtime_error("Unrecognized address specified");
             }
-        } else {
-            throw std::runtime_error("Unsupported lua value type");
         }
+
+        throw std::runtime_error("Unsupported lua value type");
     }
 
     void Patch::luafunc_flipPlayback(const std::string& id) {
@@ -99,7 +107,7 @@ namespace vidrevolt {
     }
 
     void Patch::load() {
-        lua_.open_libraries(sol::lib::base, sol::lib::package);
+        lua_.open_libraries(sol::lib::base, sol::lib::package, sol::lib::math);
 
         // Our custom functions
         lua_.set_function("Video", &Patch::luafunc_Video, this);
@@ -112,6 +120,11 @@ namespace vidrevolt {
         lua_.set_function("getControlValues", &Patch::luafunc_getControlValues, this);
         lua_.set_function("tap", &Patch::luafunc_tap, this);
         lua_.set_function("flipPlayback", &Patch::luafunc_flipPlayback, this);
+
+        auto time = std::chrono::high_resolution_clock::now();
+        auto time_ms = std::chrono::duration_cast<std::chrono::milliseconds>(time.time_since_epoch());
+        lua_["time_ms"] = time_ms.count();
+        lua_["time_delta"] = 0;
 
         lua_.script_file(path_);
 
@@ -294,7 +307,11 @@ namespace vidrevolt {
         auto time = std::chrono::high_resolution_clock::now();
         float time_delta = std::chrono::duration<float>(time - last_time_.value()).count();
         last_time_ = time;
-        setAOV("time_delta", Value(time_delta));
+        setValue("time_delta", Value(time_delta));
+        lua_["time_delta"] = time_delta;
+
+        auto time_ms = std::chrono::duration_cast<std::chrono::milliseconds>(time.time_since_epoch());
+        lua_["time_ms"] = time_ms.count();
 
         // Set function arguments for our lua controller functions
         for (const auto& kv : lua_controllers_) {
@@ -420,8 +437,8 @@ namespace vidrevolt {
         return false;
     }
 
-    void Patch::setAOV(const std::string& key, const AddressOrValue& aov) {
-        aovs_[key] = aov;
+    void Patch::setValue(const std::string& key, const Value& val) {
+        aovs_[key] = val;
     }
 
     Resolution Patch::getResolution() {

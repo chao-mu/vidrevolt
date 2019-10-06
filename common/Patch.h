@@ -67,6 +67,8 @@ namespace vidrevolt {
             void luafunc_flipPlayback(const std::string& id);
             void luafunc_tap(const std::string& sync_id);
 
+            void setValue(const std::string& key, const Value& val);
+
             std::string getAddressDeep(const Address& addr);
 
             std::optional<std::chrono::time_point<std::chrono::high_resolution_clock>> last_time_;
