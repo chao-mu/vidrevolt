@@ -293,13 +293,14 @@ namespace vidrevolt {
             throw std::runtime_error("Unable to accurately determine number FPS for " + path_);
         }
 
-        next();
-
-        res_.width = buffer_.front().second.size().width;
-        res_.height = buffer_.front().second.size().height;
-
         running_ = true;
+        load_mutex_.lock();
         thread_ = std::thread([this] {
+            next();
+            res_.width = buffer_.front().second.size().width;
+            res_.height = buffer_.front().second.size().height;
+            load_mutex_.unlock();
+
             //DEBUG_TIME_DECLARE(work_wait)
             while (running_.load()) {
                 {
@@ -329,6 +330,10 @@ namespace vidrevolt {
 
     void Video::flipPlayback() {
         setReverse(!reverse_);
+    }
+
+    void Video::waitForLoaded() {
+        std::lock_guard<std::mutex> mut(load_mutex_);
     }
 
     void Video::setReverse(bool t) {

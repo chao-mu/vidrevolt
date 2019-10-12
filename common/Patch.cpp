@@ -130,6 +130,10 @@ namespace vidrevolt {
         resolution_.width = lua_.get_or("width", 1920);
         resolution_.height = lua_.get_or("height", 1920);
 
+        for (auto& vid_kv : videos_) {
+            vid_kv.second->waitForLoaded();
+        }
+
         populateRenderSteps();
     }
 
@@ -160,6 +164,12 @@ namespace vidrevolt {
         setVideo(id, std::move(vid));
 
         return id;
+    }
+
+    void Patch::reconnectControllers() {
+        for (auto& kv : controllers_) {
+            kv.second->reconnect();
+        }
     }
 
     sol::table Patch::luafunc_getControlValues(const ObjID& controller_id) {

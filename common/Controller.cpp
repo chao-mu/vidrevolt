@@ -16,6 +16,9 @@ namespace vidrevolt {
         return values_;
     }
 
+    void Controller::reconnect() {
+    }
+
     void Controller::connect(std::function<void(const std::string& name, Value)> f) {
         generic_signal_.connect(f);
     }

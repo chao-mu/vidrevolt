@@ -8,6 +8,7 @@
 #include <chrono>
 #include <string>
 #include <condition_variable>
+#include <future>
 
 // OpenCV
 #include <opencv2/opencv.hpp>
@@ -56,6 +57,8 @@ namespace vidrevolt {
 
             double getRemainingMS();
 
+            void waitForLoaded();
+
         private:
             void next();
             void seek(int pos);
@@ -83,7 +86,7 @@ namespace vidrevolt {
 
             std::atomic<bool> requested_reset_ = false;
 
-            int cursor_;
+            int cursor_ = 0;
             std::vector<Frame> buffer_;
 
             bool work_ready_ = false;
@@ -91,6 +94,8 @@ namespace vidrevolt {
             std::condition_variable work_ready_cv_;
 
             Resolution res_;
+
+            std::mutex load_mutex_;
     };
 }
 

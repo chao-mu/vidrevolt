@@ -49,6 +49,7 @@ namespace vidrevolt {
 
             void startRender();
             void endRender();
+            void reconnectControllers();
 
         private:
             void populateRenderSteps();

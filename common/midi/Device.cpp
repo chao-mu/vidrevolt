@@ -28,8 +28,6 @@ namespace vidrevolt {
                 std::string name = midi_in_->getPortName(i);
                 if (std::regex_search(name, name_re_)) {
                     midi_in_->openPort(i);
-                    connected_ = true;
-                    port_name_ = name;
                     return true;
                 }
             }
@@ -108,8 +106,21 @@ namespace vidrevolt {
             }
         }
 
+        void Device::reconnect() {
+            reconnect_request_ = true;
+        }
+
         void Device::loop() {
             while (running_.load()) {
+                if (reconnect_request_) {
+                    midi_in_->closePort();
+                    if (connectDevice()) {
+                        reconnect_request_ = false;
+                    } else {
+                        std::this_thread::sleep_for(std::chrono::milliseconds(SLEEP_FOR_MS));
+                    }
+                }
+
                 std::vector<unsigned char> raw_message;
                 while (midi_in_->getMessage(&raw_message) > 0) {
                     Message msg(raw_message);

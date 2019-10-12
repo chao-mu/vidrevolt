@@ -30,6 +30,7 @@ namespace vidrevolt {
                 void stop();
                 void start();
                 void update();
+                virtual void reconnect() override;
 
             private:
                 void loadSettings();
@@ -40,14 +41,12 @@ namespace vidrevolt {
 
                 std::string path_;
                 std::regex name_re_;
-                mutable std::mutex controls_mutex_;
-                std::string port_name_;
 
                 std::unique_ptr<RtMidiIn> midi_in_;
                 std::vector<Control> controls_;
                 std::thread thread_;
                 std::atomic<bool> running_ = false;
-                std::atomic<bool> connected_ = false;
+                std::atomic<bool> reconnect_request_ = false;
         };
     }
 }

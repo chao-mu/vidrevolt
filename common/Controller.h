@@ -29,6 +29,8 @@ namespace vidrevolt {
             Value getValue(const std::string& control_name) const;
             std::map<std::string, Value> getValues() const;
 
+            virtual void reconnect();
+
         protected:
             void addValue(const std::string& key, Value v);
             void addControlName(const std::string& key);

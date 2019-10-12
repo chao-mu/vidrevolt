@@ -254,6 +254,14 @@ int main(int argc, const char** argv) {
         std::cout << "Reloaded!" << std::endl;
     });
 
+    keyboard->connect("m", [patch](vidrevolt::Value v) {
+        if (v.getBool()) {
+            return;
+        }
+
+        patch->reconnectControllers();
+    });
+
     // Exit key
     keyboard->connect("escape", [&window](vidrevolt::Value v) {
         // On key release
