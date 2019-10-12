@@ -79,7 +79,7 @@ namespace vidrevolt {
                         auto addr = std::get<Address>(addr_or_val);
                         patch_->visitReferable(addr, [this, program, uni_name, addr, &slot](const std::string& out, Referable r) {
                             //std::cout << "uni_name=" << uni_name << " addr=" << addr.str() << std::endl;
-                                if (std::holds_alternative<Value>(r)) {
+                            if (std::holds_alternative<Value>(r)) {
                                 program->setUniform(uni_name, std::get<Value>(r));
                                 return;
                             }

@@ -36,7 +36,7 @@ namespace vidrevolt {
             }
 
             std::shared_ptr<ShaderProgram> compile(
-                   const std::string path,
+                   const std::string& path,
                    std::map<std::string, RenderStep::Param> params,
                    std::shared_ptr<Patch> patch) {
 
@@ -134,7 +134,7 @@ namespace vidrevolt {
                 return shader;
             }
 
-            std::string readFragShader(const std::string path, std::map<std::string, RenderStep::Param> params, std::shared_ptr<Patch> patch) {
+            std::string readFragShader(const std::string& path, std::map<std::string, RenderStep::Param> params, std::shared_ptr<Patch> patch) {
                 std::ifstream ifs(path);
                 if (ifs.fail()) {
                     std::ostringstream err;

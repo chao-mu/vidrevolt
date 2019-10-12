@@ -19,7 +19,7 @@ namespace vidrevolt {
             std::string toInternalName(const std::string& input_name, const std::string& field);
 
             std::shared_ptr<ShaderProgram> compile(
-                   const std::string path,
+                   const std::string& path,
                    std::map<std::string, RenderStep::Param> params,
                    std::shared_ptr<Patch> patch);
 
@@ -28,7 +28,7 @@ namespace vidrevolt {
                     std::shared_ptr<Patch> patch);
 
             std::string readFragShader(
-                    const std::string path,
+                    const std::string& path,
                     std::map<std::string, RenderStep::Param> params,
                     std::shared_ptr<Patch> patch);
 
