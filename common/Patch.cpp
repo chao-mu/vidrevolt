@@ -106,7 +106,17 @@ namespace vidrevolt {
     }
 
     void Patch::load() {
-        lua_.open_libraries(sol::lib::base, sol::lib::package, sol::lib::math);
+        lua_.open_libraries(
+            sol::lib::base,
+            sol::lib::package,
+            sol::lib::coroutine,
+            sol::lib::string,
+            sol::lib::os,
+            sol::lib::math,
+            sol::lib::table,
+            sol::lib::bit32,
+            sol::lib::io
+        );
 
         // Our custom functions
         lua_.set_function("Video", &Patch::luafunc_Video, this);
