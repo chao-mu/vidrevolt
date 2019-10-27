@@ -3,6 +3,10 @@
 // STL
 #include <regex>
 
+// Jinja2
+#include <nlohmann/json.hpp>
+#include <inja/inja.hpp>
+
 // Ours
 #include "../AddressOrValue.h"
 #include "../fileutil.h"
@@ -10,52 +14,107 @@
 namespace vidrevolt {
     namespace gl {
         namespace module {
-            std::string toInternalName(const std::string& input_name, const std::string& field) {
-                return "vr_input_" + input_name + "_" + field;
+            std::string toPrivateInputName(const std::string& input_name) {
+                return "vr_input_" + input_name;
             }
 
-            UniformNeeds getNeeds(std::map<std::string, RenderStep::Param> params) {
-                UniformNeeds uniforms;
+            std::string inputStr(const Input& input) {
+                nlohmann::json data;
 
-                for (const auto& kv : params) {
-                    const std::string& name = kv.first;
-                    const RenderStep::Param& param = kv.second;
+                data["natural_name"] = input.name;
+                data["private_name"] = toPrivateInputName(input.name);
 
-                    uniforms[toInternalName(name, "value")] = param.value;
-                    uniforms[toInternalName(name, "shift")] = param.shift;
-                    uniforms[toInternalName(name, "amp")] = param.amp;
-                    uniforms[toInternalName(name, "pow")] = param.pow;
+                std::string type = input.type;
+                data["type"] = type;
 
-                    if (std::holds_alternative<Address>(param.value)) {
-                        uniforms[toInternalName(name, "res")] =
-                            std::get<Address>(param.value) + "resolution";
-                    }
+                size_t length = 0;
+                std::string default_value;
+                if (type == "float") {
+                    length = 1;
+                    default_value = "0.0";
+                } else if (type == "bool") {
+                    length = 1;
+                    default_value = "false";
+                } else if (type == "vec2") {
+                    length = 2;
+                    default_value = "vec2(0)";
+                } else if (type == "vec3") {
+                    length = 3;
+                    default_value = "vec3(0)";
+                } else if (type == "vec4") {
+                    length = 4;
+                    default_value = "vec4(0)";
+                } else {
+                    throw std::runtime_error("Unsupported input type '" + type + "'");
                 }
 
-                return uniforms;
+                data["length"] = length;
+                data["default"] = input.default_value == "" ? default_value : input.default_value;
+
+                constexpr auto src = R"V(
+                    uniform sampler2D {{private_name}}_as_tex;
+                    uniform {{type}} {{private_name}}_as_value = {{default}};
+
+                    {% for i in range(length) %}
+                        uniform int {{private_name}}_swiz_{{i}} = {{i}};
+                    {% endfor %}
+
+                    uniform bool {{private_name}}_is_tex = false;
+
+                    in vec2 {{private_name}}_tc;
+                    #define {{natural_name}}_res {{private_name}}_res
+                    #define {{natural_name}}_tc {{private_name}}_tc
+
+                    {{type}} input_{{natural_name}}(in vec2 st) {
+                        vec4 intermediate;
+                        if ({{private_name}}_is_tex) {
+                            vec4 intermediate = texture({{private_name}}_as_tex, st);
+                            {{type}} ret;
+                            {% if length > 1 %}
+                                {% for i in range(length) %}
+                                    ret[{{i}}] = intermediate[{{private_name}}_swiz_{{i}}];
+                                {% endfor %}
+                            {% else %}
+                                float x = intermediate[{{private_name}}_swiz_0];
+                                {% if type == "bool" %}
+                                    ret = x > 0.5;
+                                {% else %}
+                                    ret = {{type}}(x);
+                                {% end %}
+                            {% endif %}
+
+                            return ret;
+                        } else {
+                            {% if length > 1 %}
+                                {{type}} ret;
+                                {% for i in range(length) %}
+                                    ret[{{i}}] = {{private_name}}_as_value[{{private_name}}_swiz_{{i}}];
+                                {% endfor %}
+
+                                return ret;
+                            {% else %}
+                                return {{private_name}}_as_value;
+                            {% endif %}
+                        }
+                    }
+
+                    {{type}} input_{{natural_name}}() {
+                        return input_{{natural_name}}({{private_name}}_tc);
+                    }
+                )V";
+
+                return inja::render(src, data);
             }
 
-            std::shared_ptr<ShaderProgram> compile(
-                   const std::string& path,
-                   std::map<std::string, RenderStep::Param> params,
-                   std::shared_ptr<Patch> patch) {
+            std::string vertShaderStr(const std::vector<Input>& inputs) {
+                nlohmann::json data;
 
-                auto program = std::make_shared<gl::ShaderProgram>();
+                data["private_names"] = std::vector<std::string>{};
+                for (const auto input : inputs) {
+                    data["private_names"].push_back(toPrivateInputName(input.name));
+                }
 
-                std::string vert_shader = readVertShader(params, patch);
-                std::string frag_shader = readFragShader(path, params, patch);
-
-                program->loadShaderStr(GL_VERTEX_SHADER, vert_shader, "internal-vert.glsl");
-                program->loadShaderStr(GL_FRAGMENT_SHADER, frag_shader, path);
-
-                program->compile();
-
-                return program;
-            }
-
-
-            std::string readVertShader(const std::map<std::string, RenderStep::Param>& params, std::shared_ptr<Patch> patch) {
-                std::string shader = R"V(
+                constexpr auto src = R"V(
                     #version 410
 
                     out vec2 tc;
@@ -74,21 +133,13 @@ namespace vidrevolt {
                     uniform vec2 iResolution;
 
                     layout (location = 0) in vec3 aPos;
-                )V";
 
-                for (const auto& kv : params) {
-                    if (!isAddress(kv.second.value) ||
-                            !patch->isMedia(std::get<Address>(kv.second.value))) {
-                        continue;
-                    }
+            {% for name in private_names %}
+                    uniform vec2 {{name}}_res;
+                    out vec2 {{name}}_tc;
+                    uniform bool {{name}}_is_tex = false;
+            {% endfor %}
 
-                    const std::string& name = kv.first;
-
-                    shader += "uniform vec2 " + toInternalName(name, "res") + ";\n";
-                    shader += "out vec2 " + toInternalName(name, "tc") + ";\n";
-                }
-
-                shader += R"V(
                     void main() {
                         gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);
 
@@ -113,34 +164,52 @@ namespace vidrevolt {
                         texcoordB = st + vec2(0, -heightStep);
                         texcoordBL = st + vec2(-widthStep, -heightStep);
                         texcoordBR = st + vec2(widthStep, -heightStep);
+
+            {% for name in private_names %}
+                        if ({{name}}_is_tex) {
+                            {{name}}_tc = uv_in;
+                            {{name}}_tc.x /= {{name}}_res.x / {{name}}_res.y;
+                            {{name}}_tc += .5;
+                        } else {
+                            {{name}}_tc = vec2(0);
+                        }
+            {% endfor %}
+                    }
                 )V";
 
-                for (const auto& kv : params) {
-                    if (!isAddress(kv.second.value) || !patch->isMedia(std::get<Address>(kv.second.value))) {
-                        continue;
-                    }
-
-                    const std::string& name = kv.first;
-                    const std::string res_name = toInternalName(name, "res");
-                    const std::string tc_name = toInternalName(name, "tc");
-
-                    shader += tc_name + " = uv_in;\n";
-                    shader += tc_name + ".x /= " + res_name + ".x / " + res_name + ".y;\n";
-                    shader += tc_name + " += .5;\n";
-                }
-
-                shader += "}";
-
-                return shader;
+                return inja::render(src, data);
             }
 
-            std::string readFragShader(const std::string& path, std::map<std::string, RenderStep::Param> params, std::shared_ptr<Patch> patch) {
+            UniformNeeds getNeeds(std::map<std::string, RenderStep::Param> params) {
+                UniformNeeds uniforms;
+
+                for (const auto& kv : params) {
+                    const std::string& name = kv.first;
+                    const RenderStep::Param& param = kv.second;
+
+                    if (std::holds_alternative<Address>(param.value)) {
+                        auto addr = std::get<Address>(param.value);
+
+                        uniforms[toPrivateInputName(name) + "_as_tex"] = addr;
+                        uniforms[toPrivateInputName(name) + "_is_tex"] = Value(true);
+                        uniforms[toPrivateInputName(name) + "_res"] = addr + "resolution";
+                    } else {
+                        uniforms[toPrivateInputName(name) + "_as_value"] = param.value;
+                    }
+                }
+
+                return uniforms;
+            }
+
+            std::pair<std::string , std::vector<Input>> readFragShader(const std::string& path) {
                 std::ifstream ifs(path);
                 if (ifs.fail()) {
                     std::ostringstream err;
                     err << "Error loading " << path << " - " <<  std::strerror(errno);
                     throw std::runtime_error(err.str());
                 }
+
+                std::vector<Input> inputs;
 
                 std::stringstream frag_shader;
                 const std::regex pragma_input_re(R"(^#pragma\s+input\s+(.*)$)");
@@ -162,99 +231,9 @@ namespace vidrevolt {
                             const std::string name = match[2];
                             const std::string def = match[3];
 
-                            const std::string internal_name_value = toInternalName(name, "value");
-                            const std::string internal_name_shift = toInternalName(name, "shift");
-                            const std::string internal_name_amp = toInternalName(name, "amp");
-                            const std::string internal_name_res = toInternalName(name, "res");
-                            const std::string internal_name_tc = toInternalName(name, "tc");
-                            const std::string internal_name_pow = toInternalName(name, "pow");
-
-                            bool defined = params.count(name) > 0;
-                            std::optional<Address> addr_opt;
-                            if (defined) {
-                                RenderStep::Param& p = params.at(name);
-
-                                if (isAddress(p.value)) {
-                                    addr_opt = std::get<Address>(p.value);
-                                }
-                            }
-
-                            bool is_texture = addr_opt.has_value() && patch->isMedia(addr_opt.value());
-                            if (is_texture) {
-                                frag_shader << "uniform sampler2D " << internal_name_value << ";\n";
-                                frag_shader << "in vec2 " << internal_name_tc << ";\n";
-                            } else {
-                                frag_shader << "uniform " << type << " " << internal_name_value;
-
-                                if (def != "") {
-                                    frag_shader << " = " << def;
-                                }
-
-                                frag_shader << ";\n";
-                            }
-
-                            frag_shader << "uniform float " <<  internal_name_shift << " = 0;\n";
-                            frag_shader << "uniform float " <<  internal_name_amp << " = 1;\n";
-                            frag_shader << "uniform float " <<  internal_name_pow << " = 1;\n";
-                            frag_shader << "uniform vec2 " << internal_name_res << " = vec2(0);\n";
-
-                            frag_shader << "#define " << name << "_res " << internal_name_res << "\n";
-                            frag_shader << "#define " << name << "_tc ";
-                            if (is_texture && addr_opt.has_value()) {
-                                frag_shader << internal_name_tc;
-                            } else {
-                                frag_shader << "vec2(0)";
-                            }
-                            frag_shader << "\n";
-
-                            frag_shader << type << " input_" << name << "(in vec2 uv) {\n";
-                            frag_shader << "   return ";
-
-                            if (type != "bool") {
-                                frag_shader << "pow(";
-                            }
-
-                            std::string pow_arg = "";
-                            if (is_texture && addr_opt.has_value()) {
-                                frag_shader << "texture(" << internal_name_value << ", uv)";
-                                std::string swiz = addr_opt.value().getSwiz();
-
-                                // Expand the swizzle
-                                if (swiz.empty()) {
-                                    swiz = "xyzw";
-                                }
-
-                                while (swiz.length() < 4) {
-                                    swiz += swiz.back();
-                                }
-
-                                if (type == "float") {
-                                    frag_shader << "." << swiz[0];
-                                } else if (type == "vec2") {
-                                    frag_shader << "." << swiz[0] << swiz[1];
-                                } else if (type == "vec3") {
-                                    frag_shader << "." << swiz[0] << swiz[1] << swiz[2];
-                                } else if (type == "vec4") {
-                                    frag_shader << "." << swiz[0] << swiz[1] << swiz[2] << swiz[3];
-                                } else if (type == "bool") {
-                                    frag_shader << "." << swiz[0] << " > 0.5";
-                                } else {
-                                    throw std::runtime_error("unsupported input type '" + type + "'");
-                                }
-                            } else {
-                                frag_shader << internal_name_value;
-                            }
-
-                            if (type != "bool") {
-                                frag_shader << ", " <<  type << "(" << internal_name_pow << "))";
-                                frag_shader << "* " << internal_name_amp << " + " << internal_name_shift;
-                            }
-
-                            frag_shader << ";\n";
-                            frag_shader << "}\n";
-
-                            frag_shader << type << " input_" << name << "() { return input_" <<
-                                name << "(" << name << "_tc); }\n";
+                            Input input = {name, type, def};
+                            inputs.push_back(input);
+                            frag_shader << inputStr(input);
                         } else {
                             throw std::runtime_error("Unable to parse input definition line: " + line);
                         }
@@ -266,7 +245,21 @@ namespace vidrevolt {
                     frag_shader << "#line " << line_no + 1 << "\n";
                 }
 
-                return frag_shader.str();
+                return {frag_shader.str(), inputs};
+            }
+
+            std::shared_ptr<ShaderProgram> compile(const std::string& path) {
+                auto program = std::make_shared<gl::ShaderProgram>();
+
+                auto [frag_shader, inputs] = readFragShader(path);
+                std::string vert_shader = vertShaderStr(inputs);
+
+                program->loadShaderStr(GL_VERTEX_SHADER, vert_shader, "internal-vert.glsl");
+                program->loadShaderStr(GL_FRAGMENT_SHADER, frag_shader, path);
+
+                program->compile();
+
+                return program;
             }
         }
     }

@@ -8,7 +8,6 @@
 // Ours
 #include "ShaderProgram.h"
 #include "../AddressOrValue.h"
-#include "../Patch.h"
 #include "../RenderStep.h"
 
 namespace vidrevolt {
@@ -16,21 +15,13 @@ namespace vidrevolt {
         namespace module {
             using UniformNeeds = std::map<std::string, AddressOrValue>;
 
-            std::string toInternalName(const std::string& input_name, const std::string& field);
+            struct Input {
+                std::string name;
+                std::string type;
+                std::string default_value;
+            };
 
-            std::shared_ptr<ShaderProgram> compile(
-                   const std::string& path,
-                   std::map<std::string, RenderStep::Param> params,
-                   std::shared_ptr<Patch> patch);
-
-            std::string readVertShader(
-                    const std::map<std::string, RenderStep::Param>& params,
-                    std::shared_ptr<Patch> patch);
-
-            std::string readFragShader(
-                    const std::string& path,
-                    std::map<std::string, RenderStep::Param> params,
-                    std::shared_ptr<Patch> patch);
+            std::shared_ptr<ShaderProgram> compile(const std::string& path);
 
             UniformNeeds getNeeds(std::map<std::string, RenderStep::Param> params);
         }

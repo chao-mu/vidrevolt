@@ -13,8 +13,7 @@ namespace vidrevolt {
             }
 
             for (const auto& mod : steps) {
-                std::shared_ptr<ShaderProgram> prog =
-                    module::compile(mod->getPath(), mod->getParams(), patch_);
+                std::shared_ptr<ShaderProgram> prog = module::compile(mod->getPath());
 
                 programs_.push_back(prog);
 
