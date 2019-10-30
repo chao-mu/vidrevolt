@@ -115,7 +115,7 @@ namespace vidrevolt {
                                 ret = x > 0.5;
                             {% else %}
                                 ret = {{type}}(x);
-                            {% end %}
+                            {% endif %}
                         {% endif %}
 
                         return ret;
