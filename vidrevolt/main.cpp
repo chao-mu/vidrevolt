@@ -34,7 +34,6 @@
 #include "debug.h"
 #include "gl/GLUtil.h"
 #include "gl/IndexBuffer.h"
-#include "gl/PatchRenderer.h"
 #include "gl/Texture.h"
 #include "gl/VertexArray.h"
 #include "gl/VertexBuffer.h"
@@ -196,9 +195,6 @@ int main(int argc, const char** argv) {
     GLCall(glEnableVertexAttribArray(0));
     GLCall(glBindBuffer(GL_ARRAY_BUFFER, 0));
 
-    auto renderer = std::make_shared<vidrevolt::gl::PatchRenderer>(patch);
-    renderer->load();
-
     if (!sound_path.empty()) {
         music.play();
     }
@@ -209,7 +205,7 @@ int main(int argc, const char** argv) {
     // Screenshot key
     std::string out_path = img_out_arg.getValue();
     std::vector<std::future<void>> shot_futures_;
-    keyboard->connect("p", [&shot_futures_, &out_path, &renderer](vidrevolt::Value v) {
+    keyboard->connect("p", [&shot_futures_, &out_path, &patch](vidrevolt::Value v) {
         // On key release
         if (v.getBool()) {
             return;
@@ -226,7 +222,7 @@ int main(int argc, const char** argv) {
             dest = s.str();
         }
 
-        cv::Mat image = renderer->getLastOutTex()->read();
+        cv::Mat image = patch->render()->getSrcTex()->read();
 
         // Explicitly image by copy; if we pass by reference the internal refcount wont increment
         shot_futures_.push_back(std::async([dest, image]() {
@@ -235,23 +231,6 @@ int main(int argc, const char** argv) {
             cv::imwrite(dest, image);
             std::cout << "Screenshot saved at " << dest << std::endl;
         }));
-    });
-
-    keyboard->connect("r", [&renderer, patch](vidrevolt::Value v) {
-        if (v.getBool()) {
-            return;
-        }
-
-        auto replacement = std::make_shared<vidrevolt::gl::PatchRenderer>(patch);
-        try {
-            replacement->load();
-        } catch (std::runtime_error& err) {
-            std::cerr << err.what() << std::endl;
-            return;
-        }
-
-        renderer = replacement;
-        std::cout << "Reloaded!" << std::endl;
     });
 
     keyboard->connect("m", [patch](vidrevolt::Value v) {
@@ -287,6 +266,9 @@ int main(int argc, const char** argv) {
     DEBUG_TIME_DECLARE(draw)
     DEBUG_TIME_DECLARE(flush)
 
+    // Run it once to load most lazy-loaded things
+    patch->render();
+
     std::optional<std::chrono::time_point<std::chrono::high_resolution_clock>> last_write;
     while (!glfwWindowShouldClose(window)) {
         DEBUG_TIME_START(loop)
@@ -295,7 +277,7 @@ int main(int argc, const char** argv) {
         keyboard->poll();
 
         DEBUG_TIME_START(render)
-        renderer->render();
+        std::shared_ptr<vidrevolt::gl::RenderOut> out = patch->render();
         DEBUG_TIME_END(render)
 
         // Calculate blit settings
@@ -313,8 +295,8 @@ int main(int argc, const char** argv) {
         if (DOUBLE_BUF) {
             GLCall(glDrawBuffer(GL_BACK));
         }
-        GLCall(glBindFramebuffer(GL_READ_FRAMEBUFFER, renderer->getFBO()));
-        GLCall(glReadBuffer(renderer->getReadableBuf()));
+        GLCall(glBindFramebuffer(GL_READ_FRAMEBUFFER, out->getFBO()));
+        GLCall(glReadBuffer(out->getSrcDrawBuf()));
         GLCall(glViewport(0,0, win_width, win_height));
         GLCall(glBlitFramebuffer(
             0,0, resolution.width, resolution.height,
@@ -342,7 +324,7 @@ int main(int argc, const char** argv) {
             }
 
             if (should_write) {
-                cv::Mat frame = renderer->getLastOutTex()->read();
+                cv::Mat frame = out->getSrcTex()->read();
                 writer->write(frame);
                 last_write = std::chrono::high_resolution_clock::now();
             }

@@ -4,7 +4,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(OpenGL_GL_PREFERENCE GLVND)
 
 # Generate with: cd common; find -name "*.cpp" | xargs
-add_library(common ./Keyboard.cpp ./BPMSync.cpp ./AddressOrValue.cpp ./Video.cpp ./midi/Device.cpp ./midi/Message.cpp ./midi/Control.cpp ./Image.cpp ./osc/Server.cpp ./Value.cpp ./Address.cpp ./Patch.cpp ./gl/Texture.cpp ./gl/GLUtil.cpp ./gl/ShaderProgram.cpp ./gl/RenderOut.cpp ./gl/IndexBuffer.cpp ./gl/PatchRenderer.cpp ./gl/VertexArray.cpp ./gl/VertexBuffer.cpp ./gl/module.cpp ./KeyboardManager.cpp ./Media.cpp ./Resolution.cpp ./RenderStep.cpp ./VideoWriter.cpp ./Controller.cpp ./mathutil.cpp ./fileutil.cpp ./lua/HasLuaState.cpp ./lua/Group.cpp ./lua/Controller.cpp) 
+add_library(common ./Keyboard.cpp ./BPMSync.cpp ./AddressOrValue.cpp ./Video.cpp ./midi/Device.cpp ./midi/Message.cpp ./midi/Control.cpp ./Image.cpp ./osc/Server.cpp ./Value.cpp ./Address.cpp ./Patch.cpp ./gl/Texture.cpp ./gl/GLUtil.cpp ./gl/ShaderProgram.cpp ./gl/RenderOut.cpp ./gl/IndexBuffer.cpp ./gl/VertexArray.cpp ./gl/VertexBuffer.cpp ./gl/Renderer.cpp ./gl/Module.cpp ./KeyboardManager.cpp ./Media.cpp ./Resolution.cpp ./RenderStep.cpp ./VideoWriter.cpp ./Controller.cpp ./mathutil.cpp ./fileutil.cpp ./lua/HasLuaState.cpp ./lua/Group.cpp ./lua/Controller.cpp) 
 
 target_compile_options(common PRIVATE "-Wextra" "-Werror" "-Wall" "-pedantic-errors")
 

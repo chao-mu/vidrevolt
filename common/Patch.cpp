@@ -4,6 +4,7 @@
 #include "midi/Device.h"
 #include "KeyboardManager.h"
 #include "osc/Server.h"
+#include "gl/ParamSet.h"
 
 namespace vidrevolt {
     sol::table toTable(sol::state& lua, Value v) {
@@ -31,12 +32,7 @@ namespace vidrevolt {
                 return Value(obj.as<std::vector<float>>());
             }
         }  else if (obj.is<std::string>()) {
-            std::string id = obj.as<std::string>();
-            if (isMedia(id)) {
-                return Address(obj.as<std::string>());
-            } else {
-                throw std::runtime_error("Unrecognized address specified");
-            }
+            return Address(obj.as<std::string>());
         }
 
         throw std::runtime_error("Unsupported lua value type");
@@ -139,12 +135,11 @@ namespace vidrevolt {
 
         resolution_.width = lua_.get_or("width", 1920);
         resolution_.height = lua_.get_or("height", 1920);
+        renderer_ = std::make_unique<gl::Renderer>(resolution_);
 
         for (auto& vid_kv : videos_) {
             vid_kv.second->waitForLoaded();
         }
-
-        populateRenderSteps();
     }
 
     Patch::ObjID Patch::luafunc_Video(const std::string& path, sol::table args) {
@@ -214,14 +209,14 @@ namespace vidrevolt {
         return id;
     }
 
-    void Patch::luafunc_rend(const std::string& label, const std::string& path, sol::table inputs){
-        auto step = std::make_unique<RenderStep>(label, path, getResolution());
+    void Patch::luafunc_rend(const std::string& target, const std::string& path, sol::table inputs){
+        gl::ParamSet params;
         if (inputs) {
             for (const auto& input_kv : inputs) {
                 const std::string key = input_kv.first.as<std::string>();
                 sol::object value = input_kv.second;
 
-                RenderStep::Param param;
+                gl::Param param;
                 if (value.is<sol::table>()) {
                     auto tab = value.as<sol::table>();
 
@@ -244,78 +239,39 @@ namespace vidrevolt {
                     param.value = toAOV(value);
                 }
 
-                step->setParam(key, param);
+                params[key] = param;
+
+                // Render dependency
+                for (const AddressOrValue& aov : {param.value, param.amp, param.shift, param.pow}) {
+                    if (std::holds_alternative<Address>(aov)) {
+                        auto addr = std::get<Address>(aov);
+
+
+                        Media* m;
+                        if (images_.count(addr) > 0) {
+                            m = images_.at(addr).get();
+                        } else if (videos_.count(addr) > 0) {
+                            m = videos_.at(addr).get();
+                        } else {
+                            // We are either on rend target or an error.
+                            continue;
+                        }
+
+                        std::optional<cv::Mat> frame_opt = m->nextFrame();
+                        if (frame_opt) {
+                            renderer_->render(addr, frame_opt.value());
+                        }
+                    }
+                }
             }
         }
 
-        addRenderStep(std::move(step));
+        renderer_->render(target, path, params);
     }
 
-
-    void Patch::visitReferable(const Address& addr, std::function<void(const std::string&, Referable)> f, const Address& tail) const {
-        if (addr.getDepth() == 1 && tail.getDepth() == 0) {
-            std::string key = addr.str();
-
-            if (videos_.count(key) > 0) {
-                f(key, videos_.at(key).get());
-            } else if (images_.count(key) > 0) {
-                f(key, images_.at(key).get());
-            } else if (controllers_.count(key) > 0) {
-                f(key, controllers_.at(key).get());
-            } else if (aovs_.count(key) > 0) {
-                auto& aov = aovs_.at(key);
-                if (std::holds_alternative<Value>(aov)) {
-                    f(key, std::get<Value>(aov));
-                } else if (std::holds_alternative<Address>(aov)) {
-                    visitReferable(std::get<Address>(aov), f);
-                }
-            } else if (render_step_resolutions_.count(key) > 0) {
-                 f(key, key);
-            } else {
-                throw std::runtime_error("Invalid address " + addr.str());
-            }
-        } else if (tail.str() == "resolution") {
-            Resolution res;
-            visitReferable(addr, [&res, addr, this](const std::string&, Referable r) {
-                if (std::holds_alternative<Media*>(r)) {
-                    res = std::get<Media*>(r)->getResolution();
-                } else if (std::holds_alternative<RenderStep::Label>(r)) {
-                    res = render_step_resolutions_.at(std::get<RenderStep::Label>(r));
-                } else {
-                    throw std::runtime_error("Expected address '" + addr.str() + "' to refer to media");
-                }
-            });
-
-            f((addr + tail).str(),
-                Value({static_cast<float>(res.width), static_cast<float>(res.height)}));
-        } else if (addr.getDepth() == 1 && tail.getDepth() == 1) {
-            std::string head = addr.str();
-            std::string back = tail.str();
-
-            if (controllers_.count(head) > 0) {
-                f((addr + tail).str(), controllers_.at(head)->getValue(back));
-            } else {
-                throw std::runtime_error("Invalid address " + head + "." + back);
-            }
-        } else if (addr.getDepth() == 0) {
-            f((addr + tail).str(), tail.str());
-        } else {
-            std::string back = addr.getBack();
-            visitReferable(addr.withoutBack(), f, tail.withHead(back));
-        }
-    }
-
-    void Patch::startRender() {
-        auto f = [](Media* m) {
-            m->resetInUse();
-        };
-
+    std::shared_ptr<gl::RenderOut> Patch::render() {
         for (const auto& kv : videos_) {
-            f(kv.second.get());
-        }
-
-        for (const auto& kv : images_) {
-            f(kv.second.get());
+            kv.second->resetInUse();
         }
 
         // Calculate time delta (fractions of seconds)
@@ -326,96 +282,34 @@ namespace vidrevolt {
         auto time = std::chrono::high_resolution_clock::now();
         float time_delta = std::chrono::duration<float>(time - last_time_.value()).count();
         last_time_ = time;
-        setValue("time_delta", Value(time_delta));
         lua_["time_delta"] = time_delta;
 
         auto time_ms = std::chrono::duration_cast<std::chrono::milliseconds>(time.time_since_epoch());
         lua_["time_ms"] = time_ms.count();
 
-        // Set function arguments for our lua controller functions
-        for (const auto& kv : lua_controllers_) {
-            std::shared_ptr<lua::Controller> lua = kv.second;
-
-            // Set arguments for each function of this controller
-            for (const auto& kv : lua->getControls()) {
-                const auto& control_name = kv.first;
-                const std::vector<AddressOrValue> params = kv.second.params;
-
-                // Convert our parameter list into resolved arguments.
-                std::vector<Value> args;
-                for (const auto& param : params) {
-                    if (std::holds_alternative<Value>(param)) {
-                        args.push_back(std::get<Value>(param));
-                        continue;
-                    }
-
-
-                    auto addr = std::get<Address>(param);
-
-                    bool found = false;
-                    visitReferable(addr, [&found, &args](const std::string& /*name*/, Referable r) {
-                        if (std::holds_alternative<Value>(r)) {
-                            args.push_back(std::get<Value>(r));
-                            found = true;
-                        }
-                    });
-
-                    if (!found) {
-                        throw std::runtime_error(addr.str() + " is not a Value address");
-                    }
-                }
-
-                // Set the arguments
-                lua->setControlArgs(control_name, args);
-            }
-        }
-
         for (const auto& kv : controllers_) {
             kv.second->poll();
         }
 
-        populateRenderSteps();
-    }
-
-    void Patch::populateRenderSteps() {
-        // Populate our render steps
-        render_steps_.clear();
         sol::function renderFunc = lua_["render"];
         if (!renderFunc) {
             throw std::runtime_error("Expected a function 'render'");
         }
 
+        // Perform render
         renderFunc();
-    }
 
-    void Patch::endRender() {
-        auto f = [](Media* m) {
+        // Trigger out/in focus
+        for (const auto& kv : videos_) {
+            auto& m = kv.second;
             if (m->wasInUse() && !m->isInUse()) {
                 m->outFocus();
             } else if (!m->wasInUse() && m->isInUse()) {
                 m->inFocus();
             }
-        };
+        }
 
-         for (const auto& kv : videos_) {
-            f(kv.second.get());
-         }
-
-         for (const auto& kv : images_) {
-             f(kv.second.get());
-         }
-    }
-
-    const std::vector<std::unique_ptr<RenderStep>>& Patch::getRenderSteps() const {
-        return render_steps_;
-    }
-
-    const std::map<std::string, std::unique_ptr<Video>>& Patch::getVideos() const {
-        return videos_;
-    }
-
-    const std::map<std::string, std::shared_ptr<Controller>>& Patch::getControllers() const {
-        return controllers_;
+        return renderer_->getLast();
     }
 
     void Patch::setVideo(const std::string& key, std::unique_ptr<Video> vid) {
@@ -428,36 +322,6 @@ namespace vidrevolt {
 
     void Patch::setController(const std::string& key, std::shared_ptr<Controller> controller) {
         controllers_[key] = controller;
-    }
-
-    void Patch::setLuaController(const std::string& key, std::shared_ptr<lua::Controller> lua) {
-        setController(key, lua);
-        lua_controllers_[key] = lua;
-    }
-
-    void Patch::addRenderStep(std::unique_ptr<RenderStep> step) {
-        render_step_resolutions_[step->getOutput()] = step->getResolution();
-        render_steps_.push_back(std::move(step));
-    }
-
-    bool Patch::isMedia(const Address& addr) const {
-        std::string id = addr.str();
-
-        if (videos_.count(id) || images_.count(id)) {
-            return true;
-        }
-
-        for (const auto& step : render_steps_) {
-            if (step->getOutput() == id) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    void Patch::setValue(const std::string& key, const Value& val) {
-        aovs_[key] = val;
     }
 
     Resolution Patch::getResolution() {

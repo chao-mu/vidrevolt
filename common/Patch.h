@@ -17,6 +17,7 @@
 #include "Trigger.h"
 #include "lua/Controller.h"
 #include "BPMSync.h"
+#include "gl/Renderer.h"
 
 namespace vidrevolt {
     class Patch {
@@ -27,32 +28,17 @@ namespace vidrevolt {
 
             void load();
 
-            const std::map<std::string, std::unique_ptr<Video>>& getVideos() const;
-            const std::vector<std::unique_ptr<RenderStep>>& getRenderSteps() const;
-            const std::map<std::string, std::shared_ptr<Controller>>& getControllers() const;
-
             void setVideo(const std::string& key, std::unique_ptr<Video> vid);
             void setBPMSync(const std::string& key, std::shared_ptr<BPMSync> vid);
             void setImage(const std::string& key, std::unique_ptr<Image> image);
             void setController(const std::string& key, std::shared_ptr<Controller> controller);
-            void setLuaController(const std::string& key, std::shared_ptr<lua::Controller> lua);
-            void setResolution(const Resolution& res);
-            void setAOV(const std::string& key, const AddressOrValue& aov);
 
             Resolution getResolution();
 
-            void addRenderStep(std::unique_ptr<RenderStep> mod);
-
-            bool isMedia(const Address& addr) const;
-
-            void visitReferable(const Address& addr, std::function<void(const std::string&, Referable)> f, const Address& tail=Address()) const;
-
-            void startRender();
-            void endRender();
+            std::shared_ptr<gl::RenderOut> render();
             void reconnectControllers();
 
         private:
-            void populateRenderSteps();
             AddressOrValue toAOV(sol::object obj);
 
             ObjID next_id(const std::string& comment);
@@ -64,26 +50,19 @@ namespace vidrevolt {
             ObjID luafunc_OSC(const std::string& path, int port);
             ObjID luafunc_Midi(const std::string& path);
             sol::table luafunc_getControlValues(const ObjID& controller_id);
-            void luafunc_rend(const std::string& label, const std::string& path, sol::table inputs);
+            void luafunc_rend(const std::string& target, const std::string& path, sol::table inputs);
             void luafunc_flipPlayback(const std::string& id);
             void luafunc_tap(const std::string& sync_id);
-
-            void setValue(const std::string& key, const Value& val);
-
-            std::string getAddressDeep(const Address& addr);
 
             std::optional<std::chrono::time_point<std::chrono::high_resolution_clock>> last_time_;
 
             std::map<std::string, std::shared_ptr<BPMSync>> bpm_syncs_;
-            std::map<std::string, std::unique_ptr<Video>> videos_;
-            std::map<std::string, std::unique_ptr<Image>> images_;
+            std::map<Address, std::unique_ptr<Video>> videos_;
+            std::map<Address, std::unique_ptr<Image>> images_;
             std::map<std::string, std::shared_ptr<Controller>> controllers_;
-            std::map<std::string, std::shared_ptr<lua::Controller>> lua_controllers_;
-            std::vector<std::unique_ptr<RenderStep>> render_steps_;
-            std::map<std::string, AddressOrValue> aovs_;
-            std::map<std::string, Resolution> render_step_resolutions_;
             Resolution resolution_;
             sol::state lua_;
+            std::unique_ptr<gl::Renderer> renderer_;
 
             const std::string path_;
             size_t obj_id_cursor_ = 0;
