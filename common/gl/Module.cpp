@@ -40,6 +40,8 @@ namespace vidrevolt {
                         uniforms[toPrivateInputName(name) + "_as_value"] = param.value;
                     }
 
+                    uniforms[toPrivateInputName(name) + "_amp"] = param.amp;
+                    uniforms[toPrivateInputName(name) + "_shift"] = param.shift;
                     uniforms[toPrivateInputName(name) + "_is_set"] = Value(true);
                 } else {
                     // Allows us to reuse the shader since the uniforms stick around
@@ -88,6 +90,9 @@ namespace vidrevolt {
                 uniform {{type}} {{private_name}}_as_value;
                 uniform bool {{private_name}}_is_tex = false;
                 uniform bool {{private_name}}_is_set = false;
+                uniform vec2 {{private_name}}_res = vec2(0);
+                uniform float {{private_name}}_shift = 0;
+                uniform float {{private_name}}_amp = 1;
 
                 {% for i in range(length) %}
                     uniform int {{private_name}}_swiz_{{i}} = {{i}};
@@ -102,9 +107,9 @@ namespace vidrevolt {
                         return {{default}};
                     }
 
+                    {{type}} ret;
                     if ({{private_name}}_is_tex) {
                         vec4 intermediate = texture({{private_name}}_as_tex, st);
-                        {{type}} ret;
                         {% if length > 1 %}
                             {% for i in range(length) %}
                                 ret[{{i}}] = intermediate[{{private_name}}_swiz_{{i}}];
@@ -117,20 +122,21 @@ namespace vidrevolt {
                                 ret = {{type}}(x);
                             {% endif %}
                         {% endif %}
-
-                        return ret;
                     } else {
                         {% if length > 1 %}
-                            {{type}} ret;
                             {% for i in range(length) %}
                                 ret[{{i}}] = {{private_name}}_as_value[{{private_name}}_swiz_{{i}}];
                             {% endfor %}
-
-                            return ret;
                         {% else %}
-                            return {{private_name}}_as_value;
+                            ret = {{private_name}}_as_value;
                         {% endif %}
                     }
+
+                    {% if type == "bool" %}
+                        return ret;
+                    {% else %}
+                        return ret * {{private_name}}_amp + {{private_name}}_shift;
+                    {% endif %}
                 }
 
                 {{type}} input_{{natural_name}}() {
