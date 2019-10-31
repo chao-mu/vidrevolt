@@ -4,6 +4,7 @@
 // STL
 #include <string>
 #include <vector>
+#include <array>
 
 namespace vidrevolt {
     class Address {
@@ -23,8 +24,10 @@ namespace vidrevolt {
             std::string getFront() const;
             std::string getBack() const;
 
-            void setSwiz(const std::string& str);
-            std::string getSwiz() const;
+            void setSwiz(const std::array<int, 4>& swiz);
+            void setSwiz(const std::string& swiz);
+
+            std::array<int, 4> getSwiz() const;
 
             bool operator <(const Address& b) const;
             Address operator +(const Address& addr) const;
@@ -34,7 +37,7 @@ namespace vidrevolt {
             std::vector<std::string> getFields() const;
         private:
             std::vector<std::string> fields_;
-            std::string swiz_;
+            std::array<int, 4> swiz_ = {0, 1, 2, 3};
     };
 }
 #endif

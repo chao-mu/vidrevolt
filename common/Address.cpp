@@ -52,12 +52,47 @@ namespace vidrevolt {
         return Address(fields);
     }
 
-    std::string Address::getSwiz() const {
-        return swiz_;
+    void Address::setSwiz(const std::string& swiz_in) {
+        std::string swiz = swiz_in;
+
+        // Ensure non-empty
+        if (swiz.empty()) {
+            swiz = "xyzw";
+        }
+
+        // Ensure at least 4 characters
+        while (swiz.length() < 4) {
+            swiz += swiz.back();
+        }
+
+        // Ensure not more than 4 characters
+        while (swiz.length() > 4) {
+            swiz.pop_back();
+        }
+
+        // Translate characters to indices
+        for (size_t i = 0; i < 4; i++) {
+            char c = swiz.at(i);
+            if (c == 'x' || c == 'r') {
+                swiz_[i] = 0;
+            } else if (c == 'y' || c == 'g') {
+                swiz_[i] = 1;
+            } else if (c == 'z' || c == 'b') {
+                swiz_[i] = 2;
+            } else if (c == 'w' || c == 'a') {
+                swiz_[i] = 3;
+            } else {
+                throw std::runtime_error("Unexpected character found in swizzle '" + swiz_in + "'");
+            }
+        }
     }
 
-    void Address::setSwiz(const std::string& str) {
-        swiz_ = str;
+    void Address::setSwiz(const std::array<int, 4>& swiz) {
+        swiz_ = swiz;
+    }
+
+    std::array<int, 4> Address::getSwiz() const {
+        return swiz_;
     }
 
     std::string Address::getBack() const {

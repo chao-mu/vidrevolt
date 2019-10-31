@@ -36,6 +36,12 @@ namespace vidrevolt {
                         uniforms[toPrivateInputName(name) + "_as_tex"] = addr;
                         uniforms[toPrivateInputName(name) + "_is_tex"] = Value(true);
                         uniforms[toPrivateInputName(name) + "_res"] = addr + "resolution";
+
+                        auto swiz = addr.getSwiz();
+                        for (size_t i = 0; i < swiz.size(); i++) {
+                            uniforms[toPrivateInputName(name) + "_swiz_" + std::to_string(i)] =
+                                Value(swiz.at(i));
+                        }
                     } else {
                         uniforms[toPrivateInputName(name) + "_as_value"] = param.value;
                     }
