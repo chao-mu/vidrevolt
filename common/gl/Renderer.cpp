@@ -2,18 +2,17 @@
 
 namespace vidrevolt {
     namespace gl {
-        Renderer::Renderer(const Resolution& resolution) : resolution_(resolution) {
+        void Renderer::setResolution(const Resolution& res) {
+            resolution_ = res;
         }
 
         void Renderer::render(const Address target, const std::string& shader_path, ParamSet params) {
-            if (modules_.count(shader_path) <= 0) {
-                modules_[shader_path] = std::make_unique<Module>();
-                modules_.at(shader_path)->compile(shader_path);
-            }
+            preloadModule(shader_path);
 
+            auto res = getResolution();
             if (render_outs_.count(target) <= 0) {
                 auto render = std::make_shared<RenderOut>(
-                        resolution_, GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1);
+                        res, GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1);
 
                 render->load();
                 render_outs_[target] = render;
@@ -64,11 +63,11 @@ namespace vidrevolt {
                 glUniform1f(id, static_cast<float>(time));
             });
 
-            program->setUniform("iResolution", [this](GLint& id) {
+            program->setUniform("iResolution", [&res](GLint& id) {
                 glUniform2f(
                     id,
-                    static_cast<float>(resolution_.width),
-                    static_cast<float>(resolution_.height)
+                    static_cast<float>(res.width),
+                    static_cast<float>(res.height)
                 );
             });
 
@@ -80,7 +79,7 @@ namespace vidrevolt {
             });
             */
 
-            glViewport(0,0, resolution_.width, resolution_.height);
+            glViewport(0,0, res.width, res.height);
 
             // Draw our vertices
             glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
@@ -90,6 +89,22 @@ namespace vidrevolt {
 
             textures_[target] = out->getSrcTex();
             last_ = out;
+        }
+
+        Resolution Renderer::getResolution() const {
+            if (resolution_.width <= 0 || resolution_.height <= 0) {
+                throw std::runtime_error("Renderer had resolution with width or height of zero, possibly unset.");
+            }
+
+            return resolution_;
+        }
+
+        void Renderer::preloadModule(const std::string& shader_path) {
+            if (modules_.count(shader_path) <= 0) {
+                modules_[shader_path] = std::make_unique<Module>();
+                std::cout << (modules_.at(shader_path) == nullptr) << std::endl;
+                modules_.at(shader_path)->compile(shader_path);
+            }
         }
 
         void Renderer::render(const Address target, cv::Mat& frame) {

@@ -19,12 +19,15 @@ namespace vidrevolt {
     namespace gl {
         class Renderer {
             public:
-                Renderer(const Resolution& resolution);
-
                 void render(const Address target, const std::string& shader_path, ParamSet params);
                 void render(const Address target, cv::Mat& frame);
 
+                void preloadModule(const std::string& shader_path);
+
                 std::shared_ptr<RenderOut> getLast();
+
+                void setResolution(const Resolution& resolution);
+                Resolution getResolution() const;
 
             private:
                 std::map<Address, std::shared_ptr<Texture>> textures_;
@@ -33,7 +36,7 @@ namespace vidrevolt {
 
                 std::shared_ptr<RenderOut> last_;
 
-                const Resolution resolution_;
+                Resolution resolution_;
 
                 //bool first_pass_ = true;
         };

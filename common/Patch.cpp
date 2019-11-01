@@ -61,6 +61,12 @@ namespace vidrevolt {
         return "ObjID:" + std::to_string(obj_id_cursor_) + ":" + comment;
     }
 
+    void Patch::luafunc_preload(sol::table shaders) {
+        for (const auto& kv : shaders) {
+            renderer_->preloadModule(kv.second.as<std::string>());
+        }
+    }
+
     Patch::ObjID Patch::luafunc_Keyboard() {
         ObjID id = next_id("keyboard");
 
@@ -124,6 +130,7 @@ namespace vidrevolt {
         lua_.set_function("rend", &Patch::luafunc_rend, this);
         lua_.set_function("getControlValues", &Patch::luafunc_getControlValues, this);
         lua_.set_function("tap", &Patch::luafunc_tap, this);
+        lua_.set_function("preload", &Patch::luafunc_preload, this);
         lua_.set_function("flipPlayback", &Patch::luafunc_flipPlayback, this);
 
         auto time = std::chrono::high_resolution_clock::now();
@@ -135,7 +142,7 @@ namespace vidrevolt {
 
         resolution_.width = lua_.get_or("width", 1920);
         resolution_.height = lua_.get_or("height", 1920);
-        renderer_ = std::make_unique<gl::Renderer>(resolution_);
+        renderer_->setResolution(resolution_);
 
         for (auto& vid_kv : videos_) {
             vid_kv.second->waitForLoaded();

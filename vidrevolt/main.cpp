@@ -124,20 +124,12 @@ int main(int argc, const char** argv) {
         glfwWindowHint( GLFW_DOUBLEBUFFER, GL_FALSE );
     }
 
-    auto patch = std::make_shared<vidrevolt::Patch>(patch_arg.getValue());
-    patch->load();
-
-    const vidrevolt::Resolution resolution = patch->getResolution();
-
     GLFWmonitor* monitor = nullptr;
     if (full_arg.getValue()) {
         monitor = glfwGetPrimaryMonitor();
     }
 
-    float height = static_cast<float>(height_arg.getValue());
-    float ratio = static_cast<float>(resolution.height) / height;
-    float width = static_cast<float>(resolution.width) / ratio;
-    GLFWwindow* window = glfwCreateWindow(static_cast<int>(width), static_cast<int>(height), "Awesome Art", monitor, NULL);
+    GLFWwindow* window = glfwCreateWindow(640, 360, "Awesome Art", monitor, NULL);
     if (!window) {
         glfwTerminate();
         std::cerr << "Failed to create window" << std::endl;
@@ -168,6 +160,18 @@ int main(int argc, const char** argv) {
         glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
         glDebugMessageCallback(onOpenGLDebug, NULL);
     }
+
+    auto patch = std::make_shared<vidrevolt::Patch>(patch_arg.getValue());
+    patch->load();
+
+    const vidrevolt::Resolution resolution = patch->getResolution();
+
+    /*// Readjust now that we were able to load the patch's proclaimed resolution
+    float height = static_cast<float>(height_arg.getValue());
+    float ratio = static_cast<float>(resolution.height) / height;
+    float width = static_cast<float>(resolution.width) / ratio;
+    glViewport(0, 0, static_cast<int>(width), static_cast<int>(height));
+    */
 
     // Bind vertex array object
     vidrevolt::gl::VertexArray vao;
@@ -266,7 +270,7 @@ int main(int argc, const char** argv) {
     DEBUG_TIME_DECLARE(draw)
     DEBUG_TIME_DECLARE(flush)
 
-    // Run it once to load most lazy-loaded things
+    // Force lazy-loading
     patch->render();
 
     std::optional<std::chrono::time_point<std::chrono::high_resolution_clock>> last_write;

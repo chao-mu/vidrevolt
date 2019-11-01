@@ -53,6 +53,7 @@ namespace vidrevolt {
             void luafunc_rend(const std::string& target, const std::string& path, sol::table inputs);
             void luafunc_flipPlayback(const std::string& id);
             void luafunc_tap(const std::string& sync_id);
+            void luafunc_preload(sol::table shaders);
 
             std::optional<std::chrono::time_point<std::chrono::high_resolution_clock>> last_time_;
 
@@ -62,7 +63,7 @@ namespace vidrevolt {
             std::map<std::string, std::shared_ptr<Controller>> controllers_;
             Resolution resolution_;
             sol::state lua_;
-            std::unique_ptr<gl::Renderer> renderer_;
+            std::unique_ptr<gl::Renderer> renderer_ = std::make_unique<gl::Renderer>();
 
             const std::string path_;
             size_t obj_id_cursor_ = 0;
