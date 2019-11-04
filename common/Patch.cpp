@@ -192,12 +192,11 @@ namespace vidrevolt {
 
         std::vector<std::string> keys;
         for (const auto& kv : controllers_.at(controller_id)->getValues()) {
-            ret[kv.first] = toTable(lua_, kv.second);
+            ret[kv.first] = kv.second.at(0);
         }
 
         return ret;
     }
-
 
     Patch::ObjID Patch::luafunc_Midi(const std::string& path) {
         ObjID id = next_id(path);
@@ -207,7 +206,7 @@ namespace vidrevolt {
         dev->connect([id, this](const std::string& control, Value v) {
             auto listener = lua_.get<sol::function>("onControl");
             if (lua_["onControl"]) {
-                listener(id, control, toTable(lua_, v));
+                listener(id, control, v.at(0));
             }
         });
 

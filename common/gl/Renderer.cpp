@@ -48,6 +48,8 @@ namespace vidrevolt {
                                 static_cast<float>(res.height)
                             );
                         });
+                    } else {
+                        std::cerr << "WARNING: undefined texture '" << addr.str() << "' referenced"<< std::endl;
                     }
                 }
             }
@@ -102,7 +104,6 @@ namespace vidrevolt {
         void Renderer::preloadModule(const std::string& shader_path) {
             if (modules_.count(shader_path) <= 0) {
                 modules_[shader_path] = std::make_unique<Module>();
-                std::cout << (modules_.at(shader_path) == nullptr) << std::endl;
                 modules_.at(shader_path)->compile(shader_path);
             }
         }

@@ -44,6 +44,7 @@ namespace vidrevolt {
                         }
                     } else {
                         uniforms[toPrivateInputName(name) + "_as_value"] = param.value;
+                        uniforms[toPrivateInputName(name) + "_is_tex"] = Value(false);
                     }
 
                     uniforms[toPrivateInputName(name) + "_amp"] = param.amp;

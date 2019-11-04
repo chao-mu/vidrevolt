@@ -1,5 +1,5 @@
 ```
-find assets/ -type f |  perl -nle '$line++; print "vid$line: $_"'
+find assets/ -type f |  perl -nle '$line++; print q(Video("$_", {"mirror"}),)'
 ```
 
 ```
@@ -65,4 +65,9 @@ Fonfiguring ffmpeg
 
 ```
 convert -size 1920x -background black -fill white  -gravity center label:"Atmosphere is important" assets/text-test.png
+```
+
+Hap encoding several videos
+```
+find -name "*.mkv" -exec ffmpeg -i {} -c:v hap {}.hap.mov
 ```

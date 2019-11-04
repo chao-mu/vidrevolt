@@ -15,6 +15,7 @@ namespace vidrevolt {
             Value(int v);
             Value(std::vector<float> v);
 
+            float at(size_t i) const;
             bool getBool() const;
             float getFloat() const;
             int getInt() const;

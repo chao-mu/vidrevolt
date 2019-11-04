@@ -22,6 +22,10 @@ namespace vidrevolt {
         std::copy_n(v.begin(), 4, value_.begin());
     }
 
+    float Value::at(size_t i) const {
+        return value_.at(i);
+    }
+
     bool Value::getBool() const {
         return value_[0]  > 0.5 ? true : false;
     }
