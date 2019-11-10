@@ -203,13 +203,6 @@ namespace vidrevolt {
         auto dev = std::make_shared<midi::Device>(path);
         dev->start();
 
-        dev->connect([id, this](const std::string& control, Value v) {
-            auto listener = lua_.get<sol::function>("onControl");
-            if (lua_["onControl"]) {
-                listener(id, control, v.at(0));
-            }
-        });
-
         setController(id, dev);
 
         return id;
@@ -327,6 +320,13 @@ namespace vidrevolt {
     }
 
     void Patch::setController(const std::string& key, std::shared_ptr<Controller> controller) {
+        controller->connect([key, this](const std::string& control, Value v) {
+            auto listener = lua_.get<sol::function>("onControl");
+            if (lua_["onControl"]) {
+                listener(key, control, v.at(0));
+            }
+        });
+
         controllers_[key] = controller;
     }
 
