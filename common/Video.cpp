@@ -31,6 +31,10 @@ namespace vidrevolt {
         return path_;
     }
 
+    void Video::inFocus() {
+
+    }
+
     void Video::outFocus() {
         requested_reset_ = auto_reset_;
         last_update_.reset();
@@ -48,8 +52,6 @@ namespace vidrevolt {
     }
 
     std::optional<cv::Mat> Video::nextFrame(bool force) {
-        setInUse(true);
-
         if (finished_) {
             return {};
         }

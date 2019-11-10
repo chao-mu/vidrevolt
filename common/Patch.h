@@ -13,9 +13,7 @@
 #include "RenderStep.h"
 #include "Controller.h"
 #include "Keyboard.h"
-#include "Referable.h"
 #include "Trigger.h"
-#include "lua/Controller.h"
 #include "BPMSync.h"
 #include "gl/Renderer.h"
 
@@ -30,7 +28,6 @@ namespace vidrevolt {
 
             void setVideo(const std::string& key, std::unique_ptr<Video> vid);
             void setBPMSync(const std::string& key, std::shared_ptr<BPMSync> vid);
-            void setImage(const std::string& key, std::unique_ptr<Image> image);
             void setController(const std::string& key, std::shared_ptr<Controller> controller);
 
             Resolution getResolution();
@@ -59,11 +56,13 @@ namespace vidrevolt {
 
             std::map<std::string, std::shared_ptr<BPMSync>> bpm_syncs_;
             std::map<Address, std::unique_ptr<Video>> videos_;
-            std::map<Address, std::unique_ptr<Image>> images_;
             std::map<std::string, std::shared_ptr<Controller>> controllers_;
             Resolution resolution_;
             sol::state lua_;
             std::unique_ptr<gl::Renderer> renderer_ = std::make_unique<gl::Renderer>();
+
+            std::map<Address, bool> in_use_;
+            std::map<Address, bool> last_in_use_;
 
             const std::string path_;
             size_t obj_id_cursor_ = 0;

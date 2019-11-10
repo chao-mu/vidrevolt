@@ -48,10 +48,9 @@ namespace vidrevolt {
 
     Patch::ObjID Patch::luafunc_Image(const std::string& path) {
         ObjID id = next_id(path);
-        auto image = std::make_unique<vidrevolt::Image>(path);
 
-        image->load();
-        setImage(id, std::move(image));
+        cv::Mat frame = Image::load(path);
+        renderer_->render(id, frame);
 
         return id;
     }
@@ -240,25 +239,17 @@ namespace vidrevolt {
 
                 params[key] = param;
 
-                // Render dependency
+                // Mark dependencies as used and render if need be
                 for (const AddressOrValue& aov : {param.value, param.amp, param.shift, param.pow}) {
                     if (std::holds_alternative<Address>(aov)) {
                         auto addr = std::get<Address>(aov);
 
-
-                        Media* m;
-                        if (images_.count(addr) > 0) {
-                            m = images_.at(addr).get();
-                        } else if (videos_.count(addr) > 0) {
-                            m = videos_.at(addr).get();
-                        } else {
-                            // We are either on rend target or an error.
-                            continue;
-                        }
-
-                        std::optional<cv::Mat> frame_opt = m->nextFrame();
-                        if (frame_opt) {
-                            renderer_->render(addr, frame_opt.value());
+                        in_use_[addr] = true;
+                        if (videos_.count(addr) > 0) {
+                            auto frame_opt = videos_.at(addr)->nextFrame();
+                            if (frame_opt) {
+                                renderer_->render(addr, frame_opt.value());
+                            }
                         }
                     }
                 }
@@ -269,9 +260,8 @@ namespace vidrevolt {
     }
 
     std::shared_ptr<gl::RenderOut> Patch::render() {
-        for (const auto& kv : videos_) {
-            kv.second->resetInUse();
-        }
+        last_in_use_ = in_use_;
+        in_use_.clear();
 
         // Calculate time delta (fractions of seconds)
         if (!last_time_) {
@@ -300,11 +290,15 @@ namespace vidrevolt {
 
         // Trigger out/in focus
         for (const auto& kv : videos_) {
-            auto& m = kv.second;
-            if (m->wasInUse() && !m->isInUse()) {
-                m->outFocus();
-            } else if (!m->wasInUse() && m->isInUse()) {
-                m->inFocus();
+            const auto& addr = kv.first;
+            auto& vid = kv.second;
+            bool was_in_use = last_in_use_.count(addr) > 0 ? last_in_use_.at(addr) : false;
+            bool is_in_use = in_use_.count(addr) > 0 ? in_use_.at(addr) : false;
+
+            if (was_in_use && !is_in_use) {
+                vid->outFocus();
+            } else if (!was_in_use && is_in_use) {
+                vid->inFocus();
             }
         }
 
@@ -313,10 +307,6 @@ namespace vidrevolt {
 
     void Patch::setVideo(const std::string& key, std::unique_ptr<Video> vid) {
         videos_[key] = std::move(vid);
-    }
-
-    void Patch::setImage(const std::string& key, std::unique_ptr<Image> image) {
-        images_[key] = std::move(image);
     }
 
     void Patch::setController(const std::string& key, std::shared_ptr<Controller> controller) {

@@ -14,13 +14,13 @@
 #include <opencv2/opencv.hpp>
 
 // Ours
-#include "Media.h"
+#include "Resolution.h"
 
 #define VIDREVOLT_VIDEO_MIDDLE 15
 #define VIDREVOLT_VIDEO_BUFFER_SIZE 30
 
 namespace vidrevolt {
-    class Video : public Media {
+    class Video {
         public:
             using Frame = std::pair<int, cv::Mat>;
 
@@ -38,18 +38,19 @@ namespace vidrevolt {
             void start();
             void stop();
 
-            virtual std::optional<cv::Mat> nextFrame() override;
+            std::optional<cv::Mat> nextFrame();
             std::optional<cv::Mat> nextFrame(bool force);
 
-            virtual Resolution getResolution() override;
+            Resolution getResolution();
 
-            virtual void outFocus() override;
+            void outFocus();
+            void inFocus();
 
             void setReverse(bool t);
 
             void flipPlayback();
 
-            virtual std::string getPath() const override;
+            std::string getPath() const;
 
             std::optional<Frame> currentFrame();
 

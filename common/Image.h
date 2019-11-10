@@ -4,27 +4,16 @@
 // STL
 #include <string>
 
-// Ours
-#include "Media.h"
+// OpenCV
+#include <opencv2/opencv.hpp>
 
 namespace vidrevolt {
-    class Image : public Media {
+    class Image {
         public:
-            Image(const std::string& path);
-            virtual std::string getPath() const override;
-
-            void load();
-
-            virtual std::optional<cv::Mat> nextFrame() override;
-
-            virtual Resolution getResolution() override;
+            static cv::Mat load(const std::string& path);
 
         private:
-            std::string path_;
-            cv::Mat image_;
-            bool new_data_ = false;
-            Resolution res_;
-
+            Image();
     };
 }
 
