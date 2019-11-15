@@ -1,4 +1,4 @@
-#include "Patch.h"
+#include "Pipeline.h"
 
 // Ours
 #include "midi/Device.h"
@@ -17,9 +17,9 @@ namespace vidrevolt {
         return tab;
     }
 
-    Patch::Patch(const std::string& path) : path_(path) {}
+    Pipeline::Pipeline(const std::string& path) : path_(path) {}
 
-    AddressOrValue Patch::toAOV(sol::object obj) {
+    AddressOrValue Pipeline::toAOV(sol::object obj) {
         if (obj.is<float>()) {
             return Value(obj.as<float>());
         } else if (obj.is<sol::table>()) {
@@ -38,7 +38,7 @@ namespace vidrevolt {
         throw std::runtime_error("Unsupported lua value type");
     }
 
-    void Patch::luafunc_flipPlayback(const std::string& id) {
+    void Pipeline::luafunc_flipPlayback(const std::string& id) {
         if (!videos_.count(id)) {
             throw std::runtime_error("Attempt to tap non-existent video");
         }
@@ -46,7 +46,7 @@ namespace vidrevolt {
         videos_.at(id)->flipPlayback();
     }
 
-    Patch::ObjID Patch::luafunc_Image(const std::string& path) {
+    Pipeline::ObjID Pipeline::luafunc_Image(const std::string& path) {
         ObjID id = next_id(path);
 
         cv::Mat frame = Image::load(path);
@@ -55,18 +55,18 @@ namespace vidrevolt {
         return id;
     }
 
-    Patch::ObjID Patch::next_id(const std::string& comment) {
+    Pipeline::ObjID Pipeline::next_id(const std::string& comment) {
         obj_id_cursor_++;
         return "ObjID:" + std::to_string(obj_id_cursor_) + ":" + comment;
     }
 
-    void Patch::luafunc_preload(sol::table shaders) {
+    void Pipeline::luafunc_preload(sol::table shaders) {
         for (const auto& kv : shaders) {
             renderer_->preloadModule(kv.second.as<std::string>());
         }
     }
 
-    Patch::ObjID Patch::luafunc_Keyboard() {
+    Pipeline::ObjID Pipeline::luafunc_Keyboard() {
         ObjID id = next_id("keyboard");
 
         setController(id, KeyboardManager::makeKeyboard());
@@ -74,7 +74,7 @@ namespace vidrevolt {
         return id;
     }
 
-    Patch::ObjID Patch::luafunc_BPM() {
+    Pipeline::ObjID Pipeline::luafunc_BPM() {
         ObjID id = next_id("bpm_sync");
 
         setBPMSync(id, std::make_shared<BPMSync>());
@@ -82,12 +82,12 @@ namespace vidrevolt {
         return id;
     }
 
-    void Patch::setBPMSync(const std::string& key, std::shared_ptr<BPMSync> sync) {
+    void Pipeline::setBPMSync(const std::string& key, std::shared_ptr<BPMSync> sync) {
         setController(key, sync);
         bpm_syncs_[key] = sync;
     }
 
-    Patch::ObjID Patch::luafunc_OSC(const std::string& path, int port) {
+    Pipeline::ObjID Pipeline::luafunc_OSC(const std::string& path, int port) {
         ObjID id = next_id(path);
 
         auto osc = std::make_shared<osc::Server>(port, path);
@@ -98,7 +98,7 @@ namespace vidrevolt {
         return id;
     }
 
-    void Patch::luafunc_tap(const std::string& sync_id) {
+    void Pipeline::luafunc_tap(const std::string& sync_id) {
         if (!bpm_syncs_.count(sync_id)) {
             throw std::runtime_error("Attempt to tap non-existent BPM sync");
         }
@@ -106,7 +106,7 @@ namespace vidrevolt {
         bpm_syncs_.at(sync_id)->tap();
     }
 
-    void Patch::load() {
+    void Pipeline::load() {
         lua_.open_libraries(
             sol::lib::base,
             sol::lib::package,
@@ -120,17 +120,17 @@ namespace vidrevolt {
         );
 
         // Our custom functions
-        lua_.set_function("Video", &Patch::luafunc_Video, this);
-        lua_.set_function("Image", &Patch::luafunc_Image, this);
-        lua_.set_function("OSC", &Patch::luafunc_OSC, this);
-        lua_.set_function("BPM", &Patch::luafunc_BPM, this);
-        lua_.set_function("Keyboard", &Patch::luafunc_Keyboard, this);
-        lua_.set_function("Midi", &Patch::luafunc_Midi, this);
-        lua_.set_function("rend", &Patch::luafunc_rend, this);
-        lua_.set_function("getControlValues", &Patch::luafunc_getControlValues, this);
-        lua_.set_function("tap", &Patch::luafunc_tap, this);
-        lua_.set_function("preload", &Patch::luafunc_preload, this);
-        lua_.set_function("flipPlayback", &Patch::luafunc_flipPlayback, this);
+        lua_.set_function("Video", &Pipeline::luafunc_Video, this);
+        lua_.set_function("Image", &Pipeline::luafunc_Image, this);
+        lua_.set_function("OSC", &Pipeline::luafunc_OSC, this);
+        lua_.set_function("BPM", &Pipeline::luafunc_BPM, this);
+        lua_.set_function("Keyboard", &Pipeline::luafunc_Keyboard, this);
+        lua_.set_function("Midi", &Pipeline::luafunc_Midi, this);
+        lua_.set_function("rend", &Pipeline::luafunc_rend, this);
+        lua_.set_function("getControlValues", &Pipeline::luafunc_getControlValues, this);
+        lua_.set_function("tap", &Pipeline::luafunc_tap, this);
+        lua_.set_function("preload", &Pipeline::luafunc_preload, this);
+        lua_.set_function("flipPlayback", &Pipeline::luafunc_flipPlayback, this);
 
         auto time = std::chrono::high_resolution_clock::now();
         auto time_ms = std::chrono::duration_cast<std::chrono::milliseconds>(time.time_since_epoch());
@@ -148,7 +148,7 @@ namespace vidrevolt {
         }
     }
 
-    Patch::ObjID Patch::luafunc_Video(const std::string& path, sol::table args) {
+    Pipeline::ObjID Pipeline::luafunc_Video(const std::string& path, sol::table args) {
         Video::Playback pb = Video::Forward;
         bool auto_reset = false;
 
@@ -177,13 +177,13 @@ namespace vidrevolt {
         return id;
     }
 
-    void Patch::reconnectControllers() {
+    void Pipeline::reconnectControllers() {
         for (auto& kv : controllers_) {
             kv.second->reconnect();
         }
     }
 
-    sol::table Patch::luafunc_getControlValues(const ObjID& controller_id) {
+    sol::table Pipeline::luafunc_getControlValues(const ObjID& controller_id) {
         if (controllers_.count(controller_id) == 0) {
             throw std::runtime_error("Control values requested for non-existent controller");
         }
@@ -197,7 +197,7 @@ namespace vidrevolt {
         return ret;
     }
 
-    Patch::ObjID Patch::luafunc_Midi(const std::string& path) {
+    Pipeline::ObjID Pipeline::luafunc_Midi(const std::string& path) {
         ObjID id = next_id(path);
         auto dev = std::make_shared<midi::Device>(path);
         dev->start();
@@ -207,7 +207,7 @@ namespace vidrevolt {
         return id;
     }
 
-    void Patch::luafunc_rend(const std::string& target, const std::string& path, sol::table inputs){
+    void Pipeline::luafunc_rend(const std::string& target, const std::string& path, sol::table inputs){
         gl::ParamSet params;
         if (inputs) {
             for (const auto& input_kv : inputs) {
@@ -259,7 +259,7 @@ namespace vidrevolt {
         renderer_->render(target, path, params);
     }
 
-    std::shared_ptr<gl::RenderOut> Patch::render() {
+    std::shared_ptr<gl::RenderOut> Pipeline::render() {
         last_in_use_ = in_use_;
         in_use_.clear();
 
@@ -305,11 +305,11 @@ namespace vidrevolt {
         return renderer_->getLast();
     }
 
-    void Patch::setVideo(const std::string& key, std::unique_ptr<Video> vid) {
+    void Pipeline::setVideo(const std::string& key, std::unique_ptr<Video> vid) {
         videos_[key] = std::move(vid);
     }
 
-    void Patch::setController(const std::string& key, std::shared_ptr<Controller> controller) {
+    void Pipeline::setController(const std::string& key, std::shared_ptr<Controller> controller) {
         controller->connect([key, this](const std::string& control, Value v) {
             auto listener = lua_.get<sol::function>("onControl");
             if (lua_["onControl"]) {
@@ -320,7 +320,7 @@ namespace vidrevolt {
         controllers_[key] = controller;
     }
 
-    Resolution Patch::getResolution() {
+    Resolution Pipeline::getResolution() {
         return resolution_;
     }
 }

@@ -17,11 +17,6 @@ namespace vidrevolt {
 
         std::string sep = "";
         for (const auto& field : fields_) {
-            // TODO: Remove PatchParser call to our constructor with empty values. Boo
-            if (field.empty()) {
-                continue;
-            }
-
             str += sep;
             str += field;
             sep = VIDREVOLT_ADDRESS_SEP;

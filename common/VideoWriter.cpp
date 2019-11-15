@@ -2,7 +2,7 @@
 
 namespace vidrevolt {
     VideoWriter::VideoWriter(const std::string& path, double fps, const Resolution& res) :
-        writer_(path, CV_FOURCC('M','J','P','G'), fps, cv::Size(res.width, res.height)) {}
+        writer_(path, cv::VideoWriter::fourcc('M','J','P','G'), fps, cv::Size(res.width, res.height)) {}
 
     void VideoWriter::start() {
         running_ = true;

@@ -30,7 +30,7 @@
 #include "Keyboard.h"
 #include "KeyboardManager.h"
 #include "mathutil.h"
-#include "Patch.h"
+#include "Pipeline.h"
 #include "debug.h"
 #include "gl/GLUtil.h"
 #include "gl/IndexBuffer.h"
@@ -76,7 +76,7 @@ int main(int argc, const char** argv) {
     TCLAP::CmdLine cmd("VidRevolt");
 
     TCLAP::ValueArg<std::string> vert_arg("", "vert", "path to vertex shader", false, "vert.glsl", "string", cmd);
-    TCLAP::ValueArg<std::string> patch_arg("i", "patch", "path to yaml patch", false, "patch.yml", "string", cmd);
+    TCLAP::ValueArg<std::string> pipeline_arg("i", "pipeline", "path to yaml pipeline", false, "pipeline.yml", "string", cmd);
     TCLAP::ValueArg<std::string> img_out_arg("", "image-out", "output image path", false, "", "string", cmd);
     TCLAP::ValueArg<std::string> vid_out_arg("o", "vid-out", "output to video path", false, "", "string", cmd);
     TCLAP::ValueArg<std::string> sound_arg("s", "sound-path", "path to sound file", false, "", "string", cmd);
@@ -161,12 +161,12 @@ int main(int argc, const char** argv) {
         glDebugMessageCallback(onOpenGLDebug, NULL);
     }
 
-    auto patch = std::make_shared<vidrevolt::Patch>(patch_arg.getValue());
-    patch->load();
+    auto pipeline = std::make_shared<vidrevolt::Pipeline>(pipeline_arg.getValue());
+    pipeline->load();
 
-    const vidrevolt::Resolution resolution = patch->getResolution();
+    const vidrevolt::Resolution resolution = pipeline->getResolution();
 
-    /*// Readjust now that we were able to load the patch's proclaimed resolution
+    /*// Readjust now that we were able to load the pipeline's proclaimed resolution
     float height = static_cast<float>(height_arg.getValue());
     float ratio = static_cast<float>(resolution.height) / height;
     float width = static_cast<float>(resolution.width) / ratio;
@@ -209,7 +209,7 @@ int main(int argc, const char** argv) {
     // Screenshot key
     std::string out_path = img_out_arg.getValue();
     std::vector<std::future<void>> shot_futures_;
-    keyboard->connect("p", [&shot_futures_, &out_path, &patch](vidrevolt::Value v) {
+    keyboard->connect("p", [&shot_futures_, &out_path, &pipeline](vidrevolt::Value v) {
         // On key release
         if (v.getBool()) {
             return;
@@ -226,7 +226,7 @@ int main(int argc, const char** argv) {
             dest = s.str();
         }
 
-        cv::Mat image = patch->render()->getSrcTex()->read();
+        cv::Mat image = pipeline->render()->getSrcTex()->read();
 
         // Explicitly image by copy; if we pass by reference the internal refcount wont increment
         shot_futures_.push_back(std::async([dest, image]() {
@@ -237,12 +237,12 @@ int main(int argc, const char** argv) {
         }));
     });
 
-    keyboard->connect("m", [patch](vidrevolt::Value v) {
+    keyboard->connect("m", [pipeline](vidrevolt::Value v) {
         if (v.getBool()) {
             return;
         }
 
-        patch->reconnectControllers();
+        pipeline->reconnectControllers();
     });
 
     // Exit key
@@ -271,7 +271,7 @@ int main(int argc, const char** argv) {
     DEBUG_TIME_DECLARE(flush)
 
     // Force lazy-loading
-    patch->render();
+    pipeline->render();
 
     std::optional<std::chrono::time_point<std::chrono::high_resolution_clock>> last_write;
     while (!glfwWindowShouldClose(window)) {
@@ -281,7 +281,7 @@ int main(int argc, const char** argv) {
         keyboard->poll();
 
         DEBUG_TIME_START(render)
-        std::shared_ptr<vidrevolt::gl::RenderOut> out = patch->render();
+        std::shared_ptr<vidrevolt::gl::RenderOut> out = pipeline->render();
         DEBUG_TIME_END(render)
 
         // Calculate blit settings

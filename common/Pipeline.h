@@ -18,11 +18,11 @@
 #include "gl/Renderer.h"
 
 namespace vidrevolt {
-    class Patch {
+    class Pipeline {
         public:
             using ObjID = std::string;
 
-            Patch(const std::string& path);
+            Pipeline(const std::string& path);
 
             void load();
 

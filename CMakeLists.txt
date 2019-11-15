@@ -5,6 +5,8 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 #
 # Conan (Dependency Management) fun!
 #
@@ -48,10 +50,22 @@ conan_cmake_run(
         inja/[~=1.0]@DEGoodmanWilson/stable
         boost_system/1.69.0@bincrafters/stable
         boost_filesystem/1.69.0@bincrafters/stable
+        opencv/4.1.1@conan/stable
+        bzip2/1.0.8@conan/stable
     BASIC_SETUP
         ${CONAN_SETTINGS}
     OPTIONS 
-        jinja2cpp:shared=False
+        opencv:dc1394=False
+        opencv:protobuf=False
+        opencv:harfbuzz=False
+        opencv:eigen=False
+        opencv:gflags=False
+        opencv:quirc=False
+        opencv:freetype=False   
+        opencv:glog=False   
+        opencv:gflags=False   
+        # sudo apt-get install libva-dev  libvdpau-dev libpulse-dev libxcb1-dev libxcb-shm0-dev libxcb-shape0-dev libxcb-xfixes0-dev
+        opencv:ffmpeg=True   
     BUILD missing
 )
 
