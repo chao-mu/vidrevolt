@@ -9,7 +9,7 @@ compiler:
 before_install:
     - sudo apt-get update
     - sudo apt-get -y install libva-dev libvdpau-dev libpulse-dev libxcb1-dev libxcb-shm0-dev libxcb-shape0-dev libxcb-xfixes0-dev
-    - pip install conan
+    - sudo pip install conan
 
 before_script:
     - mkdir build
