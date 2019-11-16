@@ -8,8 +8,8 @@
 #include <opencv2/opencv.hpp>
 
 // Ours
-#include "GLUtil.h"
-#include "../Resolution.h"
+#include "gl/GLUtil.h"
+#include "Resolution.h"
 
 namespace vidrevolt {
     namespace gl {

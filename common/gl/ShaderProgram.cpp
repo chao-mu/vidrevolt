@@ -1,10 +1,10 @@
-#include "ShaderProgram.h"
+#include "gl/ShaderProgram.h"
 
 // OpenGL
 #include <GLFW/glfw3.h>
 
 // Ours
-#include "../fileutil.h"
+#include "fileutil.h"
 
 namespace vidrevolt {
     namespace gl {

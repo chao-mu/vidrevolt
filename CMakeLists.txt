@@ -1,11 +1,16 @@
 cmake_minimum_required (VERSION 3.10)
-project (vidrevolt-global)
+project (vidrevolt)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+set(OpenGL_GL_PREFERENCE GLVND)
 
 #
 # Conan (Dependency Management) fun!
@@ -61,6 +66,7 @@ conan_cmake_run(
         inja/[~=1.0]@DEGoodmanWilson/stable
         boost_system/1.69.0@bincrafters/stable
         boost_filesystem/1.69.0@bincrafters/stable
+        boost_signals2/1.69.0@bincrafters/stable
         opencv/4.1.1@conan/stable
         bzip2/1.0.8@conan/stable
         yaml-cpp/0.6.2@bincrafters/stable
@@ -92,12 +98,50 @@ conan_cmake_run(
 )
 
 #
-# Sub projects
+# Commmon
 #
-add_subdirectory(common)
-add_subdirectory(vidrevolt)
-#add_subdirectory(exp)
-#add_subdirectory(textexp)
-#add_subdirectory(vidrevolt-pre)
-#add_subdirectory(videxp)
-#add_subdirectory(videxp2)
+add_library(common common/Keyboard.cpp common/BPMSync.cpp common/AddressOrValue.cpp common/Video.cpp common/midi/Device.cpp common/midi/Message.cpp common/midi/Control.cpp common/Image.cpp common/osc/Server.cpp common/Pipeline.cpp common/Value.cpp common/Address.cpp common/gl/Texture.cpp common/gl/GLUtil.cpp common/gl/ShaderProgram.cpp common/gl/RenderOut.cpp common/gl/IndexBuffer.cpp common/gl/Renderer.cpp common/gl/VertexArray.cpp common/gl/VertexBuffer.cpp common/gl/Module.cpp common/gl/ParamSet.cpp common/KeyboardManager.cpp common/Resolution.cpp common/RenderStep.cpp common/VideoWriter.cpp common/Controller.cpp common/mathutil.cpp common/fileutil.cpp) 
+
+target_compile_options(common PRIVATE "-Wextra" "-Werror" "-Wall" "-pedantic-errors")
+
+target_include_directories(common PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/common)
+
+# OpenGL
+find_package(OpenGL REQUIRED)
+target_link_libraries(common ${OPENGL_LIBRARIES})
+target_link_libraries(common ${OPENGL_INCLUDE_DIRS})
+
+# OpenGL - GLFW
+find_package(glfw3 3.2 REQUIRED)
+target_link_libraries(common glfw ${GLFW_LIBRARIES}) 
+
+# OpenGL - GLEW
+find_package(GLEW REQUIRED)
+include_directories(${GLEW_INCLUDE_DIRS})
+target_link_libraries(common ${GLEW_LIBRARIES})
+
+# RtMidi
+find_package(RTMIDI REQUIRED)
+include_directories(${RTMIDI_INCLUDE_DIRS})
+target_link_libraries(common ${RTMIDI_LIBRARIES})
+
+# Lua
+find_package(Lua REQUIRED)
+include_directories(${LUA_INCLUDE_DIRS})
+target_link_libraries(common ${LUA_LIBRARIES})
+
+# Libraries brought in by conan dependency manager
+target_link_libraries(common ${CONAN_LIBS})
+
+#
+# Main executable
+#
+add_executable(${PROJECT_NAME} vidrevolt/main.cpp)
+
+target_compile_options(${PROJECT_NAME} PRIVATE "-Wextra" "-Werror" "-Wall" "-pedantic-errors")
+
+target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/common)
+target_link_libraries(${PROJECT_NAME} common)
+
+# Libraries brought in by conan dependency manager
+target_link_libraries(${PROJECT_NAME} ${CONAN_LIBS})

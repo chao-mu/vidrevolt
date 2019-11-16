@@ -5,9 +5,9 @@
 #include <memory>
 
 // Ours
-#include "Texture.h"
-#include "GLUtil.h"
-#include "ShaderProgram.h"
+#include "gl/Texture.h"
+#include "gl/GLUtil.h"
+#include "gl/ShaderProgram.h"
 
 namespace vidrevolt {
     namespace gl {

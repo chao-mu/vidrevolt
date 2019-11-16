@@ -1,4 +1,4 @@
-#include "VertexBuffer.h"
+#include "gl/VertexBuffer.h"
 
 namespace vidrevolt {
     namespace gl {

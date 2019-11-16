@@ -2,7 +2,7 @@
 #define VIDREVOLT_GL_GLUTIL_H_
 
 // STL
-#include <stdlib.h>
+#include <cstdlib>
 #include <stdexcept>
 
 // OpenGL

@@ -6,10 +6,10 @@
 #include <memory>
 
 // Ours
-#include "ShaderProgram.h"
-#include "../AddressOrValue.h"
-#include "../RenderStep.h"
-#include "ParamSet.h"
+#include "gl/ShaderProgram.h"
+#include "AddressOrValue.h"
+#include "RenderStep.h"
+#include "gl/ParamSet.h"
 
 namespace vidrevolt {
     namespace gl {

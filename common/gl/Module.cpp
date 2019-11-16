@@ -1,4 +1,4 @@
-#include "Module.h"
+#include "gl/Module.h"
 
 // STL
 #include <regex>
@@ -8,8 +8,8 @@
 #include <inja/inja.hpp>
 
 // Ours
-#include "../AddressOrValue.h"
-#include "../fileutil.h"
+#include "AddressOrValue.h"
+#include "fileutil.h"
 
 namespace vidrevolt {
     namespace gl {

@@ -1,4 +1,4 @@
-#include "IndexBuffer.h"
+#include "gl/IndexBuffer.h"
 
 namespace vidrevolt {
     namespace gl {

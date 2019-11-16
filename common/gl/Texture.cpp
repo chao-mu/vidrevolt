@@ -1,4 +1,4 @@
-#include "Texture.h"
+#include "gl/Texture.h"
 
 namespace vidrevolt {
     namespace gl {

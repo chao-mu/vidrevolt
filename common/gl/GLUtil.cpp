@@ -1,4 +1,4 @@
-#include "GLUtil.h"
+#include "gl/GLUtil.h"
 
 // STL
 #include <iostream>

@@ -9,11 +9,11 @@
 #include <opencv2/opencv.hpp>
 
 // Ours
-#include "../Value.h"
-#include "RenderOut.h"
-#include "Module.h"
-#include "ParamSet.h"
-#include "../Resolution.h"
+#include "Value.h"
+#include "gl/RenderOut.h"
+#include "gl/Module.h"
+#include "gl/ParamSet.h"
+#include "Resolution.h"
 
 namespace vidrevolt {
     namespace gl {

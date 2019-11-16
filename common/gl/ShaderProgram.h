@@ -13,7 +13,7 @@
 #include <GL/glew.h>
 
 // Ours
-#include "../Value.h"
+#include "Value.h"
 
 namespace vidrevolt {
     namespace gl {

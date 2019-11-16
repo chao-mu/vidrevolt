@@ -1,4 +1,4 @@
-#include "VertexArray.h"
+#include "gl/VertexArray.h"
 
 namespace vidrevolt {
     namespace gl {

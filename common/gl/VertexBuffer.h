@@ -1,7 +1,7 @@
 #ifndef VIDREVOLT_GL_VERTEXBUFFER_H_
 #define VIDREVOLT_GL_VERTEXBUFFER_H_
 
-#include "GLUtil.h"
+#include "gl/GLUtil.h"
 
 namespace vidrevolt {
     namespace gl {

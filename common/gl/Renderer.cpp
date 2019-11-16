@@ -1,4 +1,4 @@
-#include "Renderer.h"
+#include "gl/Renderer.h"
 
 namespace vidrevolt {
     namespace gl {

@@ -6,8 +6,7 @@
 #include <map>
 
 // Ours
-#include "../AddressOrValue.h"
-#include "Module.h"
+#include "AddressOrValue.h"
 
 namespace vidrevolt {
     namespace gl {
