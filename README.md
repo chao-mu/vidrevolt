@@ -1,5 +1,7 @@
 # vidrevolt
 
+[![Build Status](https://travis-ci.org/chao-mu/vidrevolt.svg?branch=master)](https://travis-ci.org/chao-mu/vidrevolt)
+
 Lua and GLSL driven performance tool for VJs and Visual Artists
 
 ![](https://images.mentalfloss.com/sites/default/files/styles/insert_main_wide_image/public/under%20construction1_0.gif)
