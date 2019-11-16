@@ -14,6 +14,6 @@ before_install:
 before_script:
     - mkdir build
     - cd build
-    - cmake ..
+    - cmake .. -DCMAKE_BUILD_TYPE=Release
 
 script: make && make test
