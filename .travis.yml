@@ -1,14 +1,14 @@
 language: cpp
 os: linux
-dist: disco
+dist: bionic
 
 compiler:
     - gcc
     - clang
 
-addons:
-    apt:
-        - conan
+before_install:
+    - sudo apt-get update
+    - sudo apt-get -y install libva-dev libvdpau-dev libpulse-dev libxcb1-dev libxcb-shm0-dev libxcb-shape0-dev libxcb-xfixes0-dev conan
 
 before_script:
     - mkdir build
