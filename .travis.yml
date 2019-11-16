@@ -8,7 +8,7 @@ compiler:
 
 before_install:
     - sudo apt-get update
-    - sudo apt-get -y install libva-dev libvdpau-dev libpulse-dev libxcb1-dev libxcb-shm0-dev libxcb-shape0-dev libxcb-xfixes0-dev
+    - sudo apt-get -y install libva-dev libvdpau-dev libpulse-dev libxcb1-dev libxcb-shm0-dev libxcb-shape0-dev libxcb-xfixes0-dev librtmidi-dev liblua5.3-dev
     # OpenGL libraries and friends
     - sudo apt-get -y install mesa-common-dev libgl1-mesa-dev libglfw3-dev libglu1-mesa-dev libglew-dev
     - sudo pip install conan
