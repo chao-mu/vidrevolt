@@ -10,13 +10,6 @@ target_compile_options(common PRIVATE "-Wextra" "-Werror" "-Wall" "-pedantic-err
 
 target_include_directories(common PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
-# Boost components support
-#find_package(Boost COMPONENTS system filesystem REQUIRED)
-#target_link_libraries(common 
-#	${Boost_FILESYSTEM_LIBRARY}
-#	${Boost_SYSTEM_LIBRARY}
-#)
-
 # OpenGL
 find_package(OpenGL REQUIRED)
 target_link_libraries(common ${OPENGL_LIBRARIES})
@@ -31,34 +24,15 @@ find_package(GLEW REQUIRED)
 include_directories(${GLEW_INCLUDE_DIRS})
 target_link_libraries(common ${GLEW_LIBRARIES})
 
-# yaml-cpp
-find_package(yaml-cpp REQUIRED)
-include_directories(${YAML_CPP_INCLUDE_DIRS})
-target_link_libraries(common ${YAML_CPP_LIBRARIES})
-
 # RtMidi
 find_package(RTMIDI REQUIRED)
 include_directories(${RTMIDI_INCLUDE_DIRS})
 target_link_libraries(common ${RTMIDI_LIBRARIES})
 
-# SFML
-find_package(SFML 2.5 COMPONENTS audio REQUIRED)
-target_link_libraries(common sfml-audio)
-
-# Liblo - OSC library
-find_package(LIBLO REQUIRED)
-target_link_libraries(common ${LIBLO_LIBRARIES})
-include_directories(common ${LIBLO_INCLUDE_DIRS})
-
 # Lua
 find_package(Lua REQUIRED)
 include_directories(${LUA_INCLUDE_DIRS})
 target_link_libraries(common ${LUA_LIBRARIES})
-
-# sol (Lua bindings)
-find_package(Sol2 REQUIRED)
-include_directories(${SOL2_INCLUDE_DIRS})
-target_link_libraries(common ${SOL2_LIBRARIES})
 
 # Libraries brought in by conan dependency manager
 target_link_libraries(common ${CONAN_LIBS})

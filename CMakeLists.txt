@@ -21,8 +21,14 @@ include(${CMAKE_BINARY_DIR}/conan.cmake)
 conan_check(VERSION 1.0.0 REQUIRED)
 
 conan_add_remote(
+    NAME vidrevolt
+    URL https://api.bintray.com/conan/vidrevolt/conan-packages
+)
+
+conan_add_remote(
     NAME bincrafters
-    URL https://api.bintray.com/conan/bincrafters/public-conan)
+    URL https://api.bintray.com/conan/bincrafters/public-conan
+)
 
 conan_add_remote(
     NAME martin
@@ -40,6 +46,11 @@ conan_add_remote(
 )
 
 conan_add_remote(
+    NAME jinncrafters
+    URL https://api.bintray.com/conan/jinncrafters/conan
+)
+
+conan_add_remote(
     NAME DEGoodmanWilson
     URL https://api.bintray.com/conan/degoodmanwilson/opensource
 )
@@ -52,6 +63,12 @@ conan_cmake_run(
         boost_filesystem/1.69.0@bincrafters/stable
         opencv/4.1.1@conan/stable
         bzip2/1.0.8@conan/stable
+        yaml-cpp/0.6.2@bincrafters/stable
+        sfml/2.5.1@bincrafters/stable
+        sol2/2.20.6@jinncrafters/stable
+        tclap/1.2.2@vidrevolt/stable
+        liblo/0.30@vidrevolt/stable
+        libalsa/1.1.9@conan/stable
     BASIC_SETUP
         ${CONAN_SETTINGS}
     OPTIONS 
@@ -66,6 +83,11 @@ conan_cmake_run(
         opencv:gflags=False   
         # sudo apt-get install libva-dev  libvdpau-dev libpulse-dev libxcb1-dev libxcb-shm0-dev libxcb-shape0-dev libxcb-xfixes0-dev
         opencv:ffmpeg=True   
+        sfml:graphics=False 
+        sfml:window=False
+        sfml:audio=True 
+        sfml:network=False
+
     BUILD missing
 )
 
