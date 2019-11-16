@@ -9,4 +9,4 @@ cache: # see https://docs.travis-ci.com/user/caching/
 
 addons:
   apt:
-      - conan
+    - conan
