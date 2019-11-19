@@ -102,7 +102,7 @@ conan_cmake_run(
 #
 add_library(common common/Keyboard.cpp common/BPMSync.cpp common/AddressOrValue.cpp common/Video.cpp common/midi/Device.cpp common/midi/Message.cpp common/midi/Control.cpp common/Image.cpp common/osc/Server.cpp common/Pipeline.cpp common/Value.cpp common/Address.cpp common/gl/Texture.cpp common/gl/GLUtil.cpp common/gl/ShaderProgram.cpp common/gl/RenderOut.cpp common/gl/IndexBuffer.cpp common/gl/Renderer.cpp common/gl/VertexArray.cpp common/gl/VertexBuffer.cpp common/gl/Module.cpp common/gl/ParamSet.cpp common/KeyboardManager.cpp common/Resolution.cpp common/RenderStep.cpp common/VideoWriter.cpp common/Controller.cpp common/mathutil.cpp common/fileutil.cpp) 
 
-target_compile_options(common PRIVATE "-Wextra" "-Werror" "-Wall" "-pedantic-errors")
+target_compile_options(common PRIVATE "-Wextra" "-Wall")
 
 target_include_directories(common PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/common)
 
@@ -138,7 +138,7 @@ target_link_libraries(common ${CONAN_LIBS})
 #
 add_executable(${PROJECT_NAME} vidrevolt/main.cpp)
 
-target_compile_options(${PROJECT_NAME} PRIVATE "-Wextra" "-Werror" "-Wall" "-pedantic-errors")
+target_compile_options(${PROJECT_NAME} PRIVATE "-Wextra" "-Wall")
 
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/common)
 target_link_libraries(${PROJECT_NAME} common)
