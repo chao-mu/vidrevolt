@@ -15,7 +15,6 @@ namespace vidrevolt {
                 throw std::runtime_error("Failed to start osc server on port " + std::to_string(port_));
             }
 
-
             std::ifstream controls_file(path_);
             for (std::string ctrl; getline(controls_file, ctrl);) {
                 addControlName(ctrl);
