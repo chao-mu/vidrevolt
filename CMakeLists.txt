@@ -93,50 +93,38 @@ conan_cmake_run(
 )
 
 #
-# Commmon
-#
-add_library(common common/Keyboard.cpp common/BPMSync.cpp common/AddressOrValue.cpp common/Video.cpp common/midi/Device.cpp common/midi/Message.cpp common/midi/Control.cpp common/Image.cpp common/osc/Server.cpp common/Pipeline.cpp common/Value.cpp common/Address.cpp common/gl/Texture.cpp common/gl/GLUtil.cpp common/gl/ShaderProgram.cpp common/gl/RenderOut.cpp common/gl/IndexBuffer.cpp common/gl/Renderer.cpp common/gl/VertexArray.cpp common/gl/VertexBuffer.cpp common/gl/Module.cpp common/gl/ParamSet.cpp common/KeyboardManager.cpp common/Resolution.cpp common/RenderStep.cpp common/VideoWriter.cpp common/Controller.cpp common/mathutil.cpp common/fileutil.cpp) 
-
-target_compile_options(common PRIVATE "-Wextra" "-Wall")
-
-target_include_directories(common PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/common)
-
-# OpenGL
-find_package(OpenGL REQUIRED)
-target_link_libraries(common ${OPENGL_LIBRARIES})
-target_link_libraries(common ${OPENGL_INCLUDE_DIRS})
-
-# OpenGL - GLFW
-find_package(glfw3 3.2 REQUIRED)
-target_link_libraries(common glfw ${GLFW_LIBRARIES}) 
-
-# OpenGL - GLEW
-find_package(GLEW REQUIRED)
-include_directories(${GLEW_INCLUDE_DIRS})
-target_link_libraries(common ${GLEW_LIBRARIES})
-
-# RtMidi
-find_package(RTMIDI REQUIRED)
-include_directories(${RTMIDI_INCLUDE_DIRS})
-target_link_libraries(common ${RTMIDI_LIBRARIES})
-
-# Lua
-find_package(Lua REQUIRED)
-include_directories(${LUA_INCLUDE_DIRS})
-target_link_libraries(common ${LUA_LIBRARIES})
-
-# Libraries brought in by conan dependency manager
-target_link_libraries(common ${CONAN_LIBS})
-
-#
 # Main executable
 #
-add_executable(${PROJECT_NAME} vidrevolt/main.cpp)
+add_executable(${PROJECT_NAME} src/main.cpp src/Keyboard.cpp src/BPMSync.cpp src/AddressOrValue.cpp src/Video.cpp src/midi/Device.cpp src/midi/Message.cpp src/midi/Control.cpp src/Image.cpp src/osc/Server.cpp src/Pipeline.cpp src/Value.cpp src/Address.cpp src/gl/Texture.cpp src/gl/GLUtil.cpp src/gl/ShaderProgram.cpp src/gl/RenderOut.cpp src/gl/IndexBuffer.cpp src/gl/Renderer.cpp src/gl/VertexArray.cpp src/gl/VertexBuffer.cpp src/gl/Module.cpp src/gl/ParamSet.cpp src/KeyboardManager.cpp src/Resolution.cpp src/RenderStep.cpp src/VideoWriter.cpp src/Controller.cpp src/mathutil.cpp src/fileutil.cpp)
 
 target_compile_options(${PROJECT_NAME} PRIVATE "-Wextra" "-Wall")
 
-target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/common)
-target_link_libraries(${PROJECT_NAME} common)
+target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/src)
+
+# OpenGL
+find_package(OpenGL REQUIRED)
+target_link_libraries(${PROJECT_NAME} ${OPENGL_LIBRARIES})
+target_include_directories(${PROJECT_NAME} PRIVATE ${OPENGL_INCLUDE_DIR})
+
+
+# OpenGL - GLFW
+find_package(glfw3 3.2 REQUIRED)
+target_link_libraries(${PROJECT_NAME} glfw ${GLFW_LIBRARIES}) 
+
+# OpenGL - GLEW
+find_package(GLEW REQUIRED)
+target_include_directories(${PROJECT_NAME} PRIVATE ${GLEW_INCLUDE_DIR})
+target_link_libraries(${PROJECT_NAME} ${GLEW_LIBRARIES})
+
+# RtMidi
+find_package(RTMIDI REQUIRED)
+target_include_directories(${PROJECT_NAME} PRIVATE ${RTMIDI_INCLUDE_DIR})
+target_link_libraries(${PROJECT_NAME} ${RTMIDI_LIBRARIES})
+
+# Lua
+find_package(Lua REQUIRED)
+target_include_directories(${PROJECT_NAME} PRIVATE ${LUA_INCLUDE_DIR})
+target_link_libraries(${PROJECT_NAME} ${LUA_LIBRARY})
 
 # Libraries brought in by conan dependency manager
 target_link_libraries(${PROJECT_NAME} ${CONAN_LIBS})
