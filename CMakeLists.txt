@@ -1,6 +1,14 @@
 cmake_minimum_required (VERSION 3.10)
 project (vidrevolt)
 
+option(COVERAGE "Enable code coverage reporting" FALSE)
+
+if (COVERAGE)
+    # Disable code optimizations
+    add_compile_options(--coverage -O0)
+    MESSAGE(STATUS "Coverage enabled!")
+endif()
+
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
@@ -64,7 +72,7 @@ conan_cmake_run(
         sol/3.0.3@vidrevolt/stable
         tclap/1.2.2@vidrevolt/stable
         liblo/0.30@vidrevolt/stable
-        libalsa/1.1.9@conan/stable
+        gtest/1.8.1@bincrafters/stable
     BASIC_SETUP
         ${CONAN_SETTINGS}
     BUILD missing
@@ -115,3 +123,22 @@ target_link_libraries(${PROJECT_NAME} ${Boost_LIBRARIES})
 
 # Libraries brought in by conan dependency manager
 target_link_libraries(${PROJECT_NAME} ${CONAN_LIBS})
+
+#
+# Testing!
+#
+enable_testing()
+
+add_executable(tests test/main.cpp)
+include(GoogleTest)
+gtest_discover_tests(tests)
+target_compile_options(tests PRIVATE "-Wextra" "-Wall")
+target_link_libraries(tests ${CONAN_LIBS})
+
+#
+# Enable coverage
+#
+if (COVERAGE)
+    target_link_libraries(${PROJECT_NAME} --coverage)
+    target_link_libraries(tests --coverage)
+endif()

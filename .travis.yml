@@ -23,6 +23,9 @@ before_install:
 before_script:
     - mkdir build
     - cd build
-    - cmake .. -DCMAKE_BUILD_TYPE=Release
+    - cmake .. -DCMAKE_BUILD_TYPE=Release -DCOVERAGE=ON
 
-script: make && make test
+script:
+    - make
+    - make test
+    - bash <(curl -s https://codecov.io/bash)
