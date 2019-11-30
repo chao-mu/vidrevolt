@@ -107,10 +107,6 @@ find_package(Lua REQUIRED)
 target_include_directories(${PROJECT_NAME} PRIVATE ${LUA_INCLUDE_DIR})
 target_link_libraries(${PROJECT_NAME} ${LUA_LIBRARY})
 
-# SFML
-find_package(SFML 2.5 COMPONENTS audio REQUIRED)
-target_link_libraries(${PROJECT_NAME} sfml-audio)
-
 # Boost
 # sudo apt-get install libboost-signals-dev libboost-filesystem-dev libboost-system-dev
 find_package(Boost COMPONENTS REQUIRED filesystem system)

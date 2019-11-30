@@ -23,9 +23,6 @@
 #include <tclap/SwitchArg.h>
 #include <tclap/ValueArg.h>
 
-// SMFL
-#include <SFML/Audio/Music.hpp>
-
 // Ours
 #include "Keyboard.h"
 #include "KeyboardManager.h"
@@ -79,7 +76,6 @@ int main(int argc, const char** argv) {
     TCLAP::ValueArg<std::string> pipeline_arg("i", "pipeline", "path to yaml pipeline", false, "pipeline.yml", "string", cmd);
     TCLAP::ValueArg<std::string> img_out_arg("", "image-out", "output image path", false, "", "string", cmd);
     TCLAP::ValueArg<std::string> vid_out_arg("o", "vid-out", "output to video path", false, "", "string", cmd);
-    TCLAP::ValueArg<std::string> sound_arg("s", "sound-path", "path to sound file", false, "", "string", cmd);
     TCLAP::ValueArg<int> height_arg("", "height", "window height (width will be calculated automatically)", false, 720, "int", cmd);
     TCLAP::SwitchArg debug_timer_arg("", "debug-timer", "debug time between frames", cmd);
     TCLAP::SwitchArg debug_opengl("", "debug-opengl", "print out OpenGL debugging info", cmd);
@@ -94,15 +90,6 @@ int main(int argc, const char** argv) {
     }
 
     bool debug_time = debug_timer_arg.getValue();
-
-    sf::Music music;
-    const std::string sound_path = sound_arg.getValue();
-    if (!sound_path.empty()) {
-        if (!music.openFromFile(sound_path)) {
-            // openFromFile displays its own helpful error, so none here
-            return 1;
-        }
-    }
 
     // Set GLFW error callback
     glfwSetErrorCallback(onError);
@@ -198,10 +185,6 @@ int main(int argc, const char** argv) {
     GLCall(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL));
     GLCall(glEnableVertexAttribArray(0));
     GLCall(glBindBuffer(GL_ARRAY_BUFFER, 0));
-
-    if (!sound_path.empty()) {
-        music.play();
-    }
 
     // Keyboard mappings
     std::shared_ptr<vidrevolt::Keyboard> keyboard = vidrevolt::KeyboardManager::makeKeyboard();
