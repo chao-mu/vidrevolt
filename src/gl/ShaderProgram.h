@@ -6,9 +6,6 @@
 #include <functional>
 #include <unordered_set>
 
-// Boost
-#include <boost/filesystem.hpp>
-
 // OpenGL
 #include <GL/glew.h>
 
