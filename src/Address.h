@@ -19,7 +19,7 @@ namespace vidrevolt {
             Address withoutBack() const;
             Address withoutFront() const;
 
-            Address withHead(const std::string head) const;
+            Address withHead(const std::string& head) const;
 
             std::string getFront() const;
             std::string getBack() const;

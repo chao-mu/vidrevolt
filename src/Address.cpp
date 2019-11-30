@@ -38,10 +38,10 @@ namespace vidrevolt {
             return Address();
         }
 
-        return Address(std::vector(fields_.cbegin() + 1, fields_.cend()));
+        return Address(std::vector<std::string>(fields_.cbegin() + 1, fields_.cend()));
     }
 
-    Address Address::withHead(const std::string head) const {
+    Address Address::withHead(const std::string& head) const {
         std::vector<std::string> fields(fields_.cbegin(), fields_.cend());
         fields.insert(fields.begin(), head);
         return Address(fields);
