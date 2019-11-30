@@ -30,7 +30,7 @@ namespace vidrevolt {
             return Address();
         }
 
-        return Address(std::vector(fields_.cbegin(), fields_.cend() - 1));
+        return Address(std::vector<std::string>(fields_.cbegin(), fields_.cend() - 1));
     }
 
     Address Address::withoutFront() const {
