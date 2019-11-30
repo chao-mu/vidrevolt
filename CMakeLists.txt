@@ -59,9 +59,6 @@ set (CONAN_SETTINGS SETTINGS compiler.libcxx=libstdc++11)
 conan_cmake_run(
     REQUIRES
         inja/[~=1.0]@DEGoodmanWilson/stable
-        boost_system/1.69.0@bincrafters/stable
-        boost_filesystem/1.69.0@bincrafters/stable
-        boost_signals2/1.69.0@bincrafters/stable
         opencv/4.1.1@conan/stable
         bzip2/1.0.8@conan/stable
         yaml-cpp/0.6.2@bincrafters/stable
@@ -125,6 +122,12 @@ target_link_libraries(${PROJECT_NAME} ${RTMIDI_LIBRARIES})
 find_package(Lua REQUIRED)
 target_include_directories(${PROJECT_NAME} PRIVATE ${LUA_INCLUDE_DIR})
 target_link_libraries(${PROJECT_NAME} ${LUA_LIBRARY})
+
+# Boost
+# sudo apt-get install libboost-signals-dev libboost-filesystem-dev libboost-system-dev
+find_package(Boost COMPONENTS REQUIRED filesystem system)
+target_include_directories(${PROJECT_NAME} PRIVATE ${Boost_INCLUDE_DIRS})
+target_link_libraries(${PROJECT_NAME} ${Boost_LIBRARIES})
 
 # Libraries brought in by conan dependency manager
 target_link_libraries(${PROJECT_NAME} ${CONAN_LIBS})
