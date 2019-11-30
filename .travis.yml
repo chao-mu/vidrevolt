@@ -8,6 +8,8 @@ compiler:
 
 before_install:
     - sudo apt-get update
+    # OpenCV used to read videos
+    - sudo apt-get -y install libopencv-dev
     # We use the audio portion of SFML to play audio files
     - sudo apt-get -y install libsfml-dev
     # rtmidi
