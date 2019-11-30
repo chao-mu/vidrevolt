@@ -59,33 +59,14 @@ set (CONAN_SETTINGS SETTINGS compiler.libcxx=libstdc++11)
 conan_cmake_run(
     REQUIRES
         inja/[~=1.0]@DEGoodmanWilson/stable
-        opencv/4.1.1@conan/stable
         bzip2/1.0.8@conan/stable
         yaml-cpp/0.6.2@bincrafters/stable
-        sfml/2.5.1@bincrafters/stable
         sol/3.0.3@vidrevolt/stable
         tclap/1.2.2@vidrevolt/stable
         liblo/0.30@vidrevolt/stable
         libalsa/1.1.9@conan/stable
     BASIC_SETUP
         ${CONAN_SETTINGS}
-    OPTIONS 
-        opencv:dc1394=False
-        opencv:protobuf=False
-        opencv:harfbuzz=False
-        opencv:eigen=False
-        opencv:gflags=False
-        opencv:quirc=False
-        opencv:freetype=False   
-        opencv:glog=False   
-        opencv:gflags=False   
-        # sudo apt-get install libva-dev  libvdpau-dev libpulse-dev libxcb1-dev libxcb-shm0-dev libxcb-shape0-dev libxcb-xfixes0-dev
-        opencv:ffmpeg=True   
-        sfml:graphics=False 
-        sfml:window=False
-        sfml:audio=True 
-        sfml:network=False
-
     BUILD missing
 )
 
@@ -103,6 +84,9 @@ find_package(OpenGL REQUIRED)
 target_link_libraries(${PROJECT_NAME} ${OPENGL_LIBRARIES})
 target_include_directories(${PROJECT_NAME} PRIVATE ${OPENGL_INCLUDE_DIR})
 
+# OpenCV
+find_package(OpenCV REQUIRED)
+target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBS})
 
 # OpenGL - GLFW
 find_package(glfw3 3.2 REQUIRED)
@@ -122,6 +106,10 @@ target_link_libraries(${PROJECT_NAME} ${RTMIDI_LIBRARIES})
 find_package(Lua REQUIRED)
 target_include_directories(${PROJECT_NAME} PRIVATE ${LUA_INCLUDE_DIR})
 target_link_libraries(${PROJECT_NAME} ${LUA_LIBRARY})
+
+# SFML
+find_package(SFML 2.5 COMPONENTS audio REQUIRED)
+target_link_libraries(${PROJECT_NAME} sfml-audio)
 
 # Boost
 # sudo apt-get install libboost-signals-dev libboost-filesystem-dev libboost-system-dev
