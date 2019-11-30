@@ -125,7 +125,7 @@ target_link_libraries(${PROJECT_NAME} ${Boost_LIBRARIES})
 target_link_libraries(${PROJECT_NAME} ${CONAN_LIBS})
 
 # Eliminate: /usr/local/lib/liblua.a(loadlib.o): undefined reference to symbol 'dlclose@@GLIBC_2.2.5' 
-target_link_libraries(${PROJECT_NAME} "-ldl")
+target_link_libraries(${PROJECT_NAME} ${CMAKE_DL_LIBS})
 
 #
 # Testing!
