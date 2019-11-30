@@ -124,6 +124,9 @@ target_link_libraries(${PROJECT_NAME} ${Boost_LIBRARIES})
 # Libraries brought in by conan dependency manager
 target_link_libraries(${PROJECT_NAME} ${CONAN_LIBS})
 
+# Eliminate: /usr/local/lib/liblua.a(loadlib.o): undefined reference to symbol 'dlclose@@GLIBC_2.2.5' 
+target_link_libraries(${PROJECT_NAME} "-ldl")
+
 #
 # Testing!
 #
