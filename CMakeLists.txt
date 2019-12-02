@@ -81,7 +81,7 @@ conan_cmake_run(
 #
 # Main executable
 #
-add_executable(${PROJECT_NAME} src/main.cpp src/Keyboard.cpp src/BPMSync.cpp src/AddressOrValue.cpp src/Video.cpp src/midi/Device.cpp src/midi/Message.cpp src/midi/Control.cpp src/Image.cpp src/osc/Server.cpp src/Pipeline.cpp src/Value.cpp src/Address.cpp src/gl/Texture.cpp src/gl/GLUtil.cpp src/gl/ShaderProgram.cpp src/gl/RenderOut.cpp src/gl/IndexBuffer.cpp src/gl/Renderer.cpp src/gl/VertexArray.cpp src/gl/VertexBuffer.cpp src/gl/Module.cpp src/gl/ParamSet.cpp src/KeyboardManager.cpp src/Resolution.cpp src/RenderStep.cpp src/VideoWriter.cpp src/Controller.cpp src/mathutil.cpp src/fileutil.cpp)
+add_executable(${PROJECT_NAME} src/main.cpp src/Keyboard.cpp src/BPMSync.cpp src/AddressOrValue.cpp src/Video.cpp src/midi/Device.cpp src/midi/Message.cpp src/midi/Control.cpp src/Image.cpp src/osc/Server.cpp src/Pipeline.cpp src/Value.cpp src/Address.cpp src/gl/Texture.cpp src/gl/GLUtil.cpp src/gl/ShaderProgram.cpp src/gl/RenderOut.cpp src/gl/IndexBuffer.cpp src/gl/Renderer.cpp src/gl/VertexArray.cpp src/gl/VertexBuffer.cpp src/gl/Module.cpp src/gl/ParamSet.cpp src/KeyboardManager.cpp src/Resolution.cpp src/VideoWriter.cpp src/Controller.cpp src/mathutil.cpp src/fileutil.cpp)
 
 target_compile_options(${PROJECT_NAME} PRIVATE "-Wextra" "-Wall")
 

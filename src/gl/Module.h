@@ -8,7 +8,6 @@
 // Ours
 #include "gl/ShaderProgram.h"
 #include "AddressOrValue.h"
-#include "RenderStep.h"
 #include "gl/ParamSet.h"
 
 namespace vidrevolt {

@@ -10,7 +10,6 @@
 // Ours
 #include "Video.h"
 #include "Image.h"
-#include "RenderStep.h"
 #include "Controller.h"
 #include "Keyboard.h"
 #include "Trigger.h"
