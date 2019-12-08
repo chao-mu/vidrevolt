@@ -46,7 +46,7 @@ namespace vidrevolt {
             ObjID luafunc_OSC(const std::string& path, int port);
             ObjID luafunc_Midi(const std::string& path);
             sol::table luafunc_getControlValues(const ObjID& controller_id);
-            void luafunc_rend(const std::string& target, const std::string& path, sol::table inputs);
+            std::string luafunc_rend(const std::string& target, const std::string& path, sol::table inputs);
             void luafunc_flipPlayback(const std::string& id);
             void luafunc_tap(const std::string& sync_id);
             void luafunc_preload(sol::table shaders);

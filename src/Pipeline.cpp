@@ -207,7 +207,7 @@ namespace vidrevolt {
         return id;
     }
 
-    void Pipeline::luafunc_rend(const std::string& target, const std::string& path, sol::table inputs){
+    std::string Pipeline::luafunc_rend(const std::string& target, const std::string& path, sol::table inputs){
         gl::ParamSet params;
         if (inputs) {
             for (const auto& input_kv : inputs) {
@@ -257,6 +257,8 @@ namespace vidrevolt {
         }
 
         renderer_->render(target, path, params);
+
+        return target;
     }
 
     std::shared_ptr<gl::RenderOut> Pipeline::render() {
