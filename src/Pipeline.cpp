@@ -7,79 +7,13 @@
 #include "gl/ParamSet.h"
 
 namespace vidrevolt {
-    sol::table toTable(sol::state& lua, Value v) {
-        auto vec = v.getVec4();
-        auto tab = lua.create_table(4);
-        for (size_t i = 0; i < vec.size(); i++) {
-            tab[i] = vec[i];
+    void Pipeline::load(const Resolution& resolution) {
+        resolution_ = resolution;
+        renderer_->setResolution(resolution_);
+
+        for (auto& vid_kv : videos_) {
+            vid_kv.second->waitForLoaded();
         }
-
-        return tab;
-    }
-
-    Pipeline::Pipeline(const std::string& path) : path_(path) {}
-
-    AddressOrValue Pipeline::toAOV(sol::object obj) {
-        if (obj.is<float>()) {
-            return Value(obj.as<float>());
-        } else if (obj.is<sol::table>()) {
-            auto obj_arr = obj.as<std::vector<sol::object>>();
-            if (obj_arr.size() == 2 && obj_arr[1].is<std::string>()) {
-                Address addr(obj_arr[0].as<std::string>());
-                addr.setSwiz(obj_arr[1].as<std::string>());
-                return addr;
-            } else {
-                return Value(obj.as<std::vector<float>>());
-            }
-        }  else if (obj.is<std::string>()) {
-            return Address(obj.as<std::string>());
-        }
-
-        throw std::runtime_error("Unsupported lua value type");
-    }
-
-    void Pipeline::luafunc_flipPlayback(const std::string& id) {
-        if (!videos_.count(id)) {
-            throw std::runtime_error("Attempt to tap non-existent video");
-        }
-
-        videos_.at(id)->flipPlayback();
-    }
-
-    Pipeline::ObjID Pipeline::luafunc_Image(const std::string& path) {
-        ObjID id = next_id(path);
-
-        cv::Mat frame = Image::load(path);
-        renderer_->render(id, frame);
-
-        return id;
-    }
-
-    Pipeline::ObjID Pipeline::next_id(const std::string& comment) {
-        obj_id_cursor_++;
-        return "ObjID:" + std::to_string(obj_id_cursor_) + ":" + comment;
-    }
-
-    void Pipeline::luafunc_preload(sol::table shaders) {
-        for (const auto& kv : shaders) {
-            renderer_->preloadModule(kv.second.as<std::string>());
-        }
-    }
-
-    Pipeline::ObjID Pipeline::luafunc_Keyboard() {
-        ObjID id = next_id("keyboard");
-
-        setController(id, KeyboardManager::makeKeyboard());
-
-        return id;
-    }
-
-    Pipeline::ObjID Pipeline::luafunc_BPM() {
-        ObjID id = next_id("bpm_sync");
-
-        setBPMSync(id, std::make_shared<BPMSync>());
-
-        return id;
     }
 
     void Pipeline::setBPMSync(const std::string& key, std::shared_ptr<BPMSync> sync) {
@@ -87,7 +21,23 @@ namespace vidrevolt {
         bpm_syncs_[key] = sync;
     }
 
-    Pipeline::ObjID Pipeline::luafunc_OSC(const std::string& path, int port) {
+    Pipeline::ObjID Pipeline::addKeyboard() {
+        ObjID id = next_id("keyboard");
+
+        setController(id, KeyboardManager::makeKeyboard());
+
+        return id;
+    }
+
+    Pipeline::ObjID Pipeline::addBPMSync() {
+        ObjID id = next_id("bpm_sync");
+
+        setBPMSync(id, std::make_shared<BPMSync>());
+
+        return id;
+    }
+
+    Pipeline::ObjID Pipeline::addOSC(int port, const std::string& path) {
         ObjID id = next_id(path);
 
         auto osc = std::make_shared<osc::Server>(port, path);
@@ -96,79 +46,10 @@ namespace vidrevolt {
         setController(id, std::move(osc));
 
         return id;
+
     }
 
-    void Pipeline::luafunc_tap(const std::string& sync_id) {
-        if (!bpm_syncs_.count(sync_id)) {
-            throw std::runtime_error("Attempt to tap non-existent BPM sync");
-        }
-
-        bpm_syncs_.at(sync_id)->tap();
-    }
-
-    void Pipeline::load() {
-        lua_.open_libraries(
-            sol::lib::base,
-            sol::lib::package,
-            sol::lib::coroutine,
-            sol::lib::string,
-            sol::lib::os,
-            sol::lib::math,
-            sol::lib::table,
-            sol::lib::bit32,
-            sol::lib::io
-        );
-
-        // Our custom functions
-        lua_.set_function("Video", &Pipeline::luafunc_Video, this);
-        lua_.set_function("Image", &Pipeline::luafunc_Image, this);
-        lua_.set_function("OSC", &Pipeline::luafunc_OSC, this);
-        lua_.set_function("BPM", &Pipeline::luafunc_BPM, this);
-        lua_.set_function("Keyboard", &Pipeline::luafunc_Keyboard, this);
-        lua_.set_function("Midi", &Pipeline::luafunc_Midi, this);
-        lua_.set_function("rend", &Pipeline::luafunc_rend, this);
-        lua_.set_function("getControlValues", &Pipeline::luafunc_getControlValues, this);
-        lua_.set_function("tap", &Pipeline::luafunc_tap, this);
-        lua_.set_function("preload", &Pipeline::luafunc_preload, this);
-        lua_.set_function("flipPlayback", &Pipeline::luafunc_flipPlayback, this);
-
-        auto time = std::chrono::high_resolution_clock::now();
-        auto time_ms = std::chrono::duration_cast<std::chrono::milliseconds>(time.time_since_epoch());
-        lua_["time_ms"] = time_ms.count();
-        lua_["time_delta"] = 0;
-
-        lua_.script_file(path_);
-
-        resolution_.width = lua_.get_or("width", 1920);
-        resolution_.height = lua_.get_or("height", 1920);
-        renderer_->setResolution(resolution_);
-
-        for (auto& vid_kv : videos_) {
-            vid_kv.second->waitForLoaded();
-        }
-    }
-
-    Pipeline::ObjID Pipeline::luafunc_Video(const std::string& path, sol::table args) {
-        Video::Playback pb = Video::Forward;
-        bool auto_reset = false;
-
-        if (args) {
-            for (const auto& arg : args) {
-                auto arg_s = arg.second.as<std::string>();
-                if (arg_s == "reverse") {
-                    pb = Video::Reverse;
-                } else if (arg_s == "forward") {
-                    pb = Video::Forward;
-                } else if (arg_s == "mirror") {
-                    pb = Video::Mirror;
-                } else if (arg_s == "reset") {
-                    auto_reset = true;
-                } else {
-                    throw std::runtime_error("Unexpected Video argument " + arg_s);
-                }
-            }
-        }
-
+    Pipeline::ObjID Pipeline::addVideo(const std::string& path, bool auto_reset, Video::Playback pb) {
         ObjID id = next_id(path);
         auto vid =  std::make_unique<Video>(path, auto_reset, pb);
         vid->start();
@@ -177,27 +58,7 @@ namespace vidrevolt {
         return id;
     }
 
-    void Pipeline::reconnectControllers() {
-        for (auto& kv : controllers_) {
-            kv.second->reconnect();
-        }
-    }
-
-    sol::table Pipeline::luafunc_getControlValues(const ObjID& controller_id) {
-        if (controllers_.count(controller_id) == 0) {
-            throw std::runtime_error("Control values requested for non-existent controller");
-        }
-        sol::table ret = lua_.create_table_with();
-
-        std::vector<std::string> keys;
-        for (const auto& kv : controllers_.at(controller_id)->getValues()) {
-            ret[kv.first] = kv.second.at(0);
-        }
-
-        return ret;
-    }
-
-    Pipeline::ObjID Pipeline::luafunc_Midi(const std::string& path) {
+    Pipeline::ObjID Pipeline::addMidi(const std::string& path) {
         ObjID id = next_id(path);
         auto dev = std::make_shared<midi::Device>(path);
         dev->start();
@@ -207,88 +68,77 @@ namespace vidrevolt {
         return id;
     }
 
-    std::string Pipeline::luafunc_rend(const std::string& target, const std::string& path, sol::table inputs){
-        gl::ParamSet params;
-        if (inputs) {
-            for (const auto& input_kv : inputs) {
-                const std::string key = input_kv.first.as<std::string>();
-                sol::object value = input_kv.second;
+    Pipeline::ObjID Pipeline::addImage(const std::string& path) {
+        ObjID id = next_id(path);
 
-                gl::Param param;
-                if (value.is<sol::table>()) {
-                    auto tab = value.as<sol::table>();
+        cv::Mat frame = Image::load(path);
+        renderer_->render(id, frame);
 
-                    if (tab["input"]) {
-                        param.value = toAOV(tab.get<sol::object>("input"));
-                    }
+        return id;
+    }
 
-                    if (tab["amp"]) {
-                        param.amp = toAOV(tab.get<sol::object>("amp"));
-                    }
+    void Pipeline::tap(const std::string& sync_id) {
+        if (!bpm_syncs_.count(sync_id)) {
+            throw std::runtime_error("Attempt to tap non-existent BPM sync");
+        }
 
-                    if (tab["shift"]) {
-                        param.shift = toAOV(tab.get<sol::object>("shift"));
-                    }
+        bpm_syncs_.at(sync_id)->tap();
+    }
 
-                    if (tab["pow"]) {
-                        param.pow = toAOV(tab.get<sol::object>("pow"));
-                    }
-                } else {
-                    param.value = toAOV(value);
-                }
+    void Pipeline::reconnectControllers() {
+        for (auto& kv : controllers_) {
+            kv.second->reconnect();
+        }
+    }
 
-                params[key] = param;
+    void Pipeline::addRenderStep(const std::string& target, const std::string& path, gl::ParamSet params, std::vector<Address> video_deps) {
 
-                // Mark dependencies as used and render if need be
-                for (const AddressOrValue& aov : {param.value, param.amp, param.shift, param.pow}) {
-                    if (std::holds_alternative<Address>(aov)) {
-                        auto addr = std::get<Address>(aov);
-
-                        in_use_[addr] = true;
-                        if (videos_.count(addr) > 0) {
-                            auto frame_opt = videos_.at(addr)->nextFrame();
-                            if (frame_opt) {
-                                renderer_->render(addr, frame_opt.value());
-                            }
-                        }
-                    }
+        for (const auto& addr : video_deps) {
+            in_use_[addr] = true;
+            if (videos_.count(addr) > 0) {
+                auto frame_opt = videos_.at(addr)->nextFrame();
+                if (frame_opt) {
+                    renderer_->render(addr, frame_opt.value());
                 }
             }
         }
 
         renderer_->render(target, path, params);
-
-        return target;
+        render_steps_.push_back(RenderStep{target, path});
     }
 
-    std::shared_ptr<gl::RenderOut> Pipeline::render() {
-        last_in_use_ = in_use_;
-        in_use_.clear();
-
-        // Calculate time delta (fractions of seconds)
-        if (!last_time_) {
-            last_time_ = std::chrono::high_resolution_clock::now();
+    void Pipeline::setFPS(const std::string& id, double fps) {
+        if (!videos_.count(id)) {
+            throw std::runtime_error("Attempt to set fps on non-existent video");
         }
 
-        auto time = std::chrono::high_resolution_clock::now();
-        float time_delta = std::chrono::duration<float>(time - last_time_.value()).count();
-        last_time_ = time;
-        lua_["time_delta"] = time_delta;
+        videos_.at(id)->setFPS(fps);
+    }
 
-        auto time_ms = std::chrono::duration_cast<std::chrono::milliseconds>(time.time_since_epoch());
-        lua_["time_ms"] = time_ms.count();
+    void Pipeline::flipPlayback(const std::string& id) {
+        if (!videos_.count(id)) {
+            throw std::runtime_error("Attempt to flip non-existent video");
+        }
+
+        videos_.at(id)->flipPlayback();
+    }
+
+    std::map<std::string, std::shared_ptr<Controller>> Pipeline::getControllers() const {
+       return controllers_;
+    }
+
+    std::shared_ptr<gl::RenderOut> Pipeline::render(std::function<void()> f) {
+        last_in_use_ = in_use_;
+        in_use_.clear();
 
         for (const auto& kv : controllers_) {
             kv.second->poll();
         }
 
-        sol::function renderFunc = lua_["render"];
-        if (!renderFunc) {
-            throw std::runtime_error("Expected a function 'render'");
-        }
+        render_steps_.clear();
 
         // Perform render
-        renderFunc();
+        f();
 
         // Trigger out/in focus
         for (const auto& kv : videos_) {
@@ -312,17 +162,19 @@ namespace vidrevolt {
     }
 
     void Pipeline::setController(const std::string& key, std::shared_ptr<Controller> controller) {
-        controller->connect([key, this](const std::string& control, Value v) {
-            auto listener = lua_.get<sol::function>("onControl");
-            if (lua_["onControl"]) {
-                listener(key, control, v.at(0));
-            }
-        });
-
         controllers_[key] = controller;
+    }
+
+    Pipeline::ObjID Pipeline::next_id(const std::string& comment) {
+        obj_id_cursor_++;
+        return "ObjID:" + std::to_string(obj_id_cursor_) + ":" + comment;
     }
 
     Resolution Pipeline::getResolution() {
         return resolution_;
+    }
+
+    std::vector<RenderStep> Pipeline::getRenderSteps() {
+        return render_steps_;
     }
 }

@@ -11,20 +11,18 @@
 // Ours
 #include "../Controller.h"
 
-namespace vidrevolt {
-    namespace osc {
-        class Server : public Controller {
-            public:
-                Server(int port, const std::string& path);
+namespace vidrevolt::osc {
+    class Server : public Controller {
+        public:
+            Server(int port, const std::string& path);
 
-                void start();
+            void start();
 
-            private:
-                int port_;
-                std::string path_;
-                lo::ServerThread server_;
+        private:
+            int port_;
+            std::string path_;
+            lo::ServerThread server_;
 
-        };
-    }
+    };
 }
 #endif

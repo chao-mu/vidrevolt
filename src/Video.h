@@ -54,6 +54,7 @@ namespace vidrevolt {
 
             std::optional<Frame> currentFrame();
 
+            void setFPS(double fps);
             double getFPS() const;
 
             double getRemainingMS();

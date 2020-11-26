@@ -11,3 +11,8 @@ build/
 workspace/
 *.swp
 .clangd
+
+
+#Added by cargo
+
+/target

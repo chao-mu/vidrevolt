@@ -15,6 +15,10 @@
 #include "gl/ParamSet.h"
 #include "Resolution.h"
 
+// OpenGL
+#include <GL/glew.h>
+#include <GLFW/glfw3.h>
+
 namespace vidrevolt {
     namespace gl {
         class Renderer {
@@ -29,10 +33,12 @@ namespace vidrevolt {
                 void setResolution(const Resolution& resolution);
                 Resolution getResolution() const;
 
+                std::map<std::string, std::shared_ptr<Module>> getModules();
+
             private:
                 std::map<Address, std::shared_ptr<Texture>> textures_;
                 std::map<Address, std::shared_ptr<RenderOut>> render_outs_;
-                std::map<std::string, std::unique_ptr<Module>> modules_;
+                std::map<std::string, std::shared_ptr<Module>> modules_;
 
                 std::shared_ptr<RenderOut> last_;
 

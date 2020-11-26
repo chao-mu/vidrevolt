@@ -259,6 +259,10 @@ namespace vidrevolt {
         }
     }
 
+    void Video::setFPS(double fps) {
+        fps_ = fps;
+    }
+
     double Video::getFPS() const {
         return fps_;
     }

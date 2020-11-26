@@ -116,6 +116,10 @@ namespace vidrevolt {
             textures_.at(target)->populate(frame);
         }
 
+        std::map<std::string, std::shared_ptr<Module>> Renderer::getModules() {
+            return modules_;
+        }
+
         std::shared_ptr<RenderOut> Renderer::getLast() {
             return last_;
         }
