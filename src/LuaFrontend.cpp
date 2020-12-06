@@ -40,6 +40,8 @@ namespace vidrevolt {
         //lua_.set_function("preload", &LuaFrontend::luafunc_preload, this);
         lua_.set_function("flipPlayback", &LuaFrontend::luafunc_flipPlayback, this);
         lua_.set_function("setFPS", &LuaFrontend::luafunc_setFPS, this);
+        lua_.set_function("playAudio", &LuaFrontend::luafunc_playAudio, this);
+        lua_.set_function("restartAudio", &LuaFrontend::luafunc_restartAudio, this);
 
         auto time = std::chrono::high_resolution_clock::now();
         auto time_ms = std::chrono::duration_cast<std::chrono::milliseconds>(time.time_since_epoch());
@@ -75,6 +77,14 @@ namespace vidrevolt {
         }
 
         return pipeline_->render(renderFunc);
+    }
+
+    void LuaFrontend::luafunc_restartAudio() {
+        pipeline_->restartAudio();
+    }
+
+    void LuaFrontend::luafunc_playAudio(const std::string& path) {
+        pipeline_->playAudio(path);
     }
 
     LuaFrontend::ObjID LuaFrontend::luafunc_Video(const std::string& path, const sol::table& args) {

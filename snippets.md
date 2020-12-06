@@ -71,3 +71,9 @@ Hap encoding several videos
 ```
 find -name "*.mkv" -exec ffmpeg -i {} -c:v hap {}.hap.mov
 ```
+
+Rendering controller template ERB
+
+```
+ruby -rerb -e 'puts ERB.new(File.read("workspace/controllers/fighter_twister.yml.erb")).result'
+```

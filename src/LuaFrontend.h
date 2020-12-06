@@ -32,6 +32,8 @@ namespace vidrevolt {
             void luafunc_flipPlayback(const std::string& id);
             void luafunc_tap(const std::string& sync_id);
             void luafunc_setFPS(const std::string& id, double fps);
+            void luafunc_playAudio(const std::string& path);
+            void luafunc_restartAudio();
 
             ObjID connect(const std::string& controller_id);
 

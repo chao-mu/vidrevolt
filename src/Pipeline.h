@@ -4,6 +4,9 @@
 // STL
 #include <memory>
 
+// SFML
+#include <SFML/Audio.hpp>
+
 // Ours
 #include "Video.h"
 #include "Image.h"
@@ -40,6 +43,9 @@ namespace vidrevolt {
             ObjID addMidi(const std::string& path);
             ObjID addBPMSync();
 
+            void playAudio(const std::string& path);
+            void restartAudio();
+
             void setFPS(const std::string& id, double fps);
             void flipPlayback(const std::string& id);
             void tap(const std::string& sync_id);
@@ -67,6 +73,7 @@ namespace vidrevolt {
             size_t obj_id_cursor_ = 0;
 
             std::vector<RenderStep> render_steps_;
+            sf::Music music_;
     };
 }
 

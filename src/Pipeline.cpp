@@ -16,6 +16,19 @@ namespace vidrevolt {
         }
     }
 
+    void Pipeline::restartAudio() {
+        music_.stop();
+        music_.play();
+    }
+
+    void Pipeline::playAudio(const std::string& path) {
+        if (!music_.openFromFile(path)) {
+            throw std::runtime_error("Unable to load audio file: " + path);
+        }
+
+        music_.play();
+    }
+
     void Pipeline::setBPMSync(const std::string& key, std::shared_ptr<BPMSync> sync) {
         setController(key, sync);
         bpm_syncs_[key] = sync;
