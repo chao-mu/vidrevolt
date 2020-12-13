@@ -222,7 +222,7 @@ int main(int argc, const char** argv) {
         }));
     });
 
-    keyboard->connect("m", [pipeline](vidrevolt::Value v) {
+    keyboard->connect("c", [pipeline](vidrevolt::Value v) {
         if (v.getBool()) {
             return;
         }

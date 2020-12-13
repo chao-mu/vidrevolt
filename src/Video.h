@@ -97,6 +97,8 @@ namespace vidrevolt {
 
             Resolution res_;
 
+            float error_ = 0;
+
             std::mutex load_mutex_;
     };
 }
