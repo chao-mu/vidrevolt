@@ -2,6 +2,7 @@
 
 // STL
 #include <algorithm>
+#include <stdexcept>
 
 // Ours
 #include "fileutil.h"

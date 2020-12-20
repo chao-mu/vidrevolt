@@ -2,6 +2,8 @@
 
 // STL
 #include <regex>
+#include <stdexcept>
+
 
 // Jinja2
 #include <nlohmann/json.hpp>

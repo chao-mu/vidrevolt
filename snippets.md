@@ -1,3 +1,13 @@
+
+Shrink a video to a certain width
+
+```
+function shrink_vid() {
+    ffmpeg -i "$1" -c:v mjpeg -vf "scale='min(960,iw)':-1" -qscale:v 1 -vendor ap10 -pix_fmt yuvj422p "$1-SHRINK.mov"
+}
+```
+
+
 ```
 find assets/ -type f |  perl -nle '$line++; print q(Video("$_", {"mirror"}),)'
 ```
@@ -76,4 +86,12 @@ Rendering controller template ERB
 
 ```
 ruby -rerb -e 'puts ERB.new(File.read("workspace/controllers/fighter_twister.yml.erb")).result'
+```
+
+
+Capturing portions of the screen as video playback device. Replace the -video\_size and -i with output of slop, also scale=
+
+```
+slop -f '-video_size %wx%h -i +%x,%y'
+ffmpeg -f x11grab -r 25 -video_size 664x398 -i +1692,1183 -vcodec rawvideo -pix_fmt yuv420p -threads 0 -f v4l2 -vf 'scale=664x398' /dev/video4
 ```

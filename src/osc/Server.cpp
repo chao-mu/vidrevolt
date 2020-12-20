@@ -2,6 +2,7 @@
 
 // STL
 #include "fstream"
+#include <stdexcept>
 
 // Ours
 #include "../Value.h"

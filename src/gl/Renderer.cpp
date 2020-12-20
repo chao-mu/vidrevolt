@@ -1,5 +1,7 @@
 #include "gl/Renderer.h"
 
+#include <stdexcept>
+
 namespace vidrevolt {
     namespace gl {
         void Renderer::setResolution(const Resolution& res) {

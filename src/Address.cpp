@@ -1,5 +1,7 @@
 #include "Address.h"
 
+#include <stdexcept>
+
 #define VIDREVOLT_ADDRESS_SEP "."
 
 namespace vidrevolt {

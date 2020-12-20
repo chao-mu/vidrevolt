@@ -9,6 +9,7 @@
 
 // Ours
 #include "Video.h"
+#include "Webcam.h"
 #include "Image.h"
 #include "Controller.h"
 #include "Keyboard.h"
@@ -37,6 +38,7 @@ namespace vidrevolt {
             void reconnectControllers();
 
             ObjID addVideo(const std::string& path, bool auto_reset, Video::Playback pb);
+            ObjID addWebcam(int device);
             ObjID addKeyboard();
             ObjID addImage(const std::string& path);
             ObjID addOSC(int port, const std::string& path);
@@ -58,11 +60,13 @@ namespace vidrevolt {
             ObjID next_id(const std::string& comment);
 
             void setVideo(const std::string& key, std::unique_ptr<Video> vid);
+            void setWebcam(const std::string& key, std::unique_ptr<Webcam> vid);
             void setBPMSync(const std::string& key, std::shared_ptr<BPMSync> vid);
             void setController(const std::string& key, std::shared_ptr<Controller> controller);
 
             std::map<std::string, std::shared_ptr<BPMSync>> bpm_syncs_;
             std::map<Address, std::unique_ptr<Video>> videos_;
+            std::map<Address, std::unique_ptr<Webcam>> webcams_;
             std::map<std::string, std::shared_ptr<Controller>> controllers_;
             Resolution resolution_;
             std::unique_ptr<gl::Renderer> renderer_ = std::make_unique<gl::Renderer>();

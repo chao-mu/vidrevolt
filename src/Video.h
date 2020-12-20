@@ -15,12 +15,13 @@
 
 // Ours
 #include "Resolution.h"
+#include "FrameSource.h"
 
 #define VIDREVOLT_VIDEO_MIDDLE 15
 #define VIDREVOLT_VIDEO_BUFFER_SIZE 30
 
 namespace vidrevolt {
-    class Video {
+    class Video : public FrameSource {
         public:
             using Frame = std::pair<int, cv::Mat>;
 
@@ -31,14 +32,14 @@ namespace vidrevolt {
                 Once
             };
 
-            ~Video();
+            virtual ~Video();
             Video(const std::string& path, bool auto_reset, Playback pb=Forward);
             Video(const std::string& path, Playback pb);
 
             void start();
             void stop();
 
-            std::optional<cv::Mat> nextFrame();
+            std::optional<cv::Mat> nextFrame() override;
             std::optional<cv::Mat> nextFrame(bool force);
 
             Resolution getResolution();

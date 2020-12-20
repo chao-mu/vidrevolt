@@ -1,5 +1,8 @@
 #include "gl/ShaderProgram.h"
 
+// STL
+#include <stdexcept>
+
 // OpenGL
 #include <GLFW/glfw3.h>
 

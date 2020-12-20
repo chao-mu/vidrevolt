@@ -4,6 +4,7 @@
 #include <fstream>
 #include <sstream>
 #include <cstring>
+#include <stdexcept>
 
 // Boost
 #include <boost/filesystem.hpp>

@@ -63,7 +63,7 @@ conan_add_remote(
     URL https://api.bintray.com/conan/degoodmanwilson/opensource
 )
 
-set (CONAN_SETTINGS SETTINGS compiler.libcxx=libstdc++11)
+#set (CONAN_SETTINGS SETTINGS compiler.libcxx=libstdc++11)
 conan_cmake_run(
     REQUIRES
         inja/[~=1.0]@DEGoodmanWilson/stable
@@ -75,7 +75,7 @@ conan_cmake_run(
         liblo/0.30@vidrevolt/stable
         gtest/1.8.1@bincrafters/stable
     BASIC_SETUP
-        ${CONAN_SETTINGS}
+    #        ${CONAN_SETTINGS}
     OPTIONS
         #sfml:audio=True
     BUILD missing
@@ -84,7 +84,7 @@ conan_cmake_run(
 #
 # Main executable
 #
-add_executable(${PROJECT_NAME} src/main.cpp src/Keyboard.cpp src/BPMSync.cpp src/AddressOrValue.cpp src/Video.cpp src/midi/Device.cpp src/midi/Message.cpp src/midi/Control.cpp src/Image.cpp src/osc/Server.cpp src/Pipeline.cpp src/Value.cpp src/Address.cpp src/gl/Texture.cpp src/gl/GLUtil.cpp src/gl/ShaderProgram.cpp src/gl/RenderOut.cpp src/gl/IndexBuffer.cpp src/gl/Renderer.cpp src/gl/VertexArray.cpp src/gl/VertexBuffer.cpp src/gl/Module.cpp src/gl/ParamSet.cpp src/KeyboardManager.cpp src/Resolution.cpp src/VideoWriter.cpp src/Controller.cpp src/mathutil.cpp src/fileutil.cpp src/LuaFrontend.cpp)
+add_executable(${PROJECT_NAME} src/main.cpp src/Keyboard.cpp src/BPMSync.cpp src/AddressOrValue.cpp src/Video.cpp src/midi/Device.cpp src/midi/Message.cpp src/midi/Control.cpp src/Image.cpp src/osc/Server.cpp src/Pipeline.cpp src/Value.cpp src/Address.cpp src/gl/Texture.cpp src/gl/GLUtil.cpp src/gl/ShaderProgram.cpp src/gl/RenderOut.cpp src/gl/IndexBuffer.cpp src/gl/Renderer.cpp src/gl/VertexArray.cpp src/gl/VertexBuffer.cpp src/gl/Module.cpp src/gl/ParamSet.cpp src/KeyboardManager.cpp src/Resolution.cpp src/VideoWriter.cpp src/Controller.cpp src/mathutil.cpp src/fileutil.cpp src/LuaFrontend.cpp src/Webcam.cpp)
 
 target_compile_options(${PROJECT_NAME} PRIVATE "-Wextra" "-Wall")
 

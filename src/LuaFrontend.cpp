@@ -1,5 +1,7 @@
 #include "LuaFrontend.h"
 
+#include <stdexcept>
+
 namespace vidrevolt {
     sol::table toTable(sol::state& lua, Value v) {
         auto vec = v.getVec4();
@@ -29,6 +31,7 @@ namespace vidrevolt {
 
         // Our custom functions
         lua_.set_function("Video", &LuaFrontend::luafunc_Video, this);
+        lua_.set_function("Webcam", &LuaFrontend::luafunc_Webcam, this);
         lua_.set_function("Image", &LuaFrontend::luafunc_Image, this);
         lua_.set_function("OSC", &LuaFrontend::luafunc_OSC, this);
         lua_.set_function("BPM", &LuaFrontend::luafunc_BPM, this);
@@ -52,7 +55,7 @@ namespace vidrevolt {
 
         Resolution resolution;
         resolution.width = lua_.get_or("width", 1920);
-        resolution.height = lua_.get_or("height", 1920);
+        resolution.height = lua_.get_or("height", 1080);
 
         pipeline_->load(resolution);
     }
@@ -85,6 +88,10 @@ namespace vidrevolt {
 
     void LuaFrontend::luafunc_playAudio(const std::string& path) {
         pipeline_->playAudio(path);
+    }
+
+    LuaFrontend::ObjID LuaFrontend::luafunc_Webcam(int device) {
+        return pipeline_->addWebcam(device);
     }
 
     LuaFrontend::ObjID LuaFrontend::luafunc_Video(const std::string& path, const sol::table& args) {
@@ -129,7 +136,7 @@ namespace vidrevolt {
 
     std::string LuaFrontend::luafunc_rend(const std::string& target, const std::string& path, sol::table inputs) {
         gl::ParamSet params;
-        std::vector<Address> video_deps;
+        std::vector<Address> deps;
 
         if (inputs) {
             for (const auto& input_kv : inputs) {
@@ -164,13 +171,13 @@ namespace vidrevolt {
                 // Mark dependencies as used and render if need be
                 for (const AddressOrValue& aov : {param.value, param.amp, param.shift, param.pow}) {
                     if (std::holds_alternative<Address>(aov)) {
-                        video_deps.push_back(std::get<Address>(aov));
+                        deps.push_back(std::get<Address>(aov));
                     }
                 }
             }
         }
 
-        pipeline_->addRenderStep(target, path, params, video_deps);
+        pipeline_->addRenderStep(target, path, params, deps);
 
         return target;
     }

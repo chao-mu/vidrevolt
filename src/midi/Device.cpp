@@ -1,5 +1,8 @@
 #include "Device.h"
 
+// STL
+#include <stdexcept>
+
 // yaml-cpp
 #include "yaml-cpp/yaml.h"
 
