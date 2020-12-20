@@ -1,5 +1,7 @@
 #include "Image.h"
 
+#include <stdexcept>
+
 namespace vidrevolt {
     cv::Mat Image::load(const std::string& path) {
         cv::Mat image = cv::imread(path);

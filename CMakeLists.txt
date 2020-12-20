@@ -69,19 +69,19 @@ conan_cmake_run(
         inja/[~=1.0]@DEGoodmanWilson/stable
         bzip2/1.0.8@conan/stable
         yaml-cpp/0.6.2@bincrafters/stable
-	#sol/3.0.3@vidrevolt/stable
         tclap/1.2.2@vidrevolt/stable
-	#liblo/0.30@vidrevolt/stable
         gtest/1.8.1@bincrafters/stable
     BASIC_SETUP
-        ${CONAN_SETTINGS}
+	${CONAN_SETTINGS}
+    OPTIONS
+        #sfml:audio=True
     BUILD missing
 )
 
 #
 # Main executable
 #
-add_executable(${PROJECT_NAME} src/main.cpp src/Keyboard.cpp src/BPMSync.cpp src/AddressOrValue.cpp src/Video.cpp src/midi/Device.cpp src/midi/Message.cpp src/midi/Control.cpp src/Image.cpp src/osc/Server.cpp src/Pipeline.cpp src/Value.cpp src/Address.cpp src/gl/Texture.cpp src/gl/GLUtil.cpp src/gl/ShaderProgram.cpp src/gl/RenderOut.cpp src/gl/IndexBuffer.cpp src/gl/Renderer.cpp src/gl/VertexArray.cpp src/gl/VertexBuffer.cpp src/gl/Module.cpp src/gl/ParamSet.cpp src/KeyboardManager.cpp src/Resolution.cpp src/VideoWriter.cpp src/Controller.cpp src/mathutil.cpp src/fileutil.cpp src/LuaFrontend.cpp)
+add_executable(${PROJECT_NAME} src/main.cpp src/Keyboard.cpp src/BPMSync.cpp src/AddressOrValue.cpp src/Video.cpp src/midi/Device.cpp src/midi/Message.cpp src/midi/Control.cpp src/Image.cpp src/osc/Server.cpp src/Pipeline.cpp src/Value.cpp src/Address.cpp src/gl/Texture.cpp src/gl/GLUtil.cpp src/gl/ShaderProgram.cpp src/gl/RenderOut.cpp src/gl/IndexBuffer.cpp src/gl/Renderer.cpp src/gl/VertexArray.cpp src/gl/VertexBuffer.cpp src/gl/Module.cpp src/gl/ParamSet.cpp src/KeyboardManager.cpp src/Resolution.cpp src/VideoWriter.cpp src/Controller.cpp src/mathutil.cpp src/fileutil.cpp src/LuaFrontend.cpp src/Webcam.cpp)
 
 target_compile_options(${PROJECT_NAME} PRIVATE "-Wextra" "-Wall")
 
@@ -111,6 +111,11 @@ target_link_libraries(${PROJECT_NAME} ${GLEW_LIBRARIES})
 find_package(RTMIDI REQUIRED)
 target_include_directories(${PROJECT_NAME} PRIVATE ${RTMIDI_INCLUDE_DIR})
 target_link_libraries(${PROJECT_NAME} ${RTMIDI_LIBRARIES})
+
+# SFML - Audio
+find_package(SFML COMPONENTS audio REQUIRED)
+target_include_directories(${PROJECT_NAME} PRIVATE ${SFML_INCLUDE_DIR})
+target_link_libraries(${PROJECT_NAME} sfml-audio)
 
 # Lua
 find_package(Lua REQUIRED)

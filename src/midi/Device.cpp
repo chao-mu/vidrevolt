@@ -1,5 +1,8 @@
 #include "Device.h"
 
+// STL
+#include <stdexcept>
+
 // yaml-cpp
 #include "yaml-cpp/yaml.h"
 
@@ -124,20 +127,14 @@ namespace vidrevolt {
                 std::vector<unsigned char> raw_message;
                 while (midi_in_->getMessage(&raw_message) > 0) {
                     Message msg(raw_message);
-
-                    ControlType type = CONTROL_TYPE_UNKNOWN;
-                    if (msg.getType() == MESSAGE_TYPE_NOTE_ON || msg.getType() == MESSAGE_TYPE_NOTE_OFF) {
-                        type = CONTROL_TYPE_BUTTON;
-                    } else if (msg.getType() == MESSAGE_TYPE_CONTROL) {
-                        type = CONTROL_TYPE_FADER;
-                    } else {
+                    if (msg.getType() != MESSAGE_TYPE_NOTE_ON && msg.getType() != MESSAGE_TYPE_NOTE_OFF && msg.getType() != MESSAGE_TYPE_CONTROL) {
                         continue;
                     }
 
                     {
                         for (const auto& control : controls_) {
                             std::string name = control.name;
-                            if (control.function == msg.getFunction() && control.type == type && msg.getChannel() == control.channel) {
+                            if (control.function == msg.getFunction() && msg.getChannel() == control.channel) {
                                 float value = msg.getValue();
                                 if (msg.getType() == MESSAGE_TYPE_NOTE_OFF) {
                                     value = 0;

@@ -22,6 +22,7 @@ namespace vidrevolt {
             AddressOrValue toAOV(sol::object obj);
 
             ObjID luafunc_Video(const std::string& path, const sol::table& args);
+            ObjID luafunc_Webcam(int device);
             ObjID luafunc_Image(const std::string& path);
             ObjID luafunc_Keyboard();
             ObjID luafunc_BPM();
@@ -32,6 +33,8 @@ namespace vidrevolt {
             void luafunc_flipPlayback(const std::string& id);
             void luafunc_tap(const std::string& sync_id);
             void luafunc_setFPS(const std::string& id, double fps);
+            void luafunc_playAudio(const std::string& path);
+            void luafunc_restartAudio();
 
             ObjID connect(const std::string& controller_id);
 

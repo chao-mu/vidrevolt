@@ -14,7 +14,7 @@ def main():
     target_dir = args.path
     classname = args.classname
 
-    namespace = target_dir.replace("common/", "vidrevolt/", 1).split("/")
+    namespace = target_dir.replace("src/", "vidrevolt/", 1).split("/")
     namespace = [s for s in namespace if s != ""]
 
     cpp_path = "{}/{}.cpp".format(target_dir, classname)

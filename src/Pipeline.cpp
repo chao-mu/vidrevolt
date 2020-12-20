@@ -6,6 +6,9 @@
 #include "osc/Server.h"
 #include "gl/ParamSet.h"
 
+// STL
+#include <stdexcept>
+
 namespace vidrevolt {
     void Pipeline::load(const Resolution& resolution) {
         resolution_ = resolution;
@@ -14,6 +17,19 @@ namespace vidrevolt {
         for (auto& vid_kv : videos_) {
             vid_kv.second->waitForLoaded();
         }
+    }
+
+    void Pipeline::restartAudio() {
+        music_.stop();
+        music_.play();
+    }
+
+    void Pipeline::playAudio(const std::string& path) {
+        if (!music_.openFromFile(path)) {
+            throw std::runtime_error("Unable to load audio file: " + path);
+        }
+
+        music_.play();
     }
 
     void Pipeline::setBPMSync(const std::string& key, std::shared_ptr<BPMSync> sync) {
@@ -58,6 +74,16 @@ namespace vidrevolt {
         return id;
     }
 
+    Pipeline::ObjID Pipeline::addWebcam(int device) {
+        ObjID id = next_id("webcam(" + std::to_string(device) + ")");
+        auto vid =  std::make_unique<Webcam>(device);
+        vid->start();
+        setWebcam(id, std::move(vid));
+
+        return id;
+    }
+
+
     Pipeline::ObjID Pipeline::addMidi(const std::string& path) {
         ObjID id = next_id(path);
         auto dev = std::make_shared<midi::Device>(path);
@@ -92,11 +118,17 @@ namespace vidrevolt {
     }
 
     void Pipeline::addRenderStep(const std::string& target, const std::string& path, gl::ParamSet params, std::vector<Address> video_deps) {
-
         for (const auto& addr : video_deps) {
             in_use_[addr] = true;
+            FrameSource* source = nullptr;
             if (videos_.count(addr) > 0) {
-                auto frame_opt = videos_.at(addr)->nextFrame();
+                source = videos_.at(addr).get();
+            } else if (webcams_.count(addr) > 0) {
+                source = webcams_.at(addr).get();
+            }
+
+            if (source != nullptr) {
+                auto frame_opt = source->nextFrame();
                 if (frame_opt) {
                     renderer_->render(addr, frame_opt.value());
                 }
@@ -155,6 +187,10 @@ namespace vidrevolt {
         }
 
         return renderer_->getLast();
+    }
+
+    void Pipeline::setWebcam(const std::string& key, std::unique_ptr<Webcam> vid) {
+        webcams_[key] = std::move(vid);
     }
 
     void Pipeline::setVideo(const std::string& key, std::unique_ptr<Video> vid) {

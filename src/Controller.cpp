@@ -1,6 +1,7 @@
 #include "Controller.h"
 
 #include <iostream>
+#include <stdexcept>
 
 namespace vidrevolt {
     void Controller::connect(const std::string& control_name, std::function<void(Value)> f) {

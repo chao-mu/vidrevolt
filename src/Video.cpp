@@ -2,6 +2,7 @@
 
 // STL
 #include <algorithm>
+#include <stdexcept>
 
 // Ours
 #include "fileutil.h"
@@ -60,16 +61,15 @@ namespace vidrevolt {
             std::chrono::high_resolution_clock::now();
 
         if (!force && last_update_.has_value()) {
-            std::chrono::duration<float> duration = now - last_update_.value();
+            std::chrono::duration<float> duration_s = now - last_update_.value();
 
             float frame_dur = 1 / static_cast<float>(fps_);
-            // The amount we are past the next time we should display a frame
-            float past_target = duration.count() - frame_dur;
+            float past_target = duration_s.count() - frame_dur + error_;
             if (past_target < 0) {
                 return {};
-            } else if (past_target > frame_dur) {
-                std::cerr << "WARNING: Skipped a frame! Since last frame " << past_target << "ms has traspired in " << path_ << std::endl;
             }
+
+            error_ = past_target;
         }
 
         std::lock_guard guard(buffer_mutex_);
