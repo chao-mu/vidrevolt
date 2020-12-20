@@ -12,7 +12,7 @@
 #include <vector>
 
 // RtMidi
-#include "rtmidi/RtMidi.h"
+#include "RtMidi.h"
 
 // Ours (midi)
 #include "Control.h"

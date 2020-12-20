@@ -63,15 +63,15 @@ conan_add_remote(
     URL https://api.bintray.com/conan/degoodmanwilson/opensource
 )
 
-set (CONAN_SETTINGS SETTINGS compiler.libcxx=libstdc++11)
+set (CONAN_SETTINGS SETTINGS compiler.libcxx=libc++)
 conan_cmake_run(
     REQUIRES
         inja/[~=1.0]@DEGoodmanWilson/stable
         bzip2/1.0.8@conan/stable
         yaml-cpp/0.6.2@bincrafters/stable
-        sol/3.0.3@vidrevolt/stable
+	#sol/3.0.3@vidrevolt/stable
         tclap/1.2.2@vidrevolt/stable
-        liblo/0.30@vidrevolt/stable
+	#liblo/0.30@vidrevolt/stable
         gtest/1.8.1@bincrafters/stable
     BASIC_SETUP
         ${CONAN_SETTINGS}
@@ -86,6 +86,8 @@ add_executable(${PROJECT_NAME} src/main.cpp src/Keyboard.cpp src/BPMSync.cpp src
 target_compile_options(${PROJECT_NAME} PRIVATE "-Wextra" "-Wall")
 
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/src)
+
+target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/third-party)
 
 # OpenGL
 find_package(OpenGL REQUIRED)
@@ -115,6 +117,11 @@ find_package(Lua REQUIRED)
 target_include_directories(${PROJECT_NAME} PRIVATE ${LUA_INCLUDE_DIR})
 target_link_libraries(${PROJECT_NAME} ${LUA_LIBRARY})
 
+# LibLo
+find_package(LIBLO REQUIRED)
+target_include_directories(${PROJECT_NAME} PRIVATE ${LIBLO_INCLUDE_DIR})
+target_link_libraries(${PROJECT_NAME} ${LIBLO_LIBRARY})
+
 # Boost
 # sudo apt-get install libboost-signals-dev libboost-filesystem-dev libboost-system-dev
 find_package(Boost COMPONENTS REQUIRED filesystem system)
@@ -126,6 +133,7 @@ target_link_libraries(${PROJECT_NAME} ${CONAN_LIBS})
 
 # Eliminate: /usr/local/lib/liblua.a(loadlib.o): undefined reference to symbol 'dlclose@@GLIBC_2.2.5' 
 target_link_libraries(${PROJECT_NAME} ${CMAKE_DL_LIBS})
+
 
 #
 # Testing!
