@@ -71,10 +71,13 @@ conan_cmake_run(
         yaml-cpp/0.6.2@bincrafters/stable
         tclap/1.2.2@vidrevolt/stable
         gtest/1.8.1@bincrafters/stable
+	glad/0.1.29@bincrafters/stable
     BASIC_SETUP
 	${CONAN_SETTINGS}
     OPTIONS
         #sfml:audio=True
+	glad:api_version=4.1
+	glad:spec=gl
     BUILD missing
 )
 
@@ -102,11 +105,6 @@ target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBS})
 find_package(glfw3 3.2 REQUIRED)
 target_link_libraries(${PROJECT_NAME} glfw ${GLFW_LIBRARIES}) 
 
-# OpenGL - GLEW
-find_package(GLEW REQUIRED)
-target_include_directories(${PROJECT_NAME} PRIVATE ${GLEW_INCLUDE_DIR})
-target_link_libraries(${PROJECT_NAME} ${GLEW_LIBRARIES})
-
 # RtMidi
 find_package(RTMIDI REQUIRED)
 target_include_directories(${PROJECT_NAME} PRIVATE ${RTMIDI_INCLUDE_DIR})
@@ -124,8 +122,8 @@ target_link_libraries(${PROJECT_NAME} ${LUA_LIBRARY})
 
 # LibLo
 find_package(LIBLO REQUIRED)
-target_include_directories(${PROJECT_NAME} PRIVATE ${LIBLO_INCLUDE_DIR})
-target_link_libraries(${PROJECT_NAME} ${LIBLO_LIBRARY})
+target_include_directories(${PROJECT_NAME} PRIVATE ${LIBLO_INCLUDE_DIRS})
+target_link_libraries(${PROJECT_NAME} ${LIBLO_LDFLAGS})
 
 # Boost
 # sudo apt-get install libboost-signals-dev libboost-filesystem-dev libboost-system-dev
@@ -138,6 +136,10 @@ target_link_libraries(${PROJECT_NAME} ${CONAN_LIBS})
 
 # Eliminate: /usr/local/lib/liblua.a(loadlib.o): undefined reference to symbol 'dlclose@@GLIBC_2.2.5' 
 target_link_libraries(${PROJECT_NAME} ${CMAKE_DL_LIBS})
+
+if (APPLE)
+  target_link_libraries(${PROJECT_NAME} "-framework OpenGL")
+endif()
 
 
 #

@@ -7,7 +7,7 @@
 #include <unordered_set>
 
 // OpenGL
-#include <GL/glew.h>
+#include "glad/glad.h"
 
 // Ours
 #include "Value.h"

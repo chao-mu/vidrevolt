@@ -95,3 +95,9 @@ Capturing portions of the screen as video playback device. Replace the -video\_s
 slop -f '-video_size %wx%h -i +%x,%y'
 ffmpeg -f x11grab -r 25 -video_size 664x398 -i +1692,1183 -vcodec rawvideo -pix_fmt yuv420p -threads 0 -f v4l2 -vf 'scale=664x398' /dev/video4
 ```
+
+
+Building on mac
+``` 
+SFML_DIR=/usr/local/Cellar/sfml/2.5.1/lib/cmake/SFML/ cmake ..
+```

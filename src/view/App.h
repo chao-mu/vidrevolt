@@ -10,7 +10,7 @@
 #include <imgui_node_editor.h>
 
 // OpenGL
-#include <GL/glew.h>
+#include "glad/glad.h"
 #include <GLFW/glfw3.h>
 
 // Ours

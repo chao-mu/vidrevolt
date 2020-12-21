@@ -11,7 +11,7 @@
 #include <future>
 
 // OpenGL
-#include <GL/glew.h>
+#include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
 // OpenCV
@@ -50,19 +50,20 @@
 void onError(int errc, const char* desc) {
     std::cerr << "Error (" << std::to_string(errc) << "): " << std::string(desc) << std::endl;
 }
+//
 
-// OpenGL Debug Callback
-void onOpenGLDebug(
-        GLenum /*source*/,
-        GLenum /*type*/,
-        GLuint /*id*/,
-        GLenum /*severity*/,
-        GLsizei /*length*/,
-        const GLchar *msg,
-        const void * /*data*/) {
-
-    std::cout << "OpenGL Debug: " << msg << std::endl;
-}
+//// OpenGL Debug Callback
+//void onOpenGLDebug(
+//        GLenum /*source*/,
+//        GLenum /*type*/,
+//        GLuint /*id*/,
+//        GLenum /*severity*/,
+//        GLsizei /*length*/,
+//        const GLchar *msg,
+//        const void * /*data*/) {
+//
+//    std::cout << "OpenGL Debug: " << msg << std::endl;
+//}
 
 // GLFW window resizing callback
 void onWindowSize(GLFWwindow* /* window */, int width, int height) {
@@ -137,10 +138,13 @@ int main(int argc, const char** argv) {
     // Make the context of the specified window current for our current thread
     glfwMakeContextCurrent(window);
 
-    // Initialize GLEW
-    glewExperimental = GL_TRUE;
-    glewInit();
+    // Initialize Glad
+    if(!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress)) {
+        std::cerr << "failed to load glad! :-(" << std::endl;
+        return 1;
+    }
 
+    /*
     if (debug_opengl.getValue()) {
         printf("OpenGL Debug: %s: \n", glGetString(GL_VERSION));
 
@@ -148,6 +152,7 @@ int main(int argc, const char** argv) {
         glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
         glDebugMessageCallback(onOpenGLDebug, NULL);
     }
+    */
 
     auto pipeline = std::make_shared<vidrevolt::Pipeline>();
     auto frontend = std::make_shared<vidrevolt::LuaFrontend>(pipeline_arg.getValue(), pipeline);
