@@ -63,21 +63,21 @@ conan_add_remote(
     URL https://api.bintray.com/conan/degoodmanwilson/opensource
 )
 
-set (CONAN_SETTINGS SETTINGS compiler.libcxx=libc++)
+#set (CONAN_SETTINGS SETTINGS compiler.libcxx=libc++)
 conan_cmake_run(
     REQUIRES
         inja/[~=1.0]@DEGoodmanWilson/stable
         bzip2/1.0.8@conan/stable
         yaml-cpp/0.6.2@bincrafters/stable
         tclap/1.2.2@vidrevolt/stable
-        gtest/1.8.1@bincrafters/stable
-	glad/0.1.29@bincrafters/stable
+        #gtest/1.8.1@bincrafters/stable
+        glad/0.1.29@bincrafters/stable
     BASIC_SETUP
-	${CONAN_SETTINGS}
+    #    ${CONAN_SETTINGS}
     OPTIONS
         #sfml:audio=True
-	glad:api_version=4.1
-	glad:spec=gl
+        glad:api_version=4.1
+        glad:spec=gl
     BUILD missing
 )
 
@@ -141,22 +141,22 @@ if (APPLE)
   target_link_libraries(${PROJECT_NAME} "-framework OpenGL")
 endif()
 
-
 #
-# Testing!
+##
+## Testing!
+##
+#enable_testing()
 #
-enable_testing()
-
-add_executable(tests test/main.cpp)
-include(GoogleTest)
-gtest_discover_tests(tests)
-target_compile_options(tests PRIVATE "-Wextra" "-Wall")
-target_link_libraries(tests ${CONAN_LIBS})
-
+#add_executable(tests test/main.cpp)
+#include(GoogleTest)
+#gtest_discover_tests(tests)
+#target_compile_options(tests PRIVATE "-Wextra" "-Wall")
+#target_link_libraries(tests ${CONAN_LIBS})
+#
 #
 # Enable coverage
 #
 if (COVERAGE)
     target_link_libraries(${PROJECT_NAME} --coverage)
-    target_link_libraries(tests --coverage)
+    #    target_link_libraries(tests --coverage)
 endif()
