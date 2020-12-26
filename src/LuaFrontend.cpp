@@ -231,7 +231,7 @@ namespace vidrevolt {
     }
 
     LuaFrontend::ObjID LuaFrontend::luafunc_Image(const std::string& path) {
-        return connect(pipeline_->addImage(path));
+        return pipeline_->addImage(path);
     }
 
     LuaFrontend::ObjID LuaFrontend::luafunc_Midi(const std::string& path) {
