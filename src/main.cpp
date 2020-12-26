@@ -160,12 +160,11 @@ int main(int argc, const char** argv) {
 
     const vidrevolt::Resolution resolution = pipeline->getResolution();
 
-    /*// Readjust now that we were able to load the pipeline's proclaimed resolution
-    float height = static_cast<float>(height_arg.getValue());
-    float ratio = static_cast<float>(resolution.height) / height;
-    float width = static_cast<float>(resolution.width) / ratio;
-    glViewport(0, 0, static_cast<int>(width), static_cast<int>(height));
-    */
+    // Readjust now that we were able to load the pipeline's proclaimed resolution
+    auto height = static_cast<float>(height_arg.getValue());
+    auto ratio = static_cast<float>(resolution.height) / height;
+    auto width = static_cast<float>(resolution.width) / ratio;
+    glfwSetWindowSize(window, static_cast<int>(width), static_cast<int>(height));
 
     // Bind vertex array object
     vidrevolt::gl::VertexArray vao;
