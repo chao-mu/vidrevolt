@@ -7,9 +7,24 @@ function shrink_vid() {
 }
 ```
 
+Reverse video
+```
+function rev_vid() {
+    ffmpeg -i  "$*" -filter_complex "[0:v]reverse,fifo[r];[0:v][0:a][r] [0:a]concat=n=2:v=1:a=1 [v] [a]" -map "[v]" -map "[a]" "$*"-REV.mp4 
+}
+```
+
+Shrink and reverse
+```
+function shrink_rev_vid() {
+    ffmpeg -i "$*" -c:v mjpeg -vf "scale='min(960,iw)':-1" -qscale:v 1 -vendor ap10 -pix_fmt yuvj422p "$*-SHRINK.mov"
+    ffmpeg -i "$*-SHRINK.mov" -filter_complex "[0:v]reverse,fifo[r];[0:v][r] concat=n=2:v=1 [v]" -map "[v]" "$*-SHRINK-REV.mp4"
+}
+```
+
 
 ```
-find assets/ -type f |  perl -nle '$line++; print q(Video("$_", {"mirror"}),)'
+find assets/ -type f |  perl -nle '$line++; print qq(Video("$_", {"mirror"}),)'
 ```
 
 ```
