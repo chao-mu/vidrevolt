@@ -263,8 +263,11 @@ int main(int argc, const char** argv) {
     frontend->render();
 
     std::optional<std::chrono::time_point<std::chrono::high_resolution_clock>> last_write;
+    GLCall(glClearColor(0, 0, 0, 1));
     while (!glfwWindowShouldClose(window)) {
         DEBUG_TIME_START(loop)
+        GLCall(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT));
+
         GLCall(glfwPollEvents());
 
         keyboard->poll();
@@ -275,7 +278,7 @@ int main(int argc, const char** argv) {
 
         // Calculate blit settings
         int win_width, win_height;
-        GLCall(glfwGetWindowSize(window, &win_width, &win_height));
+        GLCall(glfwGetFramebufferSize(window, &win_width, &win_height));
         auto draw_info = vidrevolt::mathutil::DrawInfo::scaleCenter(
             static_cast<float>(resolution.width),
             static_cast<float>(resolution.height),
@@ -306,7 +309,7 @@ int main(int argc, const char** argv) {
             GLCall(glFlush());
         }
         DEBUG_TIME_END(flush);
-        DEBUG_TIME_END(draw)
+        DEBUG_TIME_END(draw);
 
         if (writer != nullptr) {
             bool should_write = true;
