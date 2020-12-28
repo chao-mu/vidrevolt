@@ -182,9 +182,13 @@ namespace vidrevolt {
         return target;
     }
 
-    AddressOrValue LuaFrontend::toAOV(sol::object obj) {
+    AddressOrValue LuaFrontend::toAOV(const sol::object& obj) {
         if (obj.is<float>()) {
             return Value(obj.as<float>());
+        } else if (obj.is<int>()) {
+            return Value(obj.as<int>());
+        } else if (obj.is<bool>()) {
+            return Value(obj.as<bool>());
         } else if (obj.is<sol::table>()) {
             auto obj_arr = obj.as<std::vector<sol::object>>();
             if (obj_arr.size() == 2 && obj_arr[1].is<std::string>()) {

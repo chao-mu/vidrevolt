@@ -19,7 +19,7 @@ namespace vidrevolt {
             std::shared_ptr<gl::RenderOut> render();
 
         private:
-            AddressOrValue toAOV(sol::object obj);
+            AddressOrValue toAOV(const sol::object& obj);
 
             ObjID luafunc_Video(const std::string& path, const sol::table& args);
             ObjID luafunc_Webcam(int device);
