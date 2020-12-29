@@ -81,7 +81,8 @@ int main(int argc, const char** argv) {
     TCLAP::ValueArg<int> height_arg("", "height", "window height (width will be calculated automatically)", false, 720, "int", cmd);
     TCLAP::SwitchArg debug_timer_arg("", "debug-timer", "debug time between frames", cmd);
     TCLAP::SwitchArg debug_opengl("", "debug-opengl", "print out OpenGL debugging info", cmd);
-    TCLAP::SwitchArg full_arg("", "full", "maximized, no titlebar", cmd);
+    TCLAP::SwitchArg full_arg("", "full", "full screen", cmd);
+    TCLAP::SwitchArg hide_title_arg("", "hide-title", "hide titlebar", cmd);
 
     // Parse command line arguments
     try {
@@ -108,6 +109,10 @@ int main(int argc, const char** argv) {
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
+    if (hide_title_arg.getValue()) {
+        glfwWindowHint(GLFW_DECORATED, false);
+    }
+
     // Use single buffer rendering
     if (!DOUBLE_BUF) {
         glfwWindowHint( GLFW_DOUBLEBUFFER, GL_FALSE );
@@ -118,7 +123,7 @@ int main(int argc, const char** argv) {
         monitor = glfwGetPrimaryMonitor();
     }
 
-    GLFWwindow* window = glfwCreateWindow(640, 360, "Awesome Art", monitor, NULL);
+    GLFWwindow* window = glfwCreateWindow(1080, 720, "Awesome Art", monitor, NULL);
     if (!window) {
         glfwTerminate();
         std::cerr << "Failed to create window" << std::endl;
@@ -156,7 +161,13 @@ int main(int argc, const char** argv) {
 
     auto pipeline = std::make_shared<vidrevolt::Pipeline>();
     auto frontend = std::make_shared<vidrevolt::LuaFrontend>(pipeline_arg.getValue(), pipeline);
-    frontend->load();
+
+    try {
+        frontend->load();
+    } catch (const std::runtime_error& error) {
+        std::cerr << "Error: " << error.what() << std::endl;
+        return 1;
+    }
 
     const vidrevolt::Resolution resolution = pipeline->getResolution();
 
