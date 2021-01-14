@@ -43,7 +43,8 @@ namespace vidrevolt {
     }
 
     void Webcam::start() {
-        vid_ = std::make_unique<cv::VideoCapture>(device_, cv::CAP_V4L2);
+        //vid_ = std::make_unique<cv::VideoCapture>(device_, cv::CAP_V4L2);
+        vid_ = std::make_unique<cv::VideoCapture>(device_);
         if (!vid_->isOpened()) {
             throw std::runtime_error("Unable to open capture device " + std::to_string(device_));
         }

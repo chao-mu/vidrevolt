@@ -62,7 +62,6 @@ namespace vidrevolt {
         setController(id, std::move(osc));
 
         return id;
-
     }
 
     Pipeline::ObjID Pipeline::addVideo(const std::string& path, bool auto_reset, Video::Playback pb) {
@@ -82,7 +81,6 @@ namespace vidrevolt {
 
         return id;
     }
-
 
     Pipeline::ObjID Pipeline::addMidi(const std::string& path) {
         ObjID id = next_id(path);
