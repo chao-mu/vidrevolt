@@ -157,7 +157,7 @@ namespace vidrevolt {
        return controllers_;
     }
 
-    std::shared_ptr<gl::RenderOut> Pipeline::render(std::function<void()> f) {
+    RenderResult Pipeline::render(std::function<void()> f) {
         last_in_use_ = in_use_;
         in_use_.clear();
 
@@ -184,7 +184,11 @@ namespace vidrevolt {
             }
         }
 
-        return renderer_->getLast();
+        RenderResult res;
+        res.primary = renderer_->getLast();
+        res.aux = renderer_->getLastAux();
+
+        return res;
     }
 
     void Pipeline::setWebcam(const std::string& key, std::unique_ptr<Webcam> vid) {

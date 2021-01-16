@@ -2,6 +2,8 @@
 
 #include <stdexcept>
 
+#define AUX_OUTPUT_NAME "aux"
+
 namespace vidrevolt {
     namespace gl {
         void Renderer::setResolution(const Resolution& res) {
@@ -93,6 +95,10 @@ namespace vidrevolt {
 
             textures_[target] = out->getSrcTex();
             last_ = out;
+
+            if (target.str() == "aux") {
+                last_aux_ = out;
+            }
         }
 
         Resolution Renderer::getResolution() const {
@@ -124,6 +130,10 @@ namespace vidrevolt {
 
         std::shared_ptr<RenderOut> Renderer::getLast() {
             return last_;
+        }
+
+        std::shared_ptr<RenderOut> Renderer::getLastAux() {
+            return last_aux_;
         }
     }
 }

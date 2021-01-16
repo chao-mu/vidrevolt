@@ -15,6 +15,7 @@
 #include "Keyboard.h"
 #include "BPMSync.h"
 #include "gl/Renderer.h"
+#include "RenderResult.h"
 
 namespace vidrevolt {
     struct RenderStep {
@@ -34,7 +35,7 @@ namespace vidrevolt {
 
             std::vector<RenderStep> getRenderSteps();
 
-            std::shared_ptr<gl::RenderOut> render(std::function<void()> f);
+            RenderResult render(std::function<void()> f);
             void reconnectControllers();
 
             ObjID addVideo(const std::string& path, bool auto_reset, Video::Playback pb);

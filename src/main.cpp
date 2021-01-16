@@ -71,6 +71,12 @@ void onWindowSize(GLFWwindow* /* window */, int width, int height) {
     GLCall(glViewport(0,0, width, height));
 }
 
+struct Window {
+    GLFWwindow* window;
+    std::shared_ptr<vidrevolt::gl::RenderOut> out;
+    GLuint fbo = 0;
+};
+
 int main(int argc, const char** argv) {
     TCLAP::CmdLine cmd("VidRevolt");
 
@@ -83,6 +89,7 @@ int main(int argc, const char** argv) {
     TCLAP::SwitchArg debug_opengl("", "debug-opengl", "print out OpenGL debugging info", cmd);
     TCLAP::SwitchArg full_arg("", "full", "full screen", cmd);
     TCLAP::SwitchArg hide_title_arg("", "hide-title", "hide titlebar", cmd);
+    TCLAP::SwitchArg aux_window_arg("a", "aux", "auxiliary window", cmd);
 
     // Parse command line arguments
     try {
@@ -123,30 +130,50 @@ int main(int argc, const char** argv) {
         monitor = glfwGetPrimaryMonitor();
     }
 
-    GLFWwindow* window = glfwCreateWindow(1080, 720, "Awesome Art", monitor, NULL);
-    if (!window) {
+    std::vector<std::shared_ptr<Window>> windows;
+
+    auto primary_window = std::make_shared<Window>();
+    primary_window->window = glfwCreateWindow(1080, 720, "Awesome Art", monitor, NULL);
+    if (!primary_window->window) {
         glfwTerminate();
         std::cerr << "Failed to create window" << std::endl;
         return 1;
     }
 
+    windows.push_back(primary_window);
+
     if (full_arg.getValue()) {
-        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+        glfwSetInputMode(primary_window->window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
     }
 
     // Set window resize callback
-    glfwSetWindowSizeCallback(window, onWindowSize);
+    glfwSetWindowSizeCallback(primary_window->window, onWindowSize);
 
     // Set key press callback
-    glfwSetKeyCallback(window, vidrevolt::KeyboardManager::onKey);
+    glfwSetKeyCallback(primary_window->window, vidrevolt::KeyboardManager::onKey);
 
     // Make the context of the specified window current for our current thread
-    glfwMakeContextCurrent(window);
+    glfwMakeContextCurrent(primary_window->window);
 
     // Initialize Glad
     if(!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress)) {
         std::cerr << "failed to load glad! :-(" << std::endl;
         return 1;
+    }
+
+    auto aux_window = std::make_shared<Window>();
+    if (aux_window_arg.getValue()) {
+        aux_window->window = glfwCreateWindow(1080, 720, "Awesome Art (monitor)", monitor,
+                primary_window->window);
+        if (!aux_window->window) {
+            glfwTerminate();
+            std::cerr << "Failed to create auxiliary window" << std::endl;
+            return 1;
+        }
+
+        windows.push_back(aux_window);
+
+        glfwSetKeyCallback(aux_window->window, vidrevolt::KeyboardManager::onKey);
     }
 
     /*
@@ -175,7 +202,7 @@ int main(int argc, const char** argv) {
     auto height = static_cast<float>(height_arg.getValue());
     auto ratio = static_cast<float>(resolution.height) / height;
     auto width = static_cast<float>(resolution.width) / ratio;
-    glfwSetWindowSize(window, static_cast<int>(width), static_cast<int>(height));
+    glfwSetWindowSize(primary_window->window, static_cast<int>(width), static_cast<int>(height));
 
     // Bind vertex array object
     vidrevolt::gl::VertexArray vao;
@@ -226,7 +253,7 @@ int main(int argc, const char** argv) {
             dest = s.str();
         }
 
-        cv::Mat image = frontend->render()->getSrcTex()->read();
+        cv::Mat image = frontend->render().primary->getSrcTex()->read();
 
         // Explicitly image by copy; if we pass by reference the internal refcount wont increment
         shot_futures_.push_back(std::async([dest, image]() {
@@ -246,13 +273,13 @@ int main(int argc, const char** argv) {
     });
 
     // Exit key
-    keyboard->connect("escape", [&window](vidrevolt::Value v) {
+    keyboard->connect("escape", [&primary_window](vidrevolt::Value v) {
         // On key release
         if (v.getBool()) {
             return;
         }
 
-        GLCall(glfwSetWindowShouldClose(window, GLFW_TRUE));
+        GLCall(glfwSetWindowShouldClose(primary_window->window, GLFW_TRUE));
     });
 
     std::unique_ptr<vidrevolt::VideoWriter> writer;
@@ -262,7 +289,6 @@ int main(int argc, const char** argv) {
         writer = std::make_unique<vidrevolt::VideoWriter>(path, RECORDING_FPS, resolution);
         writer->start();
     }
-
 
     // Our run loop
     DEBUG_TIME_DECLARE(render)
@@ -275,52 +301,85 @@ int main(int argc, const char** argv) {
 
     std::optional<std::chrono::time_point<std::chrono::high_resolution_clock>> last_write;
     GLCall(glClearColor(0, 0, 0, 1));
-    while (!glfwWindowShouldClose(window)) {
+
+    while (!glfwWindowShouldClose(primary_window->window)) {
         DEBUG_TIME_START(loop)
-        GLCall(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT));
 
-        GLCall(glfwPollEvents());
+        for (const auto& target : windows) {
+            glfwMakeContextCurrent(target->window);
 
+            GLCall(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT));
+
+            GLCall(glfwPollEvents());
+        }
+
+
+        glfwMakeContextCurrent(primary_window->window);
         keyboard->poll();
 
         DEBUG_TIME_START(render)
-        std::shared_ptr<vidrevolt::gl::RenderOut> out = frontend->render();
+        vidrevolt::RenderResult result = frontend->render();
+        primary_window->out = result.primary;
+        aux_window->out = result.aux;
         DEBUG_TIME_END(render)
 
-        // Calculate blit settings
-        int win_width, win_height;
-        GLCall(glfwGetFramebufferSize(window, &win_width, &win_height));
-        auto draw_info = vidrevolt::mathutil::DrawInfo::scaleCenter(
-            static_cast<float>(resolution.width),
-            static_cast<float>(resolution.height),
-            static_cast<float>(win_width),
-            static_cast<float>(win_height)
-        );
+        for (const auto& target : windows) {
+            GLFWwindow* window = target->window;
+            std::shared_ptr<vidrevolt::gl::RenderOut> out = target->out;
 
-        // Draw to the screen
-        DEBUG_TIME_START(draw)
-        if (DOUBLE_BUF) {
-            GLCall(glDrawBuffer(GL_BACK));
-        }
-        GLCall(glBindFramebuffer(GL_READ_FRAMEBUFFER, out->getFBO()));
-        GLCall(glReadBuffer(out->getSrcDrawBuf()));
-        GLCall(glViewport(0,0, win_width, win_height));
-        GLCall(glBlitFramebuffer(
-            0,0, resolution.width, resolution.height,
-            draw_info.x0, draw_info.y0, draw_info.x1, draw_info.y1,
-            GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT,
-            GL_NEAREST
-        ));
+            if (out == nullptr) {
+                continue;
+            }
 
-        // Show buffer
-        DEBUG_TIME_START(flush);
-        if (DOUBLE_BUF) {
-            glfwSwapBuffers(window);
-        } else {
-            GLCall(glFlush());
+            glfwMakeContextCurrent(window);
+
+            // Calculate blit settings
+            int win_width, win_height;
+            GLCall(glfwGetFramebufferSize(window, &win_width, &win_height));
+            auto draw_info = vidrevolt::mathutil::DrawInfo::scaleCenter(
+                static_cast<float>(resolution.width),
+                static_cast<float>(resolution.height),
+                static_cast<float>(win_width),
+                static_cast<float>(win_height)
+            );
+
+            // Draw to the screen
+            DEBUG_TIME_START(draw)
+            if (DOUBLE_BUF) {
+                GLCall(glDrawBuffer(GL_BACK));
+            }
+
+            if (target->fbo == 0)  {
+                GLCall(glGenFramebuffers(1, &target->fbo));
+            }
+
+            GLCall(glBindFramebuffer(GL_READ_FRAMEBUFFER, target->fbo));
+            GLCall(glFramebufferTexture(
+                GL_READ_FRAMEBUFFER,
+                out->getSrcDrawBuf(),
+                out->getSrcTex()->getID(),
+                0
+            ));
+
+            GLCall(glReadBuffer(out->getSrcDrawBuf()));
+            GLCall(glViewport(0,0, win_width, win_height));
+            GLCall(glBlitFramebuffer(
+                0,0, resolution.width, resolution.height,
+                draw_info.x0, draw_info.y0, draw_info.x1, draw_info.y1,
+                GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT,
+                GL_NEAREST
+            ));
+
+            // Show buffer
+            DEBUG_TIME_START(flush);
+            if (DOUBLE_BUF) {
+                glfwSwapBuffers(window);
+            } else {
+                GLCall(glFlush());
+            }
+            DEBUG_TIME_END(flush);
+            DEBUG_TIME_END(draw);
         }
-        DEBUG_TIME_END(flush);
-        DEBUG_TIME_END(draw);
 
         if (writer != nullptr) {
             bool should_write = true;
@@ -331,7 +390,7 @@ int main(int argc, const char** argv) {
             }
 
             if (should_write) {
-                cv::Mat frame = out->getSrcTex()->read();
+                cv::Mat frame = primary_window->out->getSrcTex()->read();
                 writer->write(frame);
                 last_write = std::chrono::high_resolution_clock::now();
             }

@@ -60,7 +60,7 @@ namespace vidrevolt {
         pipeline_->load(resolution);
     }
 
-    std::shared_ptr<gl::RenderOut> LuaFrontend::render() {
+    RenderResult LuaFrontend::render() {
         // Calculate time delta (fractions of seconds)
         if (!last_time_) {
             last_time_ = std::chrono::high_resolution_clock::now();

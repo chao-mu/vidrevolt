@@ -29,6 +29,7 @@ namespace vidrevolt {
                 void preloadModule(const std::string& shader_path);
 
                 std::shared_ptr<RenderOut> getLast();
+                std::shared_ptr<RenderOut> getLastAux();
 
                 void setResolution(const Resolution& resolution);
                 Resolution getResolution() const;
@@ -41,6 +42,7 @@ namespace vidrevolt {
                 std::map<std::string, std::shared_ptr<Module>> modules_;
 
                 std::shared_ptr<RenderOut> last_;
+                std::shared_ptr<RenderOut> last_aux_;
 
                 Resolution resolution_;
 

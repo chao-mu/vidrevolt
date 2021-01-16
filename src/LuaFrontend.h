@@ -1,11 +1,12 @@
 #ifndef VIDREVOLT_LUAFRONTEND_H_
 #define VIDREVOLT_LUAFRONTEND_H_
 
-// Ours
-#include "Pipeline.h"
-
 // Sol (Lua)
 #include <sol/sol.hpp>
+
+// Ours
+#include "Pipeline.h"
+#include "RenderResult.h"
 
 namespace vidrevolt {
     class LuaFrontend {
@@ -16,7 +17,7 @@ namespace vidrevolt {
 
             void load();
 
-            std::shared_ptr<gl::RenderOut> render();
+            RenderResult render();
 
         private:
             AddressOrValue toAOV(const sol::object& obj);
