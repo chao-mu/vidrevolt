@@ -17,7 +17,7 @@ function rev_vid() {
 Shrink and reverse
 ```
 function shrink_rev_vid() {
-    ffmpeg -i "$*" -c:v mjpeg -vf "scale='min(960,iw)':-1" -qscale:v 1 -vendor ap10 -pix_fmt yuvj422p "$*-SHRINK.mov"
+    ffmpeg -i "$*" -c:v mjpeg -vf "scale='min(1080,iw)':-1" -qscale:v 1 -vendor ap10 -pix_fmt yuvj422p "$*-SHRINK.mov"
     ffmpeg -i "$*-SHRINK.mov" -filter_complex "[0:v]reverse,fifo[r];[0:v][r] concat=n=2:v=1 [v]" -map "[v]" "$*-SHRINK-REV.mp4"
 }
 ```
@@ -115,4 +115,10 @@ ffmpeg -f x11grab -r 25 -video_size 664x398 -i +1692,1183 -vcodec rawvideo -pix_
 Building on mac
 ``` 
 SFML_DIR=/usr/local/Cellar/sfml/2.5.1/lib/cmake/SFML/ cmake ..
+```
+
+Generate lua code for chaos monkey
+
+```
+grep '^#pragma input ' shaders/*.glsl | sort | perl -e 'while (<>) { m/(.*?):#pragma input \w+ (\w+).*?$/; $xs ||= {}; unshift @{$xs->{$1}}, $2;} foreach $shader (keys %$xs) { print qq(effects["$shader"] = {) . join(", ", map {qq("$_")} @{$xs->{$shader}}) . "}\n"}'
 ```
