@@ -1,5 +1,6 @@
 #include "LuaFrontend.h"
 
+// STL
 #include <stdexcept>
 
 namespace vidrevolt {
@@ -45,6 +46,7 @@ namespace vidrevolt {
         lua_.set_function("setFPS", &LuaFrontend::luafunc_setFPS, this);
         lua_.set_function("playAudio", &LuaFrontend::luafunc_playAudio, this);
         lua_.set_function("restartAudio", &LuaFrontend::luafunc_restartAudio, this);
+        lua_.set_function("rando", &LuaFrontend::luafunc_rando, this);
 
         auto time = std::chrono::high_resolution_clock::now();
         auto time_ms = std::chrono::duration_cast<std::chrono::milliseconds>(time.time_since_epoch());
@@ -58,6 +60,10 @@ namespace vidrevolt {
         resolution.height = lua_.get_or("height", 1080);
 
         pipeline_->load(resolution);
+    }
+
+    float LuaFrontend::luafunc_rando() {
+        return pipeline_->rand();
     }
 
     RenderResult LuaFrontend::render() {
@@ -79,7 +85,25 @@ namespace vidrevolt {
             throw std::runtime_error("Expected a function 'render'");
         }
 
-        return pipeline_->render(renderFunc);
+        auto result = pipeline_->render(renderFunc);
+
+        auto on_judge = lua_.get<sol::function>("onJudge");
+        if (lua_["onJudge"]) {
+            cv::Mat_<cv::Vec3b> img = result.primary->getSrcTex()->read();
+
+            int score = 0;
+            for (auto& pixel : img) {
+                double total = pixel[0] + pixel[1] + pixel[2];
+                if (total != 0 && total != (255 * 3)) {
+                    score = 1;
+                    break;
+                }
+            }
+
+            on_judge(score);
+        }
+
+        return result;
     }
 
     void LuaFrontend::luafunc_restartAudio() {

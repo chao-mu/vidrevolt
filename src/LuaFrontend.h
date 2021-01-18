@@ -36,6 +36,7 @@ namespace vidrevolt {
             void luafunc_setFPS(const std::string& id, double fps);
             void luafunc_playAudio(const std::string& path);
             void luafunc_restartAudio();
+            float luafunc_rando();
 
             ObjID connect(const std::string& controller_id);
 

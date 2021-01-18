@@ -260,7 +260,7 @@ int main(int argc, const char** argv) {
             cv::cvtColor(image, image, cv::COLOR_BGR2RGB);
             flip(image, image, 0);
             cv::imwrite(dest, image);
-            std::cout << "Screenshot saved at " << dest << std::endl;
+            std::cerr << "Screenshot saved at " << dest << std::endl;
         }));
     });
 

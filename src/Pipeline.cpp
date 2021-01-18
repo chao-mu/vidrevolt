@@ -1,15 +1,17 @@
 #include "Pipeline.h"
 
+// STL
+#include <stdexcept>
+
 // Ours
 #include "midi/Device.h"
 #include "KeyboardManager.h"
 #include "osc/Server.h"
 #include "gl/ParamSet.h"
 
-// STL
-#include <stdexcept>
-
 namespace vidrevolt {
+    Pipeline::Pipeline() : rand_gen_(rand_dev_()) {}
+
     void Pipeline::load(const Resolution& resolution) {
         resolution_ = resolution;
         renderer_->setResolution(resolution_);
@@ -214,5 +216,9 @@ namespace vidrevolt {
 
     std::vector<RenderStep> Pipeline::getRenderSteps() {
         return render_steps_;
+    }
+
+    float Pipeline::rand() {
+        return std::generate_canonical<float, 10>(rand_gen_);
     }
 }

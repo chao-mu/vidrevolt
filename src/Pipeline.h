@@ -3,6 +3,7 @@
 
 // STL
 #include <memory>
+#include <random>
 
 // SFML
 #include <SFML/Audio.hpp>
@@ -27,7 +28,7 @@ namespace vidrevolt {
         public:
             using ObjID = std::string;
 
-            Pipeline() = default;
+            Pipeline();
 
             void load(const Resolution& resolution);
 
@@ -57,6 +58,8 @@ namespace vidrevolt {
 
             std::map<std::string, std::shared_ptr<Controller>> getControllers() const;
 
+            float rand();
+
         private:
             ObjID next_id(const std::string& comment);
 
@@ -79,6 +82,9 @@ namespace vidrevolt {
 
             std::vector<RenderStep> render_steps_;
             sf::Music music_;
+
+            std::random_device rand_dev_;
+            std::mt19937 rand_gen_;
     };
 }
 
